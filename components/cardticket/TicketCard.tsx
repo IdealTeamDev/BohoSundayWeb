@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from "react";
-import { zoneConfig } from '@/data/tickets';
+import { zoneConfig } from '@/data/zoneConfig';
 import type {Ticket } from '@/types';
 
 
