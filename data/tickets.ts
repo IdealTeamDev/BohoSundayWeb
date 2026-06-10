@@ -5,6 +5,7 @@ export const tickets: Ticket[] = [
     {
     id: 'vip-1',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 1,
     persons: 6,
@@ -17,6 +18,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-2',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 2,
     persons: 6,
@@ -29,6 +31,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-3',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 3,
     persons: 6,
@@ -41,6 +44,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-4',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 4,
     persons: 6,
@@ -53,6 +57,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-5',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 5,
     persons: 6,
@@ -65,6 +70,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-6',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 6,
     persons: 6,
@@ -77,6 +83,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-7',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 7,
     persons: 6,
@@ -89,6 +96,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-8',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 8,
     persons: 6,
@@ -101,6 +109,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-9',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 9,
     persons: 6,
@@ -113,6 +122,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-10',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 10,
     persons: 6,
@@ -125,6 +135,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-11',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 11,
     persons: 6,
@@ -137,6 +148,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-12',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 12,
     persons: 6,
@@ -149,6 +161,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-13',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 13,
     persons: 6,
@@ -161,6 +174,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-14',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 14,
     persons: 6,
@@ -173,6 +187,7 @@ export const tickets: Ticket[] = [
   {
     id: 'vip-15',
     zone: 'vip',
+    img: 'images/ticketsImage/CAMA VIP.png',
     name: 'CAMA VIP',
     number: 15,
     persons: 6,
@@ -187,6 +202,7 @@ export const tickets: Ticket[] = [
   {
     id: 'backstage-1',
     zone: 'backstage',
+    img: 'images/ticketsImage/BACKSTAGE.png',
     name: 'BACKSTAGE',
     number: 1,
     persons: 20,
@@ -199,6 +215,7 @@ export const tickets: Ticket[] = [
   {
     id: 'backstage-2',
     zone: 'backstage',
+    img: 'images/ticketsImage/BACKSTAGE.png',
     name: 'BACKSTAGE',
     number: 2,
     persons: 20,
@@ -211,6 +228,7 @@ export const tickets: Ticket[] = [
   {
     id: 'backstage-3',
     zone: 'backstage',
+    img: 'images/ticketsImage/BACKSTAGE.png',
     name: 'BACKSTAGE',
     number: 3,
     persons: 20,
@@ -225,6 +243,7 @@ export const tickets: Ticket[] = [
   {
     id: 'bohemian-1',
     zone: 'bohemian',
+    img: 'images/ticketsImage/BOHEMIAN.png',
     name: 'CAMA BOHEMIAN',
     number: 1,
     persons: 8,
@@ -237,6 +256,7 @@ export const tickets: Ticket[] = [
   {
     id: 'bohemian-2',
     zone: 'bohemian',
+    img: 'images/ticketsImage/BOHEMIAN.png',
     name: 'CAMA BOHEMIAN',
     number: 2,
     persons: 8,
@@ -249,6 +269,7 @@ export const tickets: Ticket[] = [
   {
     id: 'bohemian-3',
     zone: 'bohemian',
+    img: 'images/ticketsImage/BOHEMIAN.png',
     name: 'CAMA BOHEMIAN',
     number: 3,
     persons: 8,
@@ -261,6 +282,7 @@ export const tickets: Ticket[] = [
   {
     id: 'bohemian-4',
     zone: 'bohemian',
+    img: 'images/ticketsImage/BOHEMIAN.png',
     name: 'CAMA BOHEMIAN',
     number: 4,
     persons: 8,
@@ -273,6 +295,7 @@ export const tickets: Ticket[] = [
   {
     id: 'bohemian-5',
     zone: 'bohemian',
+    img: 'images/ticketsImage/BOHEMIAN.png',
     name: 'CAMA BOHEMIAN',
     number: 5,
     persons: 8,
@@ -287,6 +310,7 @@ export const tickets: Ticket[] = [
   {
     id: 'oasis-1',
     zone: 'oasis',
+    img: 'images/ticketsImage/OASIS.png',
     name: 'MESA OASIS',
     number: 1,
     persons: 6,
@@ -299,6 +323,7 @@ export const tickets: Ticket[] = [
   {
     id: 'oasis-2',
     zone: 'oasis',
+    img: 'images/ticketsImage/OASIS.png',
     name: 'MESA OASIS',
     number: 2,
     persons: 6,
@@ -311,6 +336,7 @@ export const tickets: Ticket[] = [
   {
     id: 'oasis-3',
     zone: 'oasis',
+    img: 'images/ticketsImage/OASIS.png',
     name: 'MESA OASIS',
     number: 3,
     persons: 6,
@@ -323,6 +349,7 @@ export const tickets: Ticket[] = [
   {
     id: 'oasis-4',
     zone: 'oasis',
+    img: 'images/ticketsImage/OASIS.png',
     name: 'MESA OASIS',
     number: 4,
     persons: 6,
@@ -337,6 +364,7 @@ export const tickets: Ticket[] = [
   {
     id: 'candela-1',
     zone: 'candela',
+    img: 'images/ticketsImage/CANDELA.png',
     name: 'MESA CANDELA',
     number: 1,
     persons: 6,
@@ -349,6 +377,7 @@ export const tickets: Ticket[] = [
   {
     id: 'candela-2',
     zone: 'candela',
+    img: 'images/ticketsImage/CANDELA.png',
     name: 'MESA CANDELA',
     number: 2,
     persons: 6,
@@ -363,6 +392,7 @@ export const tickets: Ticket[] = [
   {
     id: 'primitivo-1',
     zone: 'primitivo',
+    img: 'images/ticketsImage/PRIMITIVO.png',
     name: 'CAMA LUJO PRIMITIVO',
     number: 1,
     persons: 10,
@@ -375,6 +405,7 @@ export const tickets: Ticket[] = [
   {
     id: 'primitivo-2',
     zone: 'primitivo',
+    img: 'images/ticketsImage/CANDELA.png',
     name: 'CAMA LUJO PRIMITIVO',
     number: 2,
     persons: 10,

@@ -20,10 +20,11 @@ export default function Home() {
           height={20}
         />
 
-        <div className="flex items-center mt-10 mb-5 text-center sm:items-start sm:text-left">
-          <div className="flex-1 ">
+        <div className="flex items-center mt-10 mb-2 text-center sm:items-start sm:text-left">
+          <div className="flex flex-col">
 
-            <span className="font-displayFlyer text-2xl">26<br></br>Julio</span>
+            <span className="font-agilera text-xl">JUL</span>
+            <span className="font-agilera text-4xl">26</span>
 
           </div>
           <div className="flex-1 mx-10">
@@ -36,13 +37,14 @@ export default function Home() {
                />
 
           </div>
-          <div className="flex-1 ">
+          <div className="flex flex-col">
 
-            <span className="font-displayFlyer text-2xl">46<br></br> Julio</span>
+            <span className="font-agilera text-4xl">10</span>
+            <span className="font-agilera text-xl">AM</span>
 
           </div>
         </div>
-        <div className="mt-20">
+        <div className="mt-10">
           <img
           src="images/logo/logo-casa-candela.png"
           alt="Boho Sunday Colombia Moda Edition"
@@ -54,13 +56,13 @@ export default function Home() {
       </div>
       <div className="flex flex-row items-center justify-center gap-4 pt-6 pb-1">
 
-        <button onClick={()=> setOpenMap(true)} className=" text-sm bg-[#686A54] py-2 px-4 rounded-lg my-2">MAPA DE MESAS</button>
-        <button className=" text-sm bg-[#686A54] py-2 px-4 rounded-lg my-2">BOLETERIA INDIVIDUAL</button>
+        <button onClick={()=> setOpenMap(true)} className=" text-sm bg-[#686A54] text-[15px] font-semibold font-nunito py-2.5 px-2 rounded-lg my-2">MAPA DE MESAS</button>
+        <button className=" text-sm bg-[#686A54] text-[15px] font-semibold font-nunito py-2.5 px-2 rounded-lg my-2">BOLETERÍA INDIVIDUAL</button>
       </div>
       {/* Este bloque tiene que estar DENTRO del return también */}
       {openMap && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-end justify-center overflow-y-auto">
-          <div className="w-full max-w-2xl p-4">
+          <div className="w-full max-w-2xl">
             <EventMap onClose={() => setOpenMap(false)} />
           </div>
         </div>
@@ -68,11 +70,11 @@ export default function Home() {
         
       
 
-      <div>
-        <p className="text-black text-center px-4 py-8">Plan de domingo: Boho Sunday Colombiamoda Edition.<br></br>
-          Una experiencia llena de moda,  música, diversión y los pequeños detalles  crean buena energía.<br></br> 
-          No te pierdas la oportunidad de formar parte de la mejor fiesta de Sopetrán.
-        </p>
+      <div className="px-7 mb-6">
+        <p className="text-black text-[17px] font-semibold text-center  py-2 font-nunito">Plan de domingo: Boho Sunday Colombiamoda Edition.</p>
+        <p className="text-black text-[17px] text-center py-1 font-nunito">Una experiencia llena de moda,  música, diversión y los pequeños detalles  crean buena energía.</p>
+        <p className="text-black text-[17px] text-center py-2 font-nunito">No te pierdas la oportunidad de formar parte de <span className="font-semibold">la mejor fiesta de Sopetrán.</span></p>
+        
       </div>
 
       <Parallaxsection/>
@@ -86,6 +88,13 @@ export default function Home() {
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"/>
       </div>
+      <div className="px-7 py-4">
+        <p className="text-black text-[17px] font-light text-center font-nunito">LUGAR:</p>
+        <p className="text-black text-[17px] text-center font-semibold font-nunito">Casa Candela</p>
+        <p className="text-black text-[17px] text-center py-2 px-7 font-nunito">Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia</p>
+        
+      </div>
+      
     </div>
 
   );

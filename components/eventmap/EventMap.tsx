@@ -19,18 +19,37 @@ export default function EventMap({ onClose }: EventMapProps) {
   };
 
   return (
-    <div className="relative w-full bg-[#1a120a] rounded-2xl overflow-hidden select-none">
+    <div className="relative w-full bg-[#1a120a] rounded-2xl overflow-hidden select-none ">
+      {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-3.5 w-7 h-7 rounded-full bg-[#F4EFE9] flex items-center justify-center text-[#231E1A] hover:bg-white/15 transition-colors"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
+     
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/10">
         <p className="text-xs font-medium text-white/90 uppercase tracking-widest">
-          Mapa del evento
+          Mapa base
         </p>
         <p className="text-[11px] text-white/40 mt-0.5">
           Toca una boleta para ver los detalles
         </p>
       </div>
+      {/*seleccion de boletas*/}
 
-      {/* Legend */}
+      <div className="grid grid-cols-2 gap-2 justify-items-left p-4">
+        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">CAMAS VIP</div>
+        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">MESA OASIS</div>
+        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">BACKSTAGE</div>
+        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">MESA CANDELA</div>
+        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">CAMA BOHEMIAN</div>
+        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">CAMA LUJOPRIMITIVO</div>
+      </div>
+
+      {/* Legend 
       <div className="flex flex-wrap gap-x-3 gap-y-1.5 px-4 py-2 border-b border-white/[0.08]">
         {(Object.entries(zoneConfig) as [keyof typeof zoneConfig, typeof zoneConfig[keyof typeof zoneConfig]][]).map(([zone, cfg]) => (
           <div key={zone} className="flex items-center gap-1.5">
@@ -41,7 +60,7 @@ export default function EventMap({ onClose }: EventMapProps) {
             <span className="text-[10px] text-white/55">{cfg.label}</span>
           </div>
         ))}
-      </div>
+      </div>*/}
 
       {/* Map area */}
       <div className="relative w-full" style={{ paddingBottom: '95%' }}>
