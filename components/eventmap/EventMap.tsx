@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { tickets, zoneConfig } from '@/data/tickets';
+import { tickets } from '../../data/tickets';
+import { zoneConfig } from "../../data/zoneConfig";
 import type { Ticket } from '@/types';
 import TicketCard from '@/components/cardticket/TicketCard';
 
@@ -9,7 +10,7 @@ interface EventMapProps {
   onClose: () => void
 }
 
-export default function EventMap({ onClose}: EventMapProps) {
+export default function EventMap({ onClose }: EventMapProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   const handleDotClick = (ticket: Ticket) => {

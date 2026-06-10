@@ -1,9 +1,15 @@
+'use client'
+
 import Image from "next/image";
+import {useState} from 'react';
+import EventMap from '@/components/eventmap/EventMap';
 import Parallaxsection from "@/components/parallax/Parallaxsection";
 
 
 
 export default function Home() {
+  const [openMap, setOpenMap] = useState(false)
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-[#F4EFE9] font-sans">
       <div className="bg-[url(/images/background/background-home.png)] bg-cover bg-no-repeat flex flex-1 w-full max-w-3xl flex-col items-center justify-between pt-32 pb-16 px-16 dark:bg-red sm:items-start">
@@ -32,7 +38,7 @@ export default function Home() {
           </div>
           <div className="flex-1 ">
 
-            <span className="font-displayFlyer text-2xl">26<br></br> Julio</span>
+            <span className="font-displayFlyer text-2xl">46<br></br> Julio</span>
 
           </div>
         </div>
@@ -48,9 +54,19 @@ export default function Home() {
       </div>
       <div className="flex flex-row items-center justify-center gap-4 pt-6 pb-1">
 
-        <button className=" text-sm bg-[#686A54] py-2 px-4 rounded-lg my-2">MAPA DE MESAS</button>
+        <button onClick={()=> setOpenMap(true)} className=" text-sm bg-[#686A54] py-2 px-4 rounded-lg my-2">MAPA DE MESAS</button>
         <button className=" text-sm bg-[#686A54] py-2 px-4 rounded-lg my-2">BOLETERIA INDIVIDUAL</button>
       </div>
+      {/* Este bloque tiene que estar DENTRO del return también */}
+      {openMap && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-end justify-center overflow-y-auto">
+          <div className="w-full max-w-2xl p-4">
+            <EventMap onClose={() => setOpenMap(false)} />
+          </div>
+        </div>
+      )}
+        
+      
 
       <div>
         <p className="text-black text-center px-4 py-8">Plan de domingo: Boho Sunday Colombiamoda Edition.<br></br>
