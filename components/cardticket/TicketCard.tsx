@@ -1,5 +1,5 @@
 'use client';
-
+import { useRouter } from 'next/navigation';
 import { useEffect } from "react";
 import { zoneConfig } from '@/data/zoneConfig';
 import type {Ticket } from '@/types';
@@ -13,7 +13,7 @@ interface TicketCardProps{
 
 export default function TicketCard({ ticket, onClose }: TicketCardProps) {
   const cfg = zoneConfig[ticket.zone];
- 
+ const router = useRouter();
   const formattedPrice = new Intl.NumberFormat('es-CO').format(ticket.price);
  
   // Close on Escape key
@@ -24,6 +24,29 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
+
+  
+
+  async function handleReserve() {
+    try {
+      const res = await fetch('/api/checkout/lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId: ticket.id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Esta mesa ya está siendo procesada. Intenta en unos minutos.');
+        return;
+      }
+
+      router.push(`/checkout/${ticket.id}`);
+    } catch {
+      alert('Error de conexión. Intenta nuevamente.');
+    }
+  }
  
   return (
     <div
@@ -57,14 +80,14 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
         <div className="p-5">
   
           {/* Title */}
-          <div className="grid grid-cols-[44px_1fr] items-center w-fit mx-auto gap-4">
+          <div className="grid grid-cols-[44px_1fr] items-center gap-1 w-fit mx-auto">
             <img
-                 src="images/icon/icons-tickets.png"
+                 src={ticket.icon}
                  alt="Boho Sunday Colombia Moda Edition"
                   width={28}
                   height={44}
              />
-            <h2 className="text-4xl font-displayFlyer tracking-wider uppercase text-[#231E1A] my-4">
+            <h2 className="text-3xl font-displayFlyer tracking-wider uppercase text-[#231E1A] my-4">
               {ticket.name} #{ticket.number}
             </h2>
           </div>
@@ -76,7 +99,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           <div className="flex items-center justify-center gap-15 mb-3.5 border-t border-b border-[#BDB39B] ">
             <div className="flex flex-col items-center justify-center my-4">
               <p className="text-[19px] font-nunito  text-[#231E1A]">{ticket.persons}</p>
-              <p className="text-[16px] font-nunito font-extralight text-[#231E1A] tracking-wider mb-1">Personas</p>
+              <p className="text-[16px] font-nunito font-extralight text-[#231E1A] mb-1">Personas</p>
               
             </div>
             <div className="flex flex-col justify-center">
@@ -114,11 +137,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
               <button
                 className="w-64 py-3 rounded-xl text-[17px] font-semibold font-nunito uppercase text-[#F4EFE9] hover:opacity-88 transition-opacity"
                 style={{ background: '#686A54' }}
-                onClick={() => {
-                  // TODO: integrate with booking flow
-                  console.log('Reservar:', ticket.id);
-                }}
-              >
+                onClick={handleReserve}>
                 Reservar esta mesa
               </button>
             </div>

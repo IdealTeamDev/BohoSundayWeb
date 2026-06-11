@@ -1,17 +1,38 @@
 'use client';
 
-import { useState } from 'react';
-import { tickets } from '../../data/tickets';
-import { zoneConfig } from "../../data/zoneConfig";
+import { useState, useRef, useEffect } from 'react';
+import { tickets } from '@/data/tickets';
+import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
 import TicketCard from '@/components/cardticket/TicketCard';
 
 interface EventMapProps {
-  onClose: () => void
+  onClose: () => void;
 }
+
+// Dot size in px — we use a fixed px size so numbers are always readable
+// but scale slightly on very small screens
+const DOT_PX = 28;
 
 export default function EventMap({ onClose }: EventMapProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dotSize, setDotSize] = useState(DOT_PX);
+
+  // Adjust dot size based on actual container width
+  useEffect(() => {
+    function updateDotSize() {
+      if (!containerRef.current) return;
+      const w = containerRef.current.offsetWidth;
+      // At 320px wide → 22px dots, at 500px+ → 28px dots
+      const size = Math.max(20, Math.min(28, Math.floor(w * 0.057)));
+      setDotSize(size);
+    }
+    updateDotSize();
+    const ro = new ResizeObserver(updateDotSize);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   const handleDotClick = (ticket: Ticket) => {
     if (!ticket.available) return;
@@ -19,100 +40,140 @@ export default function EventMap({ onClose }: EventMapProps) {
   };
 
   return (
-    <div className="relative w-full bg-[#1a120a] rounded-2xl overflow-hidden select-none ">
-      {/* Close button */}
+    <div className="w-full bg-[#F4EFE9] shadow-lg mb-3 rounded-2xl overflow-hidden select-none">
+
+      {/* ── Header ── */}
+
+        {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-3.5 w-7 h-7 rounded-full bg-[#F4EFE9] flex items-center justify-center text-[#231E1A] hover:bg-white/15 transition-colors"
+          className="absolute top-3 right-4 w-9 h-3  rounded-full bg-[#F4EFE9] flex items-center justify-center text-[#231E1A] hover:bg-white/15 transition-colors"
           aria-label="Cerrar"
         >
           ✕
         </button>
-     
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-white/10">
-        <p className="text-xs font-medium text-white/90 uppercase tracking-widest">
-          Mapa base
-        </p>
-        <p className="text-[11px] text-white/40 mt-0.5">
-          Toca una boleta para ver los detalles
-        </p>
-      </div>
-      {/*seleccion de boletas*/}
 
-      <div className="grid grid-cols-2 gap-2 justify-items-left p-4">
-        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">CAMAS VIP</div>
-        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">MESA OASIS</div>
-        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">BACKSTAGE</div>
-        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">MESA CANDELA</div>
-        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">CAMA BOHEMIAN</div>
-        <div className="font-nunito text-xs border rounded-full p-2 border-[#BDB39B]">CAMA LUJOPRIMITIVO</div>
-      </div>
 
-      {/* Legend 
-      <div className="flex flex-wrap gap-x-3 gap-y-1.5 px-4 py-2 border-b border-white/[0.08]">
-        {(Object.entries(zoneConfig) as [keyof typeof zoneConfig, typeof zoneConfig[keyof typeof zoneConfig]][]).map(([zone, cfg]) => (
-          <div key={zone} className="flex items-center gap-1.5">
-            <div
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ background: cfg.dotColor }}
-            />
-            <span className="text-[10px] text-white/55">{cfg.label}</span>
+          {/*seleccion de boletas*/}
+
+      <div className="grid grid-cols-2 gap-2 justify-items-left px-4 py-8">
+        <div className="flex gap-3 items-center text-[#BDB39B] font-nunito font-extralight text-xs border rounded-full p-2 border-[#BDB39B]">
+          <img src="images/icon/icons-tickets.png" alt="" width={20}/>
+          <p>CAMAS VIP</p>
           </div>
-        ))}
-      </div>*/}
+        <div className="font-nunito text-[#BDB39B] text-xs border rounded-full p-2 border-[#BDB39B]">MESA OASIS</div>
+        <div className="font-nunito text-[#BDB39B] text-xs border rounded-full p-2 border-[#BDB39B]">BACKSTAGE</div>
+        <div className="font-nunito text-[#BDB39B] text-xs border rounded-full p-2 border-[#BDB39B]">MESA CANDELA</div>
+        <div className="font-nunito text-[#BDB39B] text-xs border rounded-full p-2 border-[#BDB39B]">CAMA BOHEMIAN</div>
+        <div className="font-nunito text-[#BDB39B] text-xs border rounded-full p-2 border-[#BDB39B]">CAMA LUJOPRIMITIVO</div>
+      </div>
 
-      {/* Map area */}
-      <div className="relative w-full" style={{ paddingBottom: '95%' }}>
-        {/* Background */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_55%_50%,#2a1f10_0%,#1a120a_70%)]" />
+      {/* ── Map ── */}
+      <div ref={containerRef} className="relative w-full">
+        {/* The image defines the container height via aspect ratio */}
+        <img
+          src="/images/background/mapaboho.png"
+          alt="Mapa del venue Boho Sunday"
+          className="w-full h-auto block"
+          draggable={false}
+        />
 
-        {/* Pool */}
-        <div className="absolute left-[36%] top-[28%] w-[28%] h-[38%] bg-gradient-to-br from-[#0d4a6e] via-[#0a3550] to-[#062840] rounded-xl border border-sky-400/30 flex items-center justify-center">
-          <span className="text-[9px] text-sky-200/60 tracking-widest uppercase text-center">
-            Piscina
-          </span>
-        </div>
-
-        {/* Stage / DJ labels */}
-        <div className="absolute right-[3%] top-[28%] w-[7%] h-[38%] bg-indigo-500/20 border border-indigo-400/50 rounded flex items-center justify-center">
-          <span className="text-[8px] text-indigo-300/80 [writing-mode:vertical-rl] tracking-wider uppercase">
+        {/* Backstage label overlay */}
+        <div
+          className="absolute flex items-center justify-center"
+          style={{
+            left: '82%',
+            top: '34%',
+            width: '10%',
+            height: '28%',
+            background: 'rgba(59,130,246,0.35)',
+            border: '1px solid rgba(96,165,250,0.6)',
+            borderRadius: '6px',
+          }}
+        >
+          <span
+            className="text-blue-200 font-nunito font-semibold uppercase tracking-wider"
+            style={{ fontSize: `${Math.max(7, dotSize * 0.38)}px`, writingMode: 'vertical-rl' }}
+          >
             Backstage
           </span>
         </div>
-        <div className="absolute right-[11%] top-[28%] w-[6%] h-[38%] bg-violet-500/15 border border-violet-400/40 rounded flex items-center justify-center">
-          <span className="text-[8px] text-violet-300/70 [writing-mode:vertical-rl] tracking-widest uppercase">
-            DJ
-          </span>
-        </div>
-        <div className="absolute right-[18%] top-[44%] w-[12%] h-[20%] bg-black/50 border border-white/[0.08] rounded flex items-center justify-center">
-          <span className="text-[7px] text-white/30 tracking-wider uppercase text-center">
-            Dance<br />Floor
-          </span>
-        </div>
 
-        {/* Ticket dots */}
+        {/* Ticket dots — positioned as % of the image */}
         {tickets.map((ticket) => {
           const cfg = zoneConfig[ticket.zone];
+
+          // Skip backstage — it has its own zone label above
+          if (ticket.zone === 'backstage') return null;
+
           return (
             <button
               key={ticket.id}
               aria-label={`${ticket.name} #${ticket.number} — ${ticket.available ? 'Disponible' : 'Agotado'}`}
               onClick={() => handleDotClick(ticket)}
               style={{
+                position: 'absolute',
                 left: `${ticket.position.x}%`,
                 top: `${ticket.position.y}%`,
-                background: cfg.dotColor,
                 transform: 'translate(-50%, -50%)',
+                width: `${dotSize}px`,
+                height: `${dotSize}px`,
+                background: ticket.available ? cfg.dotColor : cfg.dotColor,
+                opacity: ticket.available ? 1 : 0.4,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(255,255,255,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: ticket.available ? 'pointer' : 'not-allowed',
+                zIndex: 10,
+                transition: 'transform 0.15s ease',
+                fontSize: `${Math.max(7, dotSize * 0.38)}px`,
+                fontWeight: '700',
+                color: ticket.zone === 'bohemian' ? '#2a1f0a' : 'rgba(255,255,255,0.95)',
+                fontFamily: 'var(--font-nunito, sans-serif)',
               }}
-              className={[
-                'absolute w-5 h-5 rounded-full flex items-center justify-center',
-                'text-[7px] font-semibold border border-white/20 z-10',
-                'transition-transform duration-150',
-                ticket.available
-                  ? 'cursor-pointer hover:scale-125 active:scale-110 text-black/80'
-                  : 'opacity-35 cursor-not-allowed text-black/60',
-              ].join(' ')}
+              onMouseEnter={(e) => {
+                if (ticket.available) (e.currentTarget as HTMLElement).style.transform = 'translate(-50%, -50%) scale(1.2)';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = 'translate(-50%, -50%) scale(1)';
+              }}
+            >
+              {ticket.number}
+            </button>
+          );
+        })}
+
+        {/* Backstage clickable dot */}
+        {tickets.filter(t => t.zone === 'backstage').map(ticket => {
+          const cfg = zoneConfig[ticket.zone];
+          return (
+            <button
+              key={ticket.id}
+              aria-label="Backstage — toca para ver detalles"
+              onClick={() => handleDotClick(ticket)}
+              style={{
+                position: 'absolute',
+                left: '85%',
+                top: '48%',
+                transform: 'translate(-50%, -50%)',
+                width: `${dotSize}px`,
+                height: `${dotSize}px`,
+                background: cfg.dotColor,
+                opacity: ticket.available ? 1 : 0.4,
+                borderRadius: '50%',
+                border: '1.5px solid rgba(255,255,255,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: ticket.available ? 'pointer' : 'not-allowed',
+                zIndex: 11,
+                fontSize: `${Math.max(7, dotSize * 0.38)}px`,
+                fontWeight: '700',
+                color: 'rgba(255,255,255,0.95)',
+                fontFamily: 'var(--font-nunito, sans-serif)',
+              }}
             >
               {ticket.number}
             </button>
@@ -120,7 +181,7 @@ export default function EventMap({ onClose }: EventMapProps) {
         })}
       </div>
 
-      {/* Ticket card overlay */}
+      {/* ── Ticket card ── */}
       {selectedTicket && (
         <TicketCard
           ticket={selectedTicket}

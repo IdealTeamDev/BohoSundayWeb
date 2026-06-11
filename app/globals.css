@@ -16,7 +16,7 @@
 
   --font-displayFlyer: var(--font-flyer-display);
   --font-nunito: var(--font-nunito);
-  --font-agilera: vae(--font-agilera);
+  --font-agilera: var(--font-agilera);
 
 
 }

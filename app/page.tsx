@@ -3,7 +3,9 @@
 import Image from "next/image";
 import {useState} from 'react';
 import EventMap from '@/components/eventmap/EventMap';
+import AlliesCarousel from '@/components/alliesaarousel/AlliesCarousel';
 import Parallaxsection from "@/components/parallax/Parallaxsection";
+import { Navbar } from "@/components";
 
 
 
@@ -12,7 +14,8 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-[#F4EFE9] font-sans">
-      <div className="bg-[url(/images/background/background-home.png)] bg-cover bg-no-repeat flex flex-1 w-full max-w-3xl flex-col items-center justify-between pt-32 pb-16 px-16 dark:bg-red sm:items-start">
+      <Navbar />
+      <div className="bg-[url(/images/background/background-home.png)] bg-cover bg-no-repeat flex flex-1 w-full max-w-3xl flex-col mb-5 items-center justify-between pt-32 pb-16 px-16 dark:bg-red sm:items-start">
         <img
           src="images/logo/logo-boho-colombiamoda.png"
           alt="Boho Sunday Colombia Moda Edition"
@@ -54,19 +57,31 @@ export default function Home() {
         </div>
         
       </div>
-      <div className="flex flex-row items-center justify-center gap-4 pt-6 pb-1">
 
-        <button onClick={()=> setOpenMap(true)} className=" text-sm bg-[#686A54] text-[15px] font-semibold font-nunito py-2.5 px-2 rounded-lg my-2">MAPA DE MESAS</button>
+      {/* Event Map inline container with smooth transition */}
+      <div 
+        className="w-full max-w-md overflow-hidden transition-all duration-800 ease-in-out px-4"
+        style={{
+          maxHeight: openMap ? '1500px' : '0px',
+          opacity: openMap ? 1 : 0,
+          transform: openMap ? 'scale(1)' : 'scale(0.98)',
+          marginTop: openMap ? '1.5rem' : '0px',
+          marginBottom: openMap ? '1.5rem' : '0px',
+        }}
+      >
+        <EventMap onClose={() => setOpenMap(false)} />
+      </div>
+
+      <div className="flex flex-row items-center justify-center gap-4 pb-1">
+        <button 
+          onClick={()=> setOpenMap(!openMap)} 
+          className="text-sm text-[15px] font-semibold font-nunito py-2.5 px-2 rounded-lg my-2 transition-colors duration-300"
+          style={{ backgroundColor: openMap ? '#47311F' : '#686A54' }}
+        >
+          MAPA DE MESAS
+        </button>
         <button className=" text-sm bg-[#686A54] text-[15px] font-semibold font-nunito py-2.5 px-2 rounded-lg my-2">BOLETERÍA INDIVIDUAL</button>
       </div>
-      {/* Este bloque tiene que estar DENTRO del return también */}
-      {openMap && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-end justify-center overflow-y-auto">
-          <div className="w-full max-w-2xl">
-            <EventMap onClose={() => setOpenMap(false)} />
-          </div>
-        </div>
-      )}
         
       
 
@@ -94,6 +109,7 @@ export default function Home() {
         <p className="text-black text-[17px] text-center py-2 px-7 font-nunito">Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia</p>
         
       </div>
+      <AlliesCarousel />
       
     </div>
 

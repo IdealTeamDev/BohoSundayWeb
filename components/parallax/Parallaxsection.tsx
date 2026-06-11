@@ -43,7 +43,7 @@ export default function ParallaxSection() {
       }}
     >
       <div className="text-white text-center">
-        <h2 className="text-sm tracking-widest mb-6">FALTA PARA EL BOHO</h2>
+        <h2 className="text-md font-nunito font-light tracking-widest mb-6">FALTA PARA EL BOHO</h2>
         <div className="flex gap-3 items-end">
           {[
             { valor: timeLeft.dias, label: "Días" },
@@ -56,7 +56,7 @@ export default function ParallaxSection() {
                 <span className="text-5xl font-displayFlyer">
                   {String(valor).padStart(2, "0")}
                 </span>
-                <span className="text-xs mt-1">{label}</span>
+                <span className="font-nunito text-md font-light mt-1">{label}</span>
               </div>
               {i < arr.length - 1 && (
                 <span className="font-displayFlyer text-md mb-6">:</span>

@@ -1,4 +1,3 @@
-import {Navbar} from "@/components";
 import { displayFlyer, nunito, agilera } from "./fonts";
 
 
@@ -35,7 +34,7 @@ export default function RootLayout({
     >
       <body>
         
-        <main> <Navbar/> {children}</main>
+        <main>{children}</main>
 
       </body>
     </html>

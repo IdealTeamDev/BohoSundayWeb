@@ -20,6 +20,7 @@ export interface Ticket{
 
     id: string;
     zone: ZoneType;
+    icon?: string,
     img:string,
     name: string;
     number: number;
