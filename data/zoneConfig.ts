@@ -2,9 +2,9 @@
 export const zoneConfig = {
   vip: {
     label: "Cama VIP",
-    color: "#4ade80",
-    dotColor: "#22c55e",
-    glowColor: "rgba(34,197,94,0.5)",
+    color: "#CC6633",
+    dotColor: "#CC6633",
+    img: "images/icon/icon-01.png",
   },
   backstage: {
     label: "Backstage",
@@ -14,14 +14,14 @@ export const zoneConfig = {
   },
   bohemian: {
     label: "Cama Bohemian",
-    color: "#fde68a",
-    dotColor: "#f59e0b",
+    color: "#686A54",
+    dotColor: "#CEC4B3",
     glowColor: "rgba(245,158,11,0.5)",
   },
   oasis: {
     label: "Mesa Oasis",
     color: "#d97706",
-    dotColor: "#b45309",
+    dotColor: "#DD9517",
     glowColor: "rgba(180,83,9,0.5)",
   },
   candela: {
@@ -31,7 +31,7 @@ export const zoneConfig = {
     glowColor: "rgba(234,88,12,0.5)",
   },
   primitivo: {
-    label: "Cama Lujo Primitivo",
+    label: "Lujo Primitivo",
     color: "#fb923c",
     dotColor: "#f97316",
     glowColor: "rgba(249,115,22,0.45)",
