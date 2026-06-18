@@ -54,8 +54,30 @@ const DOT_PX = 28;
 export default function EventMap({ onClose }: EventMapProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [ticketStatuses, setTicketStatuses] = useState<Record<string, 'available' | 'locked' | 'sold'>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const [dotSize, setDotSize] = useState(DOT_PX);
+
+  useEffect(() => {
+    async function fetchStatuses() {
+      try {
+        const res = await fetch('/api/tickets');
+        if (res.ok) {
+          const data = await res.json();
+          const mapping: Record<string, 'available' | 'locked' | 'sold'> = {};
+          data.forEach((item: { id: string; status: 'available' | 'locked' | 'sold' }) => {
+            mapping[item.id] = item.status;
+          });
+          setTicketStatuses(mapping);
+        }
+      } catch (error) {
+        console.error('Error fetching ticket statuses:', error);
+      }
+    }
+    fetchStatuses();
+    const interval = setInterval(fetchStatuses, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     function updateDotSize() {
@@ -71,7 +93,9 @@ export default function EventMap({ onClose }: EventMapProps) {
   }, []);
 
   const handleDotClick = (ticket: Ticket) => {
-    if (!ticket.available) return;
+    const status = ticketStatuses[ticket.id] || 'available';
+    const isAvailable = ticket.available && status === 'available';
+    if (!isAvailable) return;
     if (selectedZone && ticket.zone !== selectedZone) return;
     setSelectedTicket(ticket);
   };
@@ -156,16 +180,19 @@ export default function EventMap({ onClose }: EventMapProps) {
         {/* ── Puntos de tickets ── */}
         {tickets.map((ticket) => {
           const cfg = zoneConfig[ticket.zone];
+          const status = ticketStatuses[ticket.id] || 'available';
+          const isAvailable = ticket.available && status === 'available';
+
           const isSelectedZone = selectedZone === null || ticket.zone === selectedZone;
-          const isInteractive = ticket.available && isSelectedZone;
+          const isInteractive = isAvailable && isSelectedZone;
           const opacity = isSelectedZone
-            ? (ticket.available ? 1 : 0.38)
+            ? (isAvailable ? 1 : 0.38)
             : 0.15;
 
           return (
             <button
               key={ticket.id}
-              aria-label={`${ticket.name} #${ticket.number} — ${ticket.available ? 'Disponible' : 'Agotado'}`}
+              aria-label={`${ticket.name} #${ticket.number} — ${isAvailable ? 'Disponible' : 'Agotado'}`}
               onClick={() => handleDotClick(ticket)}
               disabled={!isInteractive}
               style={{

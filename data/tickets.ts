@@ -62,5 +62,6 @@ export const tickets: Ticket[] = [
   { id:'candela-4', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:4, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:14, y:70} },
 
   // ── BACKSTAGE · zona única ────────────────────────────────────────────
-  { id:'backstage-1', zone:'backstage', iconCard:'images/icon/icon-backstage.png', img:'images/ticketsImage/BACKSTAGE.png', name:'BACKSTAGE', number:1, persons:20, price:18000000, currency:'COP', includes:{licor:'3 Botellas licor premium', agua:10, redBull:10}, available:true, position:{x:90, y:49.1} },
+  { id:'backstage-1', zone:'backstage', img:'images/ticketsImage/BACKSTAGE.png', name:'BACKSTAGE', number:1, persons:20, price:18000000, currency:'COP', includes:{licor:'3 Botellas licor premium', agua:10, redBull:10}, available:true, position:{x:90, y:49.1} },
+
 ];
