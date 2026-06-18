@@ -47,18 +47,16 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
           }}
         >
           {/* Handle bar para indicar que es un drawer */}
-          <div className="flex justify-center pt-2 pb-1">
-            <div className="w-10 h-1 bg-[#F4EFE9] " />
-          </div>
+        
           <EventMap onClose={onToggleMap} />
         </div>
 
         {/* ── Barra de botones — siempre visible ── */}
         <div className="w-full flex justify-center pointer-events-none">
           <div
-            className="flex flex-row items-center justify-center gap-4
+            className="flex flex-row w-full items-center justify-center gap-4
               bg-[#F4EFE9] px-4 py-5
-              shadow-lg border-top pointer-events-auto"
+               border-top pointer-events-auto"
           >
             {/* MAPA DE MESAS */}
             <button

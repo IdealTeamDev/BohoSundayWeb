@@ -82,7 +82,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           {/* Title */}
           <div className="grid grid-cols-[44px_1fr] items-center gap-1 w-fit mx-auto">
             <img
-                 src={ticket.icon}
+                 src={ticket.iconCard}
                  alt="Boho Sunday Colombia Moda Edition"
                   width={28}
                   height={44}

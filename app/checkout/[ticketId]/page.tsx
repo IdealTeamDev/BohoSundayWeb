@@ -119,9 +119,9 @@ export default function CheckoutPage() {
               {ticket.name} #{ticket.number}
             </h2>
             <img
-              src={ticket.icon}
+              src={ticket.iconCard}
               alt="Boho Sunday Colombia Moda Edition"
-              width={880}
+              width={10}
               height={20}
             />
           </div>
@@ -132,25 +132,25 @@ export default function CheckoutPage() {
           </p>*/}
 
           {/* Form */}
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             <Field
-              label="Nombre"
+              label="Nombres y Apellidos"
               value={form.name}
               onChange={(v) => setForm({ ...form, name: v })}
               error={errors.name}
-              placeholder="Ingresa tu nombre"
+              placeholder="Ingresa tu nomnbre y apellido"
               type="text"
             />
             <Field
-              label="Número de celular"
+              label="WhastApp"
               value={form.phone}
               onChange={(v) => setForm({ ...form, phone: v })}
               error={errors.phone}
-              placeholder="Ej: 3001234567"
+              placeholder="Ingresa tu número de WhatsApp"
               type="tel"
             />
             <Field
-              label="Correo electrónico"
+              label="Email"
               value={form.email}
               onChange={(v) => setForm({ ...form, email: v })}
               error={errors.email}
@@ -158,7 +158,7 @@ export default function CheckoutPage() {
               type="email"
             />
             <Field
-              label="Confirmar correo"
+              label="Confirmar Email"
               value={form.confirmEmail}
               onChange={(v) => setForm({ ...form, confirmEmail: v })}
               error={errors.confirmEmail}
@@ -219,7 +219,7 @@ interface FieldProps {
 function Field({ label, value, onChange, error, placeholder, type = 'text', noPaste }: FieldProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="font-nunito text-[17px] text-[#231E1A]">
+      <label className="font-nunito text-[18px] text-[#231E1A]">
         {label}
       </label>
       <input
@@ -228,7 +228,7 @@ function Field({ label, value, onChange, error, placeholder, type = 'text', noPa
         onChange={(e) => onChange(e.target.value)}
         onPaste={noPaste ? (e) => e.preventDefault() : undefined}
         placeholder={placeholder}
-        className={`w-full px-3 py-2.5 rounded-xl border font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#C4BDB4] bg-[#FAF8F5] outline-none transition-colors
+        className={`w-full px-3 py-3 rounded-xl font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#BDB39B] bg-[#D9D1C0] outline-none transition-colors
           ${error ? 'border-red-400 focus:border-red-500' : 'border-[#686A54] focus:border-[#5C9D41]'}`}
       />
       {error && (

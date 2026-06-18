@@ -65,9 +65,9 @@ export default function SuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center px-4 py-8">
+    <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center">
 
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="w-full max-w-sm bg-white shadow-sm overflow-hidden">
 
         {/* Hero image */}
         {ticket.img && (
@@ -76,7 +76,7 @@ export default function SuccessPage() {
             <div className="absolute inset-0 bg-black/30" />
             <div className="absolute inset-0 flex items-center justify-center">
               <Image
-                src="/images/logo/logo-boho-colombiamoda.png"
+                src="/images/background/background-finalcompra.png"
                 alt="Boho Sunday"
                 width={140}
                 height={30}
@@ -88,16 +88,15 @@ export default function SuccessPage() {
 
         <div className="px-5 py-5 text-center">
 
+          <h2 className="font-displayFlyer text-[20px] text-[#231E1A] leading-tight mb-1">
+            ¡Tu pago ha sido<br />exitoso!
+          </h2>
           {/* Success icon */}
           <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
               <path d="M4 11L8.5 15.5L18 6" stroke="#22c55e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-
-          <h2 className="font-displayFlyer text-[20px] text-[#231E1A] leading-tight mb-1">
-            ¡Tu pago ha sido<br />exitoso!
-          </h2>
           <p className="font-nunito text-[12px] text-[#9B9389] mb-1">
             Orden: <span className="font-semibold text-[#5A5248]">{orderId}</span>
           </p>
@@ -107,7 +106,7 @@ export default function SuccessPage() {
 
           {/* QR */}
           {qrUrl && (
-            <div className="bg-[#FAF8F5] rounded-2xl p-4 mx-auto w-fit mb-3">
+            <div className="bg-[#BDB39B] rounded-2xl p-4 mx-auto w-fit mb-3">
               <img src={qrUrl} alt="QR de acceso" width={160} height={160} className="rounded-lg" />
             </div>
           )}
@@ -142,7 +141,7 @@ export default function SuccessPage() {
 
           <button
             onClick={() => router.replace('/')}
-            className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[13px] text-[#686A54] font-semibold uppercase tracking-widest hover:bg-[#FAF8F5] transition-colors"
+            className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[15px] bg-[#686A54] text-[#F4EFE9]  uppercase font-semibold hover:bg-[#FAF8F5] transition-colors"
           >
             Cerrar
           </button>

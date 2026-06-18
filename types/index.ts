@@ -20,8 +20,9 @@ export interface Ticket{
 
     id: string;
     zone: ZoneType;
-    icon?: string,
-    img:string,
+    iconCard?: string;
+    icon?: string;
+    img:string;
     name: string;
     number: number;
     persons: number;

@@ -15,36 +15,36 @@ const infoZones = [
   {
     id: 'pasarela',
     label: 'PASARELA',
-    left: '7%', top: '44.5%', width: '28%', height: '9%',
+    left: '6%', top: '45.5%', width: '30%', height: '7%',
     bg: 'white',
-    textColor: '#5A4A3A',
+    textColor: '#231E1A',
     vertical: false,
   },
   {
     id: 'dancefloor',
     label: 'DANCE FLOOR',
-    left: '55%', top: '36%', width: '12%', height: '28%',
-    bg: 'rgba(255,255,255,0.12)',
+    left: '72.5%', top: '37.5%', width: '7%', height: '20.5%',
+    bg: '#F4EFE9',
     border: 'rgba(255,255,255,0.25)',
-    textColor: 'rgba(255,255,255,0.75)',
+    textColor: '#231E1A',
     vertical: true,
   },
   {
     id: 'dj',
     label: 'DJ',
-    left: '68%', top: '36%', width: '8%', height: '28%',
-    bg: 'rgba(139,92,246,0.2)',
+    left: '79.8%', top: '41%', width: '6.5%', height: '15%',
+    bg: '#231E1A',
     border: 'rgba(139,92,246,0.45)',
-    textColor: 'rgba(216,180,254,0.9)',
+    textColor: '#F4EFE9',
     vertical: true,
   },
   {
     id: 'backstage',
     label: 'BACKSTAGE',
-    left: '77%', top: '36%', width: '11%', height: '28%',
-    bg: 'rgba(59,130,246,0.25)',
+    left: '86.5%', top: '36%', width: '8%', height: '26%',
+    bg: '#9797FF',
     border: 'rgba(96,165,250,0.5)',
-    textColor: 'rgba(186,230,253,0.9)',
+    textColor: '#FFF8D5',
     vertical: true,
   },
 ];
@@ -75,24 +75,29 @@ export default function EventMap({ onClose }: EventMapProps) {
   };
 
   return (
-    <div className="w-full bg-[#F4EFE9] shadow-lg mb-3 rounded-2xl overflow-hidden select-none">
-
-      {/* ── Legend ── */}
-      <div className="relative grid grid-cols-2 gap-2 justify-items-left px-4 pt-8 pb-4">
+    <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-hidden select-none">
         <button
           onClick={onClose}
-          className="absolute top-3 right-4 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold"
+          className="absolute top-[-10px] right-4 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold"
           aria-label="Cerrar"
         >
           ✕
         </button>
+      {/* ── Legend ── */}
+      <div className="relative grid grid-cols-2 gap-2 justify-items-left px-4 pt-8 pb-4">
+        
 
         {Object.entries(zoneConfig).map(([zone, cfg]) => (
           <div
             key={zone}
-            className="flex gap-2 items-center text-[#7A6F5E] font-nunito font-light text-xs border rounded-full px-3 py-1.5 border-[#BDB39B]"
+            className="flex gap-2 items-center text-[#7A6F5E] font-nunito font-light text-sm border rounded-full px-3 py-1.5 border-[#BDB39B]"
           >
-            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cfg.dotColor }} />
+            
+            <img
+            src={cfg.icon}
+            alt="Boho Sunday Colombia Moda Edition"
+            width={cfg.width}
+          />
             <span>{cfg.label.toUpperCase()}</span>
           </div>
         ))}
@@ -118,14 +123,12 @@ export default function EventMap({ onClose }: EventMapProps) {
               width: zone.width,
               height: zone.height,
               background: zone.bg,
-              border: `1px solid ${zone.border}`,
-              borderRadius: '6px',
             }}
           >
             <span
-              className="font-nunito font-semibold uppercase tracking-wider text-center"
+              className="font-nunito font-bold uppercase tracking-wider text-center"
               style={{
-                fontSize: `${Math.max(6, dotSize * 0.35)}px`,
+                fontSize: `${Math.max(6, dotSize * 0.45)}px`,
                 color: zone.textColor,
                 writingMode: zone.vertical ? 'vertical-rl' : 'horizontal-tb',
                 lineHeight: 1.2,
@@ -162,7 +165,7 @@ export default function EventMap({ onClose }: EventMapProps) {
                 cursor: ticket.available ? 'pointer' : 'not-allowed',
                 zIndex: 10,
                 transition: 'transform 0.15s ease',
-                fontSize: `${Math.max(6, dotSize * 0.36)}px`,
+                fontSize: `${Math.max(6, dotSize * 0.42)}px`,
                 fontWeight: '700',
                 color: ticket.zone === 'bohemian' || ticket.zone === 'oasis'
                   ? 'rgba(0,0,0,0.8)'
