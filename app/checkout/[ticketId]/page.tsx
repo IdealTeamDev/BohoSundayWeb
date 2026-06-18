@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { tickets } from '@/data/tickets';
+import { zoneConfig } from '@/data/zoneConfig';
 import type { BuyerInfo } from '@/types/checkout';
 import CountdownTimer from '@/components/checkout/CountdownTimer';
 
@@ -13,11 +14,14 @@ export default function CheckoutPage() {
 
   const [remainingSeconds, setRemainingSeconds] = useState<number>(600);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
-  const [form, setForm] = useState<BuyerInfo & { confirmEmail: string }>({
+  const [form, setForm] = useState<BuyerInfo & { confirmEmail: string; docType: string; docNumber: string; phonePrefix: string }>({
     name: '',
     phone: '',
     email: '',
     confirmEmail: '',
+    docType: 'C.C',
+    docNumber: '',
+    phonePrefix: '+57',
   });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
   const [loading, setLoading] = useState(false);
@@ -56,6 +60,7 @@ export default function CheckoutPage() {
   function validate() {
     const newErrors: Partial<typeof form> = {};
     if (!form.name.trim()) newErrors.name = 'Ingresa tu nombre completo';
+    if (!form.docNumber.trim()) newErrors.docNumber = 'Ingresa tu identificación';
     if (!/^\d{7,15}$/.test(form.phone.replace(/\s/g, '')))
       newErrors.phone = 'Número inválido';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
@@ -73,8 +78,10 @@ export default function CheckoutPage() {
     // Save buyer info in sessionStorage to pass between pages
     sessionStorage.setItem(`checkout_buyer_${ticketId}`, JSON.stringify({
       name: form.name,
-      phone: form.phone,
+      phone: `${form.phonePrefix} ${form.phone}`,
       email: form.email,
+      docType: form.docType,
+      docNumber: form.docNumber,
     }));
 
     router.push(`/checkout/${ticketId}/payment`);
@@ -91,6 +98,10 @@ export default function CheckoutPage() {
   if (!ticket) return null;
 
   const formattedPrice = new Intl.NumberFormat('es-CO').format(ticket.price);
+
+  const iconSrc = ticket.iconCard
+    ? (ticket.iconCard.startsWith('/') ? ticket.iconCard : `/${ticket.iconCard}`)
+    : `/${zoneConfig[ticket.zone].icon}`;
 
   return (
     <div className="w-full bg-[#F4EFE9] flex flex-col items-center">
@@ -113,17 +124,18 @@ export default function CheckoutPage() {
         )}*/}
 
         <div className="px-5 py-4">
-          <div>
-            {/* Ticket name */}
-            <h2 className="font-displayFlyer text-center pb-6 pt-4 text-4xl uppercase tracking-wider text-[#231E1A]">
+          {/* Title with Icon */}
+          <div className="flex justify-center items-center gap-3 pb-6 pt-4">
+            <img
+              src={iconSrc}
+              alt="Boho Sunday Colombia Moda Edition"
+              width={28}
+              height={44}
+              className="object-contain"
+            />
+            <h2 className="font-displayFlyer text-3xl uppercase tracking-wider text-[#231E1A]">
               {ticket.name} #{ticket.number}
             </h2>
-            <img
-              src={ticket.iconCard}
-              alt="Boho Sunday Colombia Moda Edition"
-              width={10}
-              height={20}
-            />
           </div>
 
           {/* Ticket name 
@@ -138,15 +150,42 @@ export default function CheckoutPage() {
               value={form.name}
               onChange={(v) => setForm({ ...form, name: v })}
               error={errors.name}
-              placeholder="Ingresa tu nomnbre y apellido"
+              placeholder="Ingresa tu nombre y apellido"
               type="text"
             />
-            <Field
-              label="WhastApp"
+            <DropdownField
+              label="Documento de Identificación"
+              value={form.docNumber}
+              onChange={(v) => setForm({ ...form, docNumber: v })}
+              error={errors.docNumber}
+              placeholder="Ingresa tu identificación"
+              dropdownValue={form.docType}
+              onDropdownChange={(v) => setForm({ ...form, docType: v })}
+              dropdownOptions={[
+                { display: 'C.C', label: 'C.C (Cédula de Ciudadanía)', value: 'C.C' },
+                { display: 'C.E', label: 'C.E (Cédula de Extranjería)', value: 'C.E' },
+                { display: 'PASAPORTE', label: 'PASAPORTE', value: 'PASAPORTE' },
+              ]}
+              type="text"
+            />
+            <DropdownField
+              label="WhatsApp"
               value={form.phone}
               onChange={(v) => setForm({ ...form, phone: v })}
               error={errors.phone}
               placeholder="Ingresa tu número de WhatsApp"
+              dropdownValue={form.phonePrefix}
+              onDropdownChange={(v) => setForm({ ...form, phonePrefix: v })}
+              dropdownOptions={[
+                { display: '🇨🇴', label: '🇨🇴 (+57)', value: '+57' },
+                { display: '🇺🇸', label: '🇺🇸 (+1)', value: '+1' },
+                { display: '🇪🇸', label: '🇪🇸 (+34)', value: '+34' },
+                { display: '🇲🇽', label: '🇲🇽 (+52)', value: '+52' },
+                { display: '🇵🇦', label: '🇵🇦 (+507)', value: '+507' },
+                { display: '🇻🇪', label: '🇻🇪 (+58)', value: '+58' },
+                { display: '🇪🇨', label: '🇪🇨 (+593)', value: '+593' },
+                { display: '🇵🇪', label: '🇵🇪 (+51)', value: '+51' },
+              ]}
               type="tel"
             />
             <Field
@@ -195,7 +234,7 @@ export default function CheckoutPage() {
           <button
             onClick={handleSubmit}
             disabled={loading || !acceptedTerms}
-            className="w-full mt-8 mb-6 py-3 rounded-xl bg-[#686A54] text-white text-[17px] font-semibold font-nunito uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full mt-8 mb-6 py-3 rounded-lg bg-[#686A54] text-white text-[15px] font-semibold font-nunito uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? 'Procesando...' : 'FINALIZAR COMPRA'}
           </button>
@@ -228,9 +267,128 @@ function Field({ label, value, onChange, error, placeholder, type = 'text', noPa
         onChange={(e) => onChange(e.target.value)}
         onPaste={noPaste ? (e) => e.preventDefault() : undefined}
         placeholder={placeholder}
-        className={`w-full px-3 py-3 rounded-xl font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#BDB39B] bg-[#D9D1C0] outline-none transition-colors
-          ${error ? 'border-red-400 focus:border-red-500' : 'border-[#686A54] focus:border-[#5C9D41]'}`}
+        className={`w-full px-3 py-3 rounded-xl font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#BDB39B] bg-[#D9D1C0] outline-none transition-colors border
+          ${error ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-[#5C9D41]'}`}
       />
+      {error && (
+        <span className="font-nunito text-[13px] text-red-500">{error}</span>
+      )}
+    </div>
+  );
+}
+
+// ── DropdownField component ──────────────────────────────────────────────────
+interface DropdownOption {
+  display: string;
+  label: string;
+  value: string;
+}
+
+interface DropdownFieldProps {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+  placeholder?: string;
+  dropdownValue: string;
+  onDropdownChange: (v: string) => void;
+  dropdownOptions: DropdownOption[];
+  type?: string;
+}
+
+function DropdownField({
+  label,
+  value,
+  onChange,
+  error,
+  placeholder,
+  dropdownValue,
+  onDropdownChange,
+  dropdownOptions,
+  type = 'text',
+}: DropdownFieldProps) {
+  const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const clickHandler = () => setOpen(false);
+    document.addEventListener('click', clickHandler);
+    return () => document.removeEventListener('click', clickHandler);
+  }, [open]);
+
+  const selectedOption = dropdownOptions.find((opt) => opt.value === dropdownValue) || dropdownOptions[0];
+
+  return (
+    <div className="flex flex-col gap-1 relative">
+      <label className="font-nunito text-[18px] text-[#231E1A]">
+        {label}
+      </label>
+      <div
+        className={`w-full flex items-center px-3 rounded-xl bg-[#D9D1C0] transition-colors relative border
+          ${error 
+            ? 'border-red-400' 
+            : focused 
+              ? 'border-[#5C9D41]' 
+              : 'border-transparent'
+          }`}
+      >
+        {/* Dropdown Selector */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(!open);
+            }}
+            className="flex items-center gap-1.5 py-3 text-[#231E1A] font-nunito font-light text-[15px] focus:outline-none cursor-pointer"
+          >
+            <span>{selectedOption.display}</span>
+            <svg
+              className={`w-2 h-1.5 text-[#7A6F5E] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 10 6"
+            >
+              <path d="M1 1L5 5L9 1" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {/* Dropdown Options Menu */}
+          {open && (
+            <div className="absolute top-full left-0 mt-1 bg-[#F4EFE9] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-hidden min-w-[150px]">
+              {dropdownOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    onDropdownChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className="w-full px-4 py-2 hover:bg-[#D9D1C0]/60 text-left font-nunito text-[14px] text-[#231E1A] transition-colors cursor-pointer block"
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Separator */}
+        <div className="h-5 w-px bg-[#BDB39B]/80 mx-3 flex-shrink-0" />
+
+        {/* Input Field */}
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={placeholder}
+          className="w-full py-3 bg-transparent outline-none font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#BDB39B]"
+        />
+      </div>
       {error && (
         <span className="font-nunito text-[13px] text-red-500">{error}</span>
       )}

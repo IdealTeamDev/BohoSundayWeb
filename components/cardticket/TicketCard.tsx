@@ -13,8 +13,12 @@ interface TicketCardProps{
 
 export default function TicketCard({ ticket, onClose }: TicketCardProps) {
   const cfg = zoneConfig[ticket.zone];
- const router = useRouter();
+  const router = useRouter();
   const formattedPrice = new Intl.NumberFormat('es-CO').format(ticket.price);
+
+  const iconSrc = ticket.iconCard
+    ? (ticket.iconCard.startsWith('/') ? ticket.iconCard : `/${ticket.iconCard}`)
+    : `/${cfg.icon}`;
  
   // Close on Escape key
   useEffect(() => {
@@ -50,39 +54,39 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
  
   return (
     <div
-      className="fixed inset-0 bg-[black/70] z-50 flex items-end justify-center"
+      className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl  animate-slide-up"
+        className="w-full max-w-md rounded-t-2xl relative overflow-visible animate-slide-up"
         style={{ background: '#F4EFE9' }}
       >
-        {/* Handle bar */}
-        <div className="w-full max-w-md rounded">
-          {/*<div className="w-9 h-[3px] rounded-full bg-white/20 mx-auto mb-4" />*/}
-          <img
-          src={ticket.img}
-          alt="Boho Sunday Colombia Moda Edition"
-          width={880}
-          height={20}
-        />
-        </div>
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-46 right-3.5 w-7 h-7 rounded-full bg-[#F4EFE9] flex items-center justify-center text-[#231E1A] hover:bg-white/15 transition-colors"
+          className="absolute top-[-36px] right-4 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
           aria-label="Cerrar"
         >
           ✕
         </button>
+
+        {/* Handle bar */}
+        <div className="w-full max-w-md rounded-t-2xl overflow-hidden">
+          <img
+            src={ticket.img}
+            alt="Boho Sunday Colombia Moda Edition"
+            className="w-full h-auto block"
+            width={880}
+            height={20}
+          />
+        </div>
  
         {/* Zone badge */}
         <div className="p-5">
   
-          {/* Title */}
           <div className="grid grid-cols-[44px_1fr] items-center gap-1 w-fit mx-auto">
             <img
-                 src={ticket.iconCard}
+                 src={iconSrc}
                  alt="Boho Sunday Colombia Moda Edition"
                   width={28}
                   height={44}
@@ -135,14 +139,14 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           {ticket.available ? (
             <div className="flex justify-center mb-4 mt-4">
               <button
-                className="w-64 py-3 rounded-xl text-[17px] font-semibold font-nunito uppercase text-[#F4EFE9] hover:opacity-88 transition-opacity"
+                className="w-55 py-2.5 rounded-lg text-[15px] font-semibold font-nunito uppercase text-[#F4EFE9] hover:opacity-88 transition-opacity"
                 style={{ background: '#686A54' }}
                 onClick={handleReserve}>
                 Reservar esta mesa
               </button>
             </div>
           ) : (
-            <div className="w-full py-2.5 rounded-xl text-center text-[11px] uppercase tracking-widest bg-red-500/15 border border-red-400/30 text-red-300/70">
+            <div className="w-full py-2.5 rounded-lg text-center text-[11px] uppercase tracking-widest bg-red-500/15 border border-red-400/30 text-red-300/70">
               Boleta agotada
             </div>
           )}

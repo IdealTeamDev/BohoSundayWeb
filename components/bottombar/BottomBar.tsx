@@ -24,7 +24,7 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
     <>
       {/* ── Overlay oscuro — solo visible cuando el mapa está abierto ── */}
       <div
-        className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
+        className="fixed inset-0 z-[9990] bg-black/60 transition-opacity duration-300"
         style={{
           opacity: openMap ? 1 : 0,
           pointerEvents: openMap ? 'auto' : 'none',
@@ -37,7 +37,7 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
 
         {/* Drawer del mapa — sale desde abajo hacia arriba */}
         <div
-          className="w-full max-w-lg px-2 overflow-y-auto"
+          className="w-full max-w-lg px-2 pt-12 mb-[-25px] overflow-y-auto"
           style={{
             maxHeight: 'calc(100vh - 80px)',
             transform: openMap ? 'translateY(0)' : 'translateY(100%)',
@@ -52,7 +52,7 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
         </div>
 
         {/* ── Barra de botones — siempre visible ── */}
-        <div className="w-full flex justify-center pointer-events-none">
+        <div className="w-full flex justify-center pointer-events-none relative z-10">
           <div
             className="flex flex-row w-full items-center justify-center gap-4
               bg-[#F4EFE9] px-4 py-5

@@ -53,6 +53,7 @@ const DOT_PX = 28;
 
 export default function EventMap({ onClose }: EventMapProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dotSize, setDotSize] = useState(DOT_PX);
 
@@ -71,40 +72,53 @@ export default function EventMap({ onClose }: EventMapProps) {
 
   const handleDotClick = (ticket: Ticket) => {
     if (!ticket.available) return;
+    if (selectedZone && ticket.zone !== selectedZone) return;
     setSelectedTicket(ticket);
   };
 
   return (
-    <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-hidden select-none">
+    <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-visible select-none relative">
         <button
           onClick={onClose}
-          className="absolute top-[-10px] right-4 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold"
+          className="absolute top-[-36px] right-2 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
           aria-label="Cerrar"
         >
           ✕
         </button>
       {/* ── Legend ── */}
-      <div className="relative grid grid-cols-2 gap-2 justify-items-left px-4 pt-8 pb-4">
+      <div className="relative grid grid-cols-2 gap-2 justify-items-left px-4 pt-3 pb-2">
         
 
-        {Object.entries(zoneConfig).map(([zone, cfg]) => (
-          <div
-            key={zone}
-            className="flex gap-2 items-center text-[#7A6F5E] font-nunito font-light text-sm border rounded-full px-3 py-1.5 border-[#BDB39B]"
-          >
-            
-            <img
-            src={cfg.icon}
-            alt="Boho Sunday Colombia Moda Edition"
-            width={cfg.width}
-          />
-            <span>{cfg.label.toUpperCase()}</span>
-          </div>
-        ))}
+        {Object.entries(zoneConfig).map(([zone, cfg]) => {
+          const isSelected = selectedZone === zone;
+          return (
+            <button
+              key={zone}
+              onClick={() => setSelectedZone(isSelected ? null : zone)}
+              className="flex gap-2 items-center text-[#7A6F5E] font-nunito font-light text-sm border rounded-full px-3 py-1.5 border-[#BDB39B] cursor-pointer hover:bg-[#E8E2DA] transition-all"
+              style={
+                isSelected
+                  ? {
+                      borderColor: '#231E1A',
+                      color: '#231E1A',
+                      fontWeight: '600',
+                    }
+                  : {}
+              }
+            >
+              <img
+                src={isSelected ? (cfg.iconActive || cfg.icon.replace('.png', '-active.png')) : cfg.icon}
+                alt="Boho Sunday Colombia Moda Edition"
+                width={cfg.width}
+              />
+              <span>{cfg.label.toUpperCase()}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Map ── */}
-      <div ref={containerRef} className="relative w-full">
+      <div ref={containerRef} className="relative w-full rounded-b-2xl overflow-hidden">
         <img
           src="/images/background/mapaboho.png"
           alt="Mapa del venue Boho Sunday"
@@ -142,12 +156,18 @@ export default function EventMap({ onClose }: EventMapProps) {
         {/* ── Puntos de tickets ── */}
         {tickets.map((ticket) => {
           const cfg = zoneConfig[ticket.zone];
+          const isSelectedZone = selectedZone === null || ticket.zone === selectedZone;
+          const isInteractive = ticket.available && isSelectedZone;
+          const opacity = isSelectedZone
+            ? (ticket.available ? 1 : 0.38)
+            : 0.15;
 
           return (
             <button
               key={ticket.id}
               aria-label={`${ticket.name} #${ticket.number} — ${ticket.available ? 'Disponible' : 'Agotado'}`}
               onClick={() => handleDotClick(ticket)}
+              disabled={!isInteractive}
               style={{
                 position: 'absolute',
                 left: `${ticket.position.x}%`,
@@ -156,15 +176,16 @@ export default function EventMap({ onClose }: EventMapProps) {
                 width: `${dotSize}px`,
                 height: `${dotSize}px`,
                 background: cfg.dotColor,
-                opacity: ticket.available ? 1 : 0.38,
+                opacity: opacity,
                 borderRadius: '50%',
                 border: '1.5px solid white',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                cursor: ticket.available ? 'pointer' : 'not-allowed',
+                cursor: isInteractive ? 'pointer' : 'not-allowed',
+                pointerEvents: isSelectedZone ? 'auto' : 'none',
                 zIndex: 10,
-                transition: 'transform 0.15s ease',
+                transition: 'transform 0.15s ease, opacity 0.2s ease',
                 fontSize: `${Math.max(6, dotSize * 0.42)}px`,
                 fontWeight: '700',
                 color: ticket.zone === 'bohemian' || ticket.zone === 'oasis'
@@ -174,7 +195,7 @@ export default function EventMap({ onClose }: EventMapProps) {
                 lineHeight: 1,
               }}
               onMouseEnter={(e) => {
-                if (ticket.available)
+                if (isInteractive)
                   (e.currentTarget as HTMLElement).style.transform = 'translate(-50%, -50%) scale(1.25)';
               }}
               onMouseLeave={(e) => {

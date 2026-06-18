@@ -16,7 +16,7 @@ export default function CountdownTimer({ seconds, ticketName }: CountdownTimerPr
         ${isUrgent ? 'bg-red-50' : 'bg-[#EBCB9D]'}`}
     >
       <div className="items-center justify-between text-center">
-        <p className={`font-nunito font-bold text-[18px] uppercase tracking-wider
+        <p className={`font-nunito font-bold text-[18px] uppercase
           ${isUrgent ? 'text-red-500' : 'text-[#CF6E19]'}`}>
           {isUrgent ? '¡Apúrate!' : '¡MESA ASEGURADA!'}
         </p>
