@@ -55,4 +55,13 @@ export const zoneConfig = {
     glowColor: "rgba(249,115,22,0.45)",
     width:"22",
   },
+  general: {
+    label: "General",
+    color: "#686A54",
+    dotColor: "#CEC4B3",
+    icon: "images/icon/icon-general.png",
+    iconActive: "images/icon/icon-general.png",
+    glowColor: "rgba(104,106,84,0.5)",
+    width: "28",
+  },
 };

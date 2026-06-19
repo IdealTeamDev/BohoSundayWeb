@@ -5,6 +5,7 @@ export interface TicketLock {
   sessionToken: string;
   expiresAt: number; // timestamp ms
   status: LockStatus;
+  quantity: number;
 }
 
 export interface CheckoutSession {

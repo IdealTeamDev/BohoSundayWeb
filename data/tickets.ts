@@ -64,4 +64,35 @@ export const tickets: Ticket[] = [
   // ── BACKSTAGE · zona única ────────────────────────────────────────────
   { id:'backstage-1', zone:'backstage', img:'images/ticketsImage/BACKSTAGE.png', name:'BACKSTAGE', number:1, persons:20, price:18000000, currency:'COP', includes:{licor:'3 Botellas licor premium', agua:10, redBull:10}, available:true, position:{x:90, y:49.1} },
 
+  // ── BOLETAS INDIVIDUALES ──────────────────────────────────────────────
+  {
+    id: 'early',
+    zone: 'general',
+    iconCard: 'images/icon/icon-early.png',
+    img: 'images/individual-ticket/card-early.png',
+    name: 'EARLY',
+    number: 1,
+    persons: 1,
+    price: 290000,
+    currency: 'COP',
+    includes: { licor: 'Antes de las 2PM', agua: 0, redBull: 0 },
+    available: true,
+    position: { x: 0, y: 0 },
+    stock: 50
+  },
+  {
+    id: 'anytime',
+    zone: 'general',
+    iconCard: 'images/icon/icon-anytime.png',
+    img: 'images/individual-ticket/card-anytime.png',
+    name: 'ANYTIME',
+    number: 2,
+    persons: 1,
+    price: 340000,
+    currency: 'COP',
+    includes: { licor: 'Ingresa en cualquier horario', agua: 0, redBull: 0 },
+    available: true,
+    position: { x: 0, y: 0 },
+    stock: 100
+  }
 ];

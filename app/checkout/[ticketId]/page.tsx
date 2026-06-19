@@ -14,6 +14,7 @@ export default function CheckoutPage() {
 
   const [remainingSeconds, setRemainingSeconds] = useState<number>(600);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
   const [form, setForm] = useState<BuyerInfo & { confirmEmail: string; docType: string; docNumber: string; phonePrefix: string }>({
     name: '',
     phone: '',
@@ -33,7 +34,12 @@ export default function CheckoutPage() {
     const res = await fetch(`/api/checkout/verify?ticketId=${ticketId}`);
     const data = await res.json();
     setSessionValid(data.valid);
-    if (data.valid) setRemainingSeconds(data.remainingSeconds);
+    if (data.valid) {
+      setRemainingSeconds(data.remainingSeconds);
+      if (typeof data.quantity === 'number') {
+        setQuantity(data.quantity);
+      }
+    }
     if (!data.valid) router.replace('/');
   }, [ticketId, router]);
 
@@ -83,6 +89,7 @@ export default function CheckoutPage() {
       docType: form.docType,
       docNumber: form.docNumber,
     }));
+    sessionStorage.setItem(`checkout_quantity_${ticketId}`, quantity.toString());
 
     router.push(`/checkout/${ticketId}/payment`);
   }
@@ -97,7 +104,8 @@ export default function CheckoutPage() {
 
   if (!ticket) return null;
 
-  const formattedPrice = new Intl.NumberFormat('es-CO').format(ticket.price);
+  const totalPrice = ticket.stock !== undefined ? ticket.price * quantity : ticket.price;
+  const formattedPrice = new Intl.NumberFormat('es-CO').format(totalPrice);
 
   const iconSrc = ticket.iconCard
     ? (ticket.iconCard.startsWith('/') ? ticket.iconCard : `/${ticket.iconCard}`)
@@ -107,10 +115,10 @@ export default function CheckoutPage() {
     <div className="w-full bg-[#F4EFE9] flex flex-col items-center">
 
       {/* Timer banner */}
-      <CountdownTimer seconds={remainingSeconds} ticketName={`${ticket.name} #${ticket.number}`} />
+      <CountdownTimer seconds={remainingSeconds} ticketName={`${ticket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} />
 
       {/* Card */}
-      <div className="w-full bg-[#F4EFE9] overflow-hidden shadow-sm">
+      <div className="w-full lg:max-w-5xl bg-[#F4EFE9] overflow-hidden lg:shadow-none shadow-sm">
 
         {/* Ticket image 
         {ticket.img && (
@@ -134,14 +142,15 @@ export default function CheckoutPage() {
               className="object-contain"
             />
             <h2 className="font-displayFlyer text-3xl uppercase tracking-wider text-[#231E1A]">
-              {ticket.name} #{ticket.number}
+              {ticket.name}{ticket.stock === undefined ? ` #${ticket.number}` : ''}
             </h2>
           </div>
 
-          {/* Ticket name 
-          <p className="font-nunito text-[13px] text-[#686A54] mb-4">
-            {ticket.persons} personas · ${formattedPrice} COP
-          </p>*/}
+          {ticket.stock !== undefined && (
+            <p className="font-nunito text-[15px] text-center text-[#686A54] mb-6">
+              {quantity} {quantity === 1 ? 'boleta' : 'boletas'} · ${formattedPrice} COP
+            </p>
+          )}
 
           {/* Form */}
           <div className="flex flex-col gap-4">

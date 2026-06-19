@@ -17,12 +17,16 @@ export default function Home() {
       <Marquee />
       <Navbar />
 
-      <div className="bg-[url(/images/background/background-home.png)] bg-cover bg-no-repeat flex flex-1 w-full max-w-3xl flex-col mb-5 items-center justify-between pt-32 pb-16 px-16 dark:bg-red sm:items-start">
+      <div className="bg-[url(/images/background/background-home.png)] lg:bg-[url(/images/background/background-desktop-home.png)] bg-cover bg-no-repeat flex flex-1 w-full max-w-3xl lg:max-w-full flex-col mb-5 items-center justify-between pt-32 pb-16 px-16 dark:bg-red">
         <img
           src="images/logo/logo-boho-colombiamoda.png"
           alt="Boho Sunday Colombia Moda Edition"
-          width={180}
-          height={20}
+          className="block sm:hidden w-50"        
+          />
+        <img
+          src="images/logo/logo-boho-colombiamoda-desk.png"
+          alt="Boho Sunday"
+          className="hidden sm:block sm:w-80"
         />
 
         <div className="flex items-center mt-10 mb-2 text-center sm:items-start sm:text-left">
@@ -61,10 +65,11 @@ export default function Home() {
             alt="Boho Sunday Colombia Moda Edition"
             width={30}
             height={20}
+            
         />
-        <p className="text-black text-[17px]/5 font-semibold text-center py-2 font-nunito">Plan de domingo: Boho Sunday Colombiamoda Edition.</p>
-        <p className="text-black text-[17px]/5 text-center py-1 font-nunito">Una experiencia llena de moda, música, diversión y los pequeños detalles crean buena energía.</p>
-        <p className="text-black text-[17px]/5 text-center py-2 font-nunito">No te pierdas la oportunidad de formar parte de <span className="font-semibold">la mejor fiesta de Sopetrán.</span></p>
+        <p className="text-black lg:text-[18px] text-[17px]/5 font-semibold text-center lg:pt-4 lg:py-0 py-2 font-nunito">Plan de domingo: Boho Sunday Colombiamoda Edition.</p>
+        <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-1 font-nunito">Una experiencia llena de moda, música, diversión y los pequeños detalles crean buena energía.</p>
+        <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-2 font-nunito">No te pierdas la oportunidad de formar parte de <span className="font-semibold">la mejor fiesta de Sopetrán.</span></p>
       </div>
       <LineUp/>
       <Parallaxsection />

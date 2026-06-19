@@ -54,7 +54,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
  
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center"
+      className="fixed inset-0 bg-black/60 lg:bg-black/40 z-50 flex items-end justify-center"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -64,7 +64,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-[-36px] right-4 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
+          className="absolute top-[-36px] right-4 lg:right-1.5 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
           aria-label="Cerrar"
         >
           ✕

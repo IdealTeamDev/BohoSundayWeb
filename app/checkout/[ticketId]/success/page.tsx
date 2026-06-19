@@ -14,12 +14,14 @@ export default function SuccessPage() {
   const [buyerInfo, setBuyerInfo] = useState<BuyerInfo | null>(null);
   const [orderId, setOrderId] = useState<string>('');
   const [qrUrl, setQrUrl] = useState<string>('');
+  const [quantity, setQuantity] = useState<number>(1);
 
   const ticket = tickets.find((t) => t.id === ticketId);
 
   useEffect(() => {
     const buyer = sessionStorage.getItem(`checkout_buyer_${ticketId}`);
     const order = sessionStorage.getItem(`checkout_order_${ticketId}`);
+    const qtyStr = sessionStorage.getItem(`checkout_quantity_${ticketId}`) || '1';
 
     // If no order ID, they didn't complete payment — send home
     if (!order || !buyer) {
@@ -30,6 +32,7 @@ export default function SuccessPage() {
     const parsedBuyer: BuyerInfo = JSON.parse(buyer);
     setBuyerInfo(parsedBuyer);
     setOrderId(order);
+    setQuantity(parseInt(qtyStr, 10));
 
     // Generate QR from order ID using a free QR API
     const qrData = encodeURIComponent(
@@ -40,10 +43,11 @@ export default function SuccessPage() {
     // Clean up session data after reading
     sessionStorage.removeItem(`checkout_buyer_${ticketId}`);
     sessionStorage.removeItem(`checkout_order_${ticketId}`);
+    sessionStorage.removeItem(`checkout_quantity_${ticketId}`);
   }, [ticketId, router]);
 
   function handleShare(method: 'copy' | 'whatsapp' | 'instagram') {
-    const message = `¡Mesa asegurada! 🎉\n${ticket?.name} #${ticket?.number}\nOrden: ${orderId}\nMuestra este QR en la entrada.`;
+    const message = `¡${ticket?.stock === undefined ? 'Mesa' : 'Boleta'} asegurada! 🎉\n${ticket?.name}${ticket?.stock === undefined ? ` #${ticket?.number}` : ''}\nOrden: ${orderId}\nMuestra este QR en la entrada.`;
 
     if (method === 'copy') {
       navigator.clipboard.writeText(qrUrl);
@@ -101,8 +105,15 @@ export default function SuccessPage() {
             Orden: <span className="font-semibold text-[#5A5248]">{orderId}</span>
           </p>
           <p className="font-nunito text-[12px] text-[#9B9389] mb-4">
-            {ticket.name} #{ticket.number} · {ticket.persons} accesos
+            {ticket.name}{ticket.stock === undefined ? ` #${ticket.number}` : ''} · {ticket.stock === undefined ? ticket.persons : quantity} {(ticket.stock === undefined ? ticket.persons : quantity) === 1 ? 'acceso' : 'accesos'}
           </p>
+
+          <div className="bg-[#686A54]/8 border border-[#686A54]/20 rounded-xl px-4 py-3 mb-4 mx-2">
+            <p className="font-nunito text-[12px] text-[#686A54] leading-relaxed text-center">
+              Te hemos enviado un correo de confirmación con tu código QR a:<br />
+              <strong className="text-[#231E1A]">{buyerInfo.email}</strong>
+            </p>
+          </div>
 
           {/* QR */}
           {qrUrl && (
@@ -112,7 +123,7 @@ export default function SuccessPage() {
           )}
 
           <p className="font-nunito text-[12px] text-[#5A5248] leading-relaxed mb-4">
-            Tu mesa tiene <strong>{ticket.persons} accesos</strong>.<br />
+            Tu {ticket.stock === undefined ? 'mesa tiene' : 'reserva es válida para'} <strong>{ticket.stock === undefined ? ticket.persons : quantity} {(ticket.stock === undefined ? ticket.persons : quantity) === 1 ? 'acceso' : 'accesos'}</strong>.<br />
             Envía el QR a tus invitados o comparte este enlace para mandarlo a tu grupo de WhatsApp.
           </p>
 

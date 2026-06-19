@@ -36,13 +36,12 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
           if (openIndividual) setOpenIndividual(false);
         }}
       />
-
       {/* ── Contenedor fijo que incluye mapa + barra de botones ── */}
       <div className="fixed bottom-0 left-0 right-0 z-9999 flex flex-col items-center pointer-events-none">
 
         {/* Drawer del mapa e individual — sale desde abajo hacia arriba */}
         <div
-          className="w-full max-w-lg px-2 pt-12 mb-[-25px] overflow-y-auto"
+          className="w-full max-w-lg lg:max-w-2xl px-2 lg:px-0 pt-20 mb-[-25px] lg:mb-[30px] overflow-y-none"
           style={{
             maxHeight: 'calc(100vh - 80px)',
             transform: (openMap || openIndividual) ? 'translateY(0)' : 'translateY(100%)',

@@ -13,6 +13,7 @@ export default function PaymentPage() {
 
   const [remainingSeconds, setRemainingSeconds] = useState(600);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
+  const [quantity, setQuantity] = useState<number>(1);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +23,12 @@ export default function PaymentPage() {
     const res = await fetch(`/api/checkout/verify?ticketId=${ticketId}`);
     const data = await res.json();
     setSessionValid(data.valid);
-    if (data.valid) setRemainingSeconds(data.remainingSeconds);
+    if (data.valid) {
+      setRemainingSeconds(data.remainingSeconds);
+      if (typeof data.quantity === 'number') {
+        setQuantity(data.quantity);
+      }
+    }
     if (!data.valid) router.replace('/');
   }, [ticketId, router]);
 
@@ -84,12 +90,13 @@ export default function PaymentPage() {
     );
   }
 
-  const formattedPrice = new Intl.NumberFormat('es-CO').format(ticket.price);
+  const totalPrice = ticket.stock !== undefined ? ticket.price * quantity : ticket.price;
+  const formattedPrice = new Intl.NumberFormat('es-CO').format(totalPrice);
 
   return (
     <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center px-4 py-8">
 
-      <CountdownTimer seconds={remainingSeconds} ticketName={`${ticket.name} #${ticket.number}`} />
+      <CountdownTimer seconds={remainingSeconds} ticketName={`${ticket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} />
 
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm mt-4 overflow-hidden">
 
@@ -101,10 +108,10 @@ export default function PaymentPage() {
 
         <div className="px-5 py-5">
           <h2 className="font-nunito font-semibold text-[15px] uppercase tracking-wider text-[#231E1A]">
-            {ticket.name} #{ticket.number}
+            {ticket.name}{ticket.stock === undefined ? ` #${ticket.number}` : ''}
           </h2>
           <p className="font-nunito text-[12px] text-[#9B9389] mt-0.5 mb-4">
-            {ticket.persons} personas
+            {ticket.stock !== undefined ? quantity : ticket.persons} {ticket.stock !== undefined ? (quantity === 1 ? 'persona' : 'personas') : 'personas'}
           </p>
 
           {/* Order summary */}
@@ -114,7 +121,7 @@ export default function PaymentPage() {
             </p>
             <div className="flex justify-between items-center">
               <span className="font-nunito text-[13px] text-[#5A5248]">
-                {ticket.name} · {ticket.persons} personas
+                {ticket.name} · {ticket.stock !== undefined ? quantity : ticket.persons} {ticket.stock !== undefined ? (quantity === 1 ? 'boleta' : 'boletas') : 'personas'}
               </span>
               <span className="font-nunito font-semibold text-[13px] text-[#231E1A]">
                 ${formattedPrice}

@@ -4,20 +4,22 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: NextRequest) {
   try {
-    const { ticketId } = await req.json();
+    const { ticketId, quantity } = await req.json();
 
     if (!ticketId) {
       return NextResponse.json({ error: 'ticketId requerido' }, { status: 400 });
     }
 
+    const reqQuantity = typeof quantity === 'number' ? quantity : 1;
+
     // Generate a unique session token for this checkout attempt
     const sessionToken = uuidv4();
 
-    const lock = acquireLock(ticketId, sessionToken);
+    const lock = acquireLock(ticketId, sessionToken, reqQuantity);
 
     if (!lock) {
       return NextResponse.json(
-        { error: 'Esta mesa ya está siendo procesada por otro usuario. Intenta en unos minutos.' },
+        { error: 'La cantidad seleccionada de boletas ya no está disponible. Intenta con un número menor o en unos minutos.' },
         { status: 409 }
       );
     }

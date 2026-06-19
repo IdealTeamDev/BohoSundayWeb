@@ -5,7 +5,7 @@
 //Para que asi la funcion de ticketcard sabra exactamente que propiedades tiene
 //para decirle como lucen o se ven esos datos y ya el typescript se encarga de que todas las reglas se cumplan
 
-export type ZoneType = 'vip' | 'backstage' | 'bohemian' | 'oasis' | 'candela' | 'primitivo';
+export type ZoneType = 'vip' | 'backstage' | 'bohemian' | 'oasis' | 'candela' | 'primitivo' | 'general';
 
 export interface TicketIncluides{
 
@@ -31,5 +31,6 @@ export interface Ticket{
     includes: TicketIncluides;
     available: boolean;
     position: { x:number; y:number}; //posicion del mapa
+    stock?: number;
 
 }

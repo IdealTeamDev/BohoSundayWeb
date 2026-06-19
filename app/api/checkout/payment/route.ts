@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyLock, markAsSold, releaseLock } from '@/lib/lockStore';
+import { verifyLock, markAsSold, releaseLock, getLockQuantity } from '@/lib/lockStore';
+import { addEmailToQueue } from '@/lib/emailQueue';
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,11 +39,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Pago rechazado' }, { status: 402 });
     }
 
+    const quantity = getLockQuantity(ticketId, sessionToken) || 1;
+
     // Mark ticket as permanently sold
-    markAsSold(ticketId);
+    markAsSold(ticketId, sessionToken);
 
     // Generate a fake order ID — replace with real DB record ID later
     const orderId = `ORD-${ticketId.toUpperCase()}-${Date.now()}`;
+
+    // Queue confirmation email in background
+    addEmailToQueue({
+      ticketId,
+      orderId,
+      buyerInfo,
+      quantity,
+    });
 
     const response = NextResponse.json({
       success: true,

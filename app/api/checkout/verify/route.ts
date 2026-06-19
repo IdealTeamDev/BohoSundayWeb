@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyLock, getRemainingSeconds } from '@/lib/lockStore';
+import { verifyLock, getRemainingSeconds, getLockQuantity } from '@/lib/lockStore';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
   const valid = verifyLock(ticketId, sessionToken);
   const remainingSeconds = valid ? getRemainingSeconds(ticketId, sessionToken) : 0;
+  const quantity = valid ? getLockQuantity(ticketId, sessionToken) : 0;
 
-  return NextResponse.json({ valid, remainingSeconds, sessionToken });
+  return NextResponse.json({ valid, remainingSeconds, sessionToken, quantity });
 }
