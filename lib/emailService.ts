@@ -42,6 +42,9 @@ Attachments count: ${options.attachments?.length || 0}
       user,
       pass,
     },
+    tls: {
+      rejectUnauthorized: false
+    }
   });
 }
 

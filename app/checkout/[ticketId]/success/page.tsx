@@ -41,9 +41,9 @@ export default function SuccessPage() {
     setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`);
 
     // Clean up session data after reading
-    sessionStorage.removeItem(`checkout_buyer_${ticketId}`);
-    sessionStorage.removeItem(`checkout_order_${ticketId}`);
-    sessionStorage.removeItem(`checkout_quantity_${ticketId}`);
+    // sessionStorage.removeItem(`checkout_buyer_${ticketId}`);
+    // sessionStorage.removeItem(`checkout_order_${ticketId}`);
+    // sessionStorage.removeItem(`checkout_quantity_${ticketId}`);
   }, [ticketId, router]);
 
   function handleShare(method: 'copy' | 'whatsapp' | 'instagram') {
