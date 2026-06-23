@@ -24,6 +24,7 @@ export interface Ticket{
     icon?: string;
     img:string;
     name: string;
+    description?:string;
     number: number;
     persons: number;
     price: number;

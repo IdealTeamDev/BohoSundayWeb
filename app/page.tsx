@@ -73,25 +73,25 @@ export default function Home() {
       </div>
       <LineUp/>
       <Parallaxsection />
+      <div className="grid grid-cols-1 lg:grid-cols-2 justify-items-center items-center lg:py-10 lg:min-h-[450px] lg:px-10">
+        <div className="flex justify-center w-full">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.6198796279923!2d-75.73034718782313!3d6.442831024065319!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e45cd00070ad22b%3A0x423df42d5961a089!2sCasa%20candela!5e0!3m2!1ses-419!2sco!4v1780683973432!5m2!1ses-419!2sco"
+            className="w-full max-w-[370px] lg:w-[450px] lg:max-w-none"
+            height="450"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
 
-      <div className="py-6">
-        <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.6198796279923!2d-75.73034718782313!3d6.442831024065319!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e45cd00070ad22b%3A0x423df42d5961a089!2sCasa%20candela!5e0!3m2!1ses-419!2sco!4v1780683973432!5m2!1ses-419!2sco"
-          width="370"
-          height="450"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
+        <div className="flex flex-col items-center justify-center px-7 py-4 lg:py-0 text-center">
+          <p className="text-black text-[17px] font-light font-nunito">LUGAR:</p>
+          <p className="text-black text-[17px] font-semibold font-nunito">Casa Candela</p>
+          <p className="text-black text-[17px] font-nunito">Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia</p>
+        </div>
       </div>
-
-      <div className="px-7 py-4">
-        <p className="text-black text-[17px] font-light text-center font-nunito">LUGAR:</p>
-        <p className="text-black text-[17px] text-center font-semibold font-nunito">Casa Candela</p>
-        <p className="text-black text-[17px] text-center py-2 px-7 font-nunito">Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia</p>
-      </div>
-
       <AlliesCarousel />
 
       {/* BottomBar contiene el mapa internamente */}

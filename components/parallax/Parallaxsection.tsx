@@ -37,29 +37,29 @@ export default function ParallaxSection() {
     
   return (
     <section
-      className=" w-full bg-fixed bg-center bg-cover flex items-center justify-center py-8"
+      className=" w-full bg-fixed bg-center bg-cover flex items-center justify-center py-8 lg:py-15"
       style={{
         backgroundImage: "url('/images/background/background-parallax.png')",
       }}
     >
       <div className="text-white text-center">
         <h2 className="text-md font-nunito font-light tracking-widest mb-6">FALTA PARA EL BOHO</h2>
-        <div className="flex gap-3 items-end">
+        <div className="flex gap-3 lg:gap-6 items-end">
           {[
             { valor: timeLeft.dias, label: "Días" },
             { valor: timeLeft.horas, label: "Horas" },
             { valor: timeLeft.minutos, label: "Minutos" },
             { valor: timeLeft.segundos, label: "Segundos" },
           ].map(({ valor, label }, i, arr) => (
-            <div key={label} className="flex items-end gap-4">
+            <div key={label} className="flex items-end gap-4 lg:gap-6">
               <div className="flex flex-col items-center">
-                <span className="text-5xl font-displayFlyer">
+                <span className="text-5xl lg:text-6xl font-displayFlyer">
                   {String(valor).padStart(2, "0")}
                 </span>
                 <span className="font-nunito text-md font-light mt-1">{label}</span>
               </div>
               {i < arr.length - 1 && (
-                <span className="font-displayFlyer text-md mb-6">:</span>
+                <span className="font-displayFlyer text-md mb-6 lg:mb-10 lg:text-lg">:</span>
               )}
             </div>
           ))}

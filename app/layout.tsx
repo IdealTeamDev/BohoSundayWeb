@@ -1,5 +1,5 @@
 import { displayFlyer, nunito, agilera } from "./fonts";
-
+import SplashScreen from '@/components/splash/SplashScreen';
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono} from "next/font/google";
@@ -33,7 +33,7 @@ export default function RootLayout({
       className={`${displayFlyer.variable} ${nunito.variable} ${agilera.variable}`}
     >
       <body>
-        
+        <SplashScreen />
         <main>{children}</main>
 
       </body>

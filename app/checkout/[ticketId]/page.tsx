@@ -118,7 +118,7 @@ export default function CheckoutPage() {
       <CountdownTimer seconds={remainingSeconds} ticketName={`${ticket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} />
 
       {/* Card */}
-      <div className="w-full lg:max-w-5xl bg-[#F4EFE9] overflow-hidden lg:shadow-none shadow-sm">
+      <div className="w-full lg:max-w-3xl bg-[#F4EFE9] overflow-hidden lg:shadow-none shadow-sm">
 
         {/* Ticket image 
         {ticket.img && (
