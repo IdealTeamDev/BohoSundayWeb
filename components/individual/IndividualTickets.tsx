@@ -64,12 +64,12 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
       />
 
       {/* Title */}
-      <h2 className="font-displayFlyer text-center text-4xl uppercase text-[#231E1A] mt-3 mb-8">
+      <h2 className="font-displayFlyer text-center text-4xl lg:text-5xl uppercase text-[#231E1A] mt-3 mb-8">
         GENERAL
       </h2>
 
       {/* Tickets List */}
-      <div className="w-full flex flex-col gap-5 max-w-sm">
+      <div className="w-full flex flex-col lg:flex-row gap-5 max-w-sm lg:max-w-2xl">
         
         {/* ENTRADA EARLY */}
         <button

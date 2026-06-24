@@ -278,7 +278,7 @@ export default function CheckoutPage() {
               Confirmo que soy mayor de 18 años, acepto las políticas de no reembolso y las normas del evento (sin mascotas, libre de humo/drogas).
             </p>
           </label>
-          <a href='' className="text-[#47311F] font-nunito text-[15px] underline">Leer reglas completas</a>
+          <a href='/policy' target="_blank" rel="noopener noreferrer" className="text-[#47311F] font-nunito text-[15px] underline">Leer reglas completas</a>
 
           {submitError && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mt-4 text-center">

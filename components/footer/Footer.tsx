@@ -15,14 +15,14 @@ export const Footer = () => {
         <div className="lg:flex lg:basis-200">  
           <div className="text-[#D9D1C0] pb-4 pt-8 font-nunito font-extralight border-b lg:border-b-0 lg:border-r lg:border-[#D9D1C0]/30 lg:pr-5 lg:pl-0 lg:py-5">
             <p className="uppercase mb-3 text-xl font-extralight">Contacto</p>
-            <p className="px-3 text-lg mb-2">323 3114995</p>
-            <p className="px-3 text-lg underline">info@casacandela.co</p>
+            <p className="text-lg mb-2">323 3114995</p>
+            <p className="text-lg underline">info@casacandela.co</p>
           </div>
 
           {/* Legal */}
           <div className="text-[#D9D1C0] py-4 font-nunito border-b lg:border-b-0 lg:px-6 lg:py-5">
             <p className="uppercase text-xl font-extralight mb-3">Legal</p>
-            <p className="px-3 mb-2 text-lg font-extralight underline">Política de reservas</p>
+            <a href="/policy"><p className=" mb-2 text-lg font-extralight underline">Política de reservas</p></a>
           </div>
         </div>
         {/* Redes sociales */}
@@ -34,12 +34,14 @@ export const Footer = () => {
               width={40}
               height={40}
             /></a>
-            <img
-              src="images/icon/icon-facebook.png"
-              alt="Facebook"
-              width={40}
-              height={40}
-            />
+            <a href="https://www.facebook.com/share/1GYdu2BTDT/">
+              <img
+                src="images/icon/icon-facebook.png"
+                alt="Facebook"
+                width={40}
+                height={40}
+              />
+              </a>
           </div>
         </div>
 

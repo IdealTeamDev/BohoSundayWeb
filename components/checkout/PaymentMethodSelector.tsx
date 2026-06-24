@@ -12,47 +12,18 @@ interface PaymentMethodSelectorProps {
   error?: string;
 }
 
-// Custom SVG for Wompi Logo (stylized geometric W)
+
 const WompiLogo = () => (
-  <svg width="24" height="24" viewBox="0 0 40 40" fill="none" className="shrink-0">
-    <path
-      d="M8 32 L15.5 8 H21 L16.5 24 L21 8 H26.5 L19 32 H14.5 L19 16 L14.5 32 H8 Z"
-      fill="#1D1D24"
-      stroke="#1D1D24"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M26.5 8 L32 25 L29 32 H35 L38 8 H32 L29 17 L32 8 H26.5 Z"
-      fill="#1D1D24"
-      stroke="#1D1D24"
-      strokeWidth="0.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
+  <img
+    src="/images/logo/logo wompi.svg"
+  />
 );
 
-// Custom SVG for Mercado Pago Logo (circle with handshake lines)
+
 const MercadoPagoLogo = () => (
-  <svg width="24" height="24" viewBox="0 0 30 30" fill="none" className="shrink-0">
-    <circle cx="15" cy="15" r="14" fill="#009EE3" />
-    {/* Stylized handshake */}
-    <path
-      d="M9 16.5 C9 16.5 11 13 14 15 C17 17 21 13.5 21 13.5 M9 13.5 C9 13.5 11.5 16.5 14.5 14.5 C17.5 12.5 21 16.5 21 16.5"
-      stroke="#FFFFFF"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M12.5 11.5 C11.5 10.5 10 11.5 9 12.5 C8 13.5 9.5 15.5 10.5 14.5 M17.5 18.5 C18.5 19.5 20 18.5 21 17.5 C22 16.5 20.5 14.5 19.5 15.5"
-      stroke="#FFFFFF"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    />
-  </svg>
+  <img
+    src="/images/logo/logo-mercado-pago.svg"
+  />
 );
 
 export default function PaymentMethodSelector({ selected, onChange, error }: PaymentMethodSelectorProps) {

@@ -55,19 +55,17 @@ export default function AlliesCarousel() {
   const dotIndex = getDotIndex(current, total);
 
   return (
-    <div className="w-full px-4 py-6">
+    <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 py-6">
 
-      
-      
-
-      {/* div de la card */}
-      <div className="relative border border-[#BDB39B] rounded-lg overflow-hidden bg-[#BDB39B]">
+      {/* ── MOBILE: Carousel Slider (hidden on lg+) ── */}
+      <div className="block lg:hidden relative border border-[#BDB39B] rounded-lg overflow-hidden bg-[#BDB39B]">
         {/* Titulo */}
-        <div className="rounded-lg mt-4 px-4  text-center">
-            <p className="font-nunito text-[#F4EFE9] text-[20px] font-light uppercase text-[#7A6F5E]">
-                Aliados
-            </p>
-      </div>
+        <div className="rounded-lg mt-4 px-4 text-center">
+          <p className="font-nunito text-[#F4EFE9] text-[20px] font-light uppercase text-[#7A6F5E]">
+            Aliados
+          </p>
+        </div>
+        
         {/* Prev button */}
         <button
           onClick={prev}
@@ -97,16 +95,12 @@ export default function AlliesCarousel() {
             alt={ally.name}
             className="max-h-20 max-w-[220px] w-auto h-auto object-contain"
             onError={(e) => {
-              // Fallback: show name as text if image fails
               (e.currentTarget as HTMLImageElement).style.display = 'none';
               const fallback = e.currentTarget.nextSibling as HTMLElement;
               if (fallback) fallback.style.display = 'block';
             }}
           />
-          {/* Text fallback — hidden by default */}
-          <p
-            className="font-nunito font-bold text-[32px] text-[#7A6F5E] tracking-wider hidden"
-          >
+          <p className="font-nunito font-bold text-[32px] text-[#7A6F5E] tracking-wider hidden">
             {ally.name}
           </p>
         </div>
@@ -137,6 +131,37 @@ export default function AlliesCarousel() {
           ))}
         </div>
       </div>
+
+      {/* ── DESKTOP: All Allies in a row (hidden on mobile/tablet) ── */}
+      <div className="hidden lg:block border border-[#BDB39B] rounded-lg overflow-hidden bg-[#BDB39B] py-6 px-10">
+        {/* Titulo */}
+        <div className="text-center mb-6">
+          <p className="font-nunito text-[#F4EFE9] text-[20px] font-light uppercase tracking-widest">
+            Aliados
+          </p>
+        </div>
+        {/* Logos Row */}
+        <div className="flex flex-row items-center justify-around gap-10">
+          {allies.map((a) => (
+            <div key={a.id} className="flex items-center justify-center h-20 w-1/3">
+              <img
+                src={a.logo}
+                alt={a.name}
+                className="max-h-16 max-w-full w-auto h-auto object-contain brightness-0 invert opacity-90 hover:opacity-100 transition-opacity duration-300"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  const fallback = e.currentTarget.nextSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'block';
+                }}
+              />
+              <p className="font-nunito font-bold text-[28px] text-[#F4EFE9] tracking-wider hidden">
+                {a.name}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }

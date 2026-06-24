@@ -58,7 +58,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-[-36px] right-4 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
+          className="absolute top-[-36px] right-4 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] cursor-pointer flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
           aria-label="Cerrar"
         >
           ✕
@@ -123,7 +123,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           {ticket.available ? (
             <div className="flex justify-center mb-4 mt-4">
               <button
-                className="w-55 py-2.5 rounded-lg text-[15px] font-semibold font-nunito uppercase text-[#F4EFE9] hover:opacity-88 transition-opacity"
+                className="w-55 py-2.5 rounded-lg text-[15px] cursor-pointer font-semibold font-nunito uppercase text-[#F4EFE9] hover:opacity-88 transition-opacity"
                 style={{ background: '#686A54' }}
                 onClick={handleReserve}
               >

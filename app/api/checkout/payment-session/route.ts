@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyLock, getRemainingSeconds } from '@/lib/lockStore';
-import { createOrder } from '@/lib/orderStore';
+import { verifyLock, getRemainingSeconds, markAsSold } from '@/lib/lockStore';
+import { createOrder, approveOrder } from '@/lib/orderStore';
+import { addEmailToQueue } from '@/lib/emailQueue';
 import { tickets } from '@/data/tickets';
 
 export async function POST(req: NextRequest) {
@@ -42,6 +43,30 @@ export async function POST(req: NextRequest) {
     createOrder(orderId, ticketId, sessionToken, buyerInfo, finalQty, paymentMethod);
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+    // BYPASS MODE (To test local checkout without gateway redirects)
+    if (process.env.BYPASS_PAYMENT === 'true') {
+      console.log(`[Bypass Payment] ⚡ BYPASS_PAYMENT is enabled. Simulating instant approval...`);
+      approveOrder(orderId, `bypass-${Date.now()}`);
+      markAsSold(ticketId, sessionToken);
+      try {
+        addEmailToQueue({
+          ticketId,
+          orderId,
+          buyerInfo,
+          quantity: finalQty,
+        });
+      } catch (e) {
+        console.error('[Bypass Payment] Email queue error:', e);
+      }
+
+      const mockRedirectUrl = `${siteUrl}/checkout/${ticketId}/success?orderId=${orderId}`;
+      return NextResponse.json({
+        success: true,
+        orderId,
+        checkoutUrl: mockRedirectUrl,
+      });
+    }
 
     if (paymentMethod === 'mercadopago') {
       const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;

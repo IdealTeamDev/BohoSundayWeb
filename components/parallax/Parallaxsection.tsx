@@ -37,7 +37,7 @@ export default function ParallaxSection() {
     
   return (
     <section
-      className=" w-full bg-fixed bg-center bg-cover flex items-center justify-center py-8 lg:py-15"
+      className="w-full bg-fixed bg-center bg-cover flex items-center justify-center py-8 lg:py-15 mb-5"
       style={{
         backgroundImage: "url('/images/background/background-parallax.png')",
       }}

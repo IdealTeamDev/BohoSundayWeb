@@ -21,7 +21,7 @@ export default function LineUp() {
   }
  
   return (
-    <div className="w-full lg:w-5xl px-4 pt-1 pb-10">
+    <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 pt-1 pb-10">
  
       {/* Title */}
       <div className="text-center mb-6">
@@ -78,7 +78,7 @@ export default function LineUp() {
             >
               <DjBackground dj={dj} isActive={isActive} />
               <DjOverlay isActive={isActive} />
-              <DjLabel name={dj.name} isActive={isActive} />
+              <DjLabel name={dj.name} isActive={isActive} isDesktop={true} />
             </div>
           );
         })}
@@ -117,7 +117,9 @@ function DjOverlay({ isActive }: { isActive: boolean }) {
   );
 }
  
-function DjLabel({ name, isActive }: { name: string; isActive: boolean }) {
+function DjLabel({ name, isActive, isDesktop }: { name: string; isActive: boolean; isDesktop?: boolean }) {
+  const showLabel = !isDesktop || isActive;
+
   return (
     <div
       className="absolute left-0 right-0 flex items-center justify-center pointer-events-none"
@@ -125,7 +127,8 @@ function DjLabel({ name, isActive }: { name: string; isActive: boolean }) {
         bottom: isActive ? '17px' : 'auto',
         top: isActive ? 'auto' : '50%',
         transform: isActive ? 'none' : 'translateY(-50%)',
-        transition: 'top 0.4s ease, bottom 0.4s ease, transform 0.4s ease',
+        opacity: showLabel ? 1 : 0,
+        transition: 'top 0.4s ease, bottom 0.4s ease, transform 0.4s ease, opacity 0.4s ease',
       }}
     >
       <span
