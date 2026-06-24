@@ -6,6 +6,7 @@ import { tickets } from '@/data/tickets';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { BuyerInfo } from '@/types/checkout';
 import CountdownTimer from '@/components/checkout/CountdownTimer';
+import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -24,8 +25,10 @@ export default function CheckoutPage() {
     docNumber: '',
     phonePrefix: '+57',
   });
-  const [errors, setErrors] = useState<Partial<typeof form>>({});
+  const [paymentMethod, setPaymentMethod] = useState<'wompi' | 'mercadopago' | ''>('');
+  const [errors, setErrors] = useState<Partial<typeof form & { paymentMethod: string }>>({});
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const ticket = tickets.find((t) => t.id === ticketId);
@@ -64,7 +67,7 @@ export default function CheckoutPage() {
   }, [sessionValid, router]);
 
   function validate() {
-    const newErrors: Partial<typeof form> = {};
+    const newErrors: Partial<typeof form & { paymentMethod: string }> = {};
     if (!form.name.trim()) newErrors.name = 'Ingresa tu nombre completo';
     if (!form.docNumber.trim()) newErrors.docNumber = 'Ingresa tu identificación';
     if (!/^\d{7,15}$/.test(form.phone.replace(/\s/g, '')))
@@ -73,6 +76,8 @@ export default function CheckoutPage() {
       newErrors.email = 'Correo inválido';
     if (form.email !== form.confirmEmail)
       newErrors.confirmEmail = 'Los correos no coinciden';
+    if (!paymentMethod)
+      newErrors.paymentMethod = 'Selecciona un método de pago';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -80,18 +85,48 @@ export default function CheckoutPage() {
   async function handleSubmit() {
     if (!validate() || !acceptedTerms) return;
     setLoading(true);
+    setSubmitError(null);
 
-    // Save buyer info in sessionStorage to pass between pages
-    sessionStorage.setItem(`checkout_buyer_${ticketId}`, JSON.stringify({
+    const buyerInfo = {
       name: form.name,
       phone: `${form.phonePrefix} ${form.phone}`,
       email: form.email,
       docType: form.docType,
       docNumber: form.docNumber,
-    }));
-    sessionStorage.setItem(`checkout_quantity_${ticketId}`, quantity.toString());
+    };
 
-    router.push(`/checkout/${ticketId}/payment`);
+    try {
+      const res = await fetch('/api/checkout/payment-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ticketId,
+          buyerInfo,
+          quantity,
+          paymentMethod,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setSubmitError(data.error || 'Error al iniciar la sesión de pago.');
+        setLoading(false);
+        return;
+      }
+
+      // Save info in sessionStorage as fallback
+      sessionStorage.setItem(`checkout_buyer_${ticketId}`, JSON.stringify(buyerInfo));
+      sessionStorage.setItem(`checkout_quantity_${ticketId}`, quantity.toString());
+      sessionStorage.setItem(`checkout_order_${ticketId}`, data.orderId);
+
+      // Redirect to checkout provider (Mercado Pago or Wompi Mock)
+      window.location.href = data.checkoutUrl;
+    } catch (err) {
+      console.error('Error submitting payment session:', err);
+      setSubmitError('Error de red. Por favor intenta de nuevo.');
+      setLoading(false);
+    }
   }
 
   if (sessionValid === null) {
@@ -214,6 +249,11 @@ export default function CheckoutPage() {
               type="email"
               noPaste
             />
+            <PaymentMethodSelector
+              selected={paymentMethod}
+              onChange={(v) => setPaymentMethod(v)}
+              error={errors.paymentMethod}
+            />
           </div>
 
           {/* Terms checkbox */}
@@ -240,12 +280,18 @@ export default function CheckoutPage() {
           </label>
           <a href='' className="text-[#47311F] font-nunito text-[15px] underline">Leer reglas completas</a>
 
+          {submitError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mt-4 text-center">
+              <p className="font-nunito text-[14px] text-red-600">{submitError}</p>
+            </div>
+          )}
+
           <button
             onClick={handleSubmit}
             disabled={loading || !acceptedTerms}
             className="w-full mt-8 mb-6 py-3 rounded-lg bg-[#686A54] text-white text-[15px] font-semibold font-nunito uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? 'Procesando...' : 'FINALIZAR COMPRA'}
+            {loading ? 'Redirigiendo...' : 'FINALIZAR COMPRA'}
           </button>
         </div>
       </div>

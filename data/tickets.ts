@@ -88,7 +88,7 @@ export const tickets: Ticket[] = [
     name: 'ANYTIME',
     number: 2,
     persons: 1,
-    price: 340000,
+    price: 3400,
     currency: 'COP',
     includes: { licor: 'Ingresa en cualquier horario', agua: 0, redBull: 0 },
     available: true,

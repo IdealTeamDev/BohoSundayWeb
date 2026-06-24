@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { tickets } from '@/data/tickets';
 import type { BuyerInfo } from '@/types/checkout';
 import Image from 'next/image';
@@ -9,42 +9,122 @@ import Image from 'next/image';
 export default function SuccessPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const ticketId = params.ticketId as string;
 
   const [buyerInfo, setBuyerInfo] = useState<BuyerInfo | null>(null);
   const [orderId, setOrderId] = useState<string>('');
   const [qrUrl, setQrUrl] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
+  const [status, setStatus] = useState<'loading' | 'approved' | 'rejected' | 'pending_verification'>('loading');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const ticket = tickets.find((t) => t.id === ticketId);
 
   useEffect(() => {
-    const buyer = sessionStorage.getItem(`checkout_buyer_${ticketId}`);
-    const order = sessionStorage.getItem(`checkout_order_${ticketId}`);
-    const qtyStr = sessionStorage.getItem(`checkout_quantity_${ticketId}`) || '1';
+    // 1. Get orderId from query params (Mercado Pago redirects or Wompi redirects)
+    const urlOrderId = searchParams.get('orderId') || searchParams.get('external_reference');
+    const mpStatus = searchParams.get('status'); // approved, pending, rejected
+    
+    // 2. Fallback to sessionStorage
+    const sessionOrderId = sessionStorage.getItem(`checkout_order_${ticketId}`);
+    
+    const targetOrderId = urlOrderId || sessionOrderId;
 
-    // If no order ID, they didn't complete payment — send home
-    if (!order || !buyer) {
+    if (!targetOrderId) {
+      console.warn('No order ID found in URL or sessionStorage. Redirecting home.');
       router.replace('/');
       return;
     }
 
-    const parsedBuyer: BuyerInfo = JSON.parse(buyer);
-    setBuyerInfo(parsedBuyer);
-    setOrderId(order);
-    setQuantity(parseInt(qtyStr, 10));
+    setOrderId(targetOrderId);
 
-    // Generate QR from order ID using a free QR API
-    const qrData = encodeURIComponent(
-      JSON.stringify({ orderId: order, ticketId, email: parsedBuyer.email })
-    );
-    setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`);
+    // If query parameters explicitly say payment rejected, mark immediately
+    if (mpStatus === 'rejected' || mpStatus === 'cancelled') {
+      setStatus('rejected');
+      setErrorMsg('El pago fue rechazado o cancelado en la pasarela. Por favor intenta de nuevo.');
+      return;
+    }
 
-    // Clean up session data after reading
-    // sessionStorage.removeItem(`checkout_buyer_${ticketId}`);
-    // sessionStorage.removeItem(`checkout_order_${ticketId}`);
-    // sessionStorage.removeItem(`checkout_quantity_${ticketId}`);
-  }, [ticketId, router]);
+    let pollAttempts = 0;
+    const maxPollAttempts = 15; // 15 attempts * 2s = 30 seconds max polling
+    let pollInterval: NodeJS.Timeout;
+
+    const checkOrderStatus = async () => {
+      try {
+        const res = await fetch(`/api/checkout/order-status?orderId=${targetOrderId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          // If order not found, fallback to sessionStorage if we have it
+          const buyer = sessionStorage.getItem(`checkout_buyer_${ticketId}`);
+          if (buyer) {
+            const parsedBuyer = JSON.parse(buyer);
+            const qtyStr = sessionStorage.getItem(`checkout_quantity_${ticketId}`) || '1';
+            setBuyerInfo(parsedBuyer);
+            setQuantity(parseInt(qtyStr, 10));
+            
+            // Generate QR
+            const qrData = encodeURIComponent(
+              JSON.stringify({ orderId: targetOrderId, ticketId, email: parsedBuyer.email })
+            );
+            setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`);
+            setStatus('approved');
+            clearInterval(pollInterval);
+            return;
+          }
+          setErrorMsg(data.error || 'No pudimos verificar el estado de tu compra.');
+          setStatus('rejected');
+          clearInterval(pollInterval);
+          return;
+        }
+
+        if (data.status === 'approved') {
+          setBuyerInfo(data.buyerInfo);
+          setQuantity(data.quantity);
+          
+          // Generate QR
+          const qrData = encodeURIComponent(
+            JSON.stringify({ orderId: targetOrderId, ticketId, email: data.buyerInfo.email })
+          );
+          setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`);
+          setStatus('approved');
+          
+          // Save back to sessionStorage to persist on refresh
+          sessionStorage.setItem(`checkout_buyer_${ticketId}`, JSON.stringify(data.buyerInfo));
+          sessionStorage.setItem(`checkout_quantity_${ticketId}`, data.quantity.toString());
+          sessionStorage.setItem(`checkout_order_${ticketId}`, targetOrderId);
+          
+          clearInterval(pollInterval);
+        } else if (data.status === 'rejected') {
+          setErrorMsg(data.errorDetail || 'El pago fue rechazado por la pasarela.');
+          setStatus('rejected');
+          clearInterval(pollInterval);
+        } else {
+          // Pending status
+          pollAttempts += 1;
+          if (pollAttempts >= maxPollAttempts) {
+            // Stop polling and notify user it is still pending (async webhook delayed)
+            setStatus('pending_verification');
+            clearInterval(pollInterval);
+          } else {
+            // Keep status as loading but show a friendly polling notice if it takes too long
+            if (pollAttempts > 3) {
+              setStatus('pending_verification');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error polling order status:', err);
+      }
+    };
+
+    // Run immediately and start polling
+    checkOrderStatus();
+    pollInterval = setInterval(checkOrderStatus, 2000);
+
+    return () => clearInterval(pollInterval);
+  }, [ticketId, searchParams, router]);
 
   function handleShare(method: 'copy' | 'whatsapp' | 'instagram' | 'facebook') {
     const message = `¡${ticket?.stock === undefined ? 'Mesa' : 'Boleta'} asegurada! 🎉\n${ticket?.name}${ticket?.stock === undefined ? ` #${ticket?.number}` : ''}\nOrden: ${orderId}\nMuestra este QR en la entrada.`;
@@ -62,12 +142,72 @@ export default function SuccessPage() {
     }
   }
 
-  if (!buyerInfo || !ticket) {
+  if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-[#F4EFE9] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#686A54] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="font-nunito text-[#231E1A] font-light text-center">Verificando transacción de pago...</p>
       </div>
     );
+  }
+
+  if (status === 'pending_verification') {
+    return (
+      <div className="min-h-screen bg-[#F4EFE9] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-sm max-w-md w-full text-center border border-[#E8E2DA]">
+          <div className="w-12 h-12 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-5" />
+          <h2 className="font-nunito font-semibold text-[18px] text-[#231E1A] mb-3">
+            Validando pago con tu banco...
+          </h2>
+          <p className="font-nunito text-[14px] text-[#7A6F5E] mb-6 leading-relaxed">
+            Estamos esperando la confirmación de la pasarela de pago. Esto puede tardar un momento.
+            Te enviaremos un correo con tus entradas tan pronto como se reciba la confirmación de pago.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => router.replace('/')}
+              className="w-full py-3 bg-[#686A54] hover:opacity-90 text-white font-semibold rounded-xl font-nunito uppercase tracking-wider text-[13px]"
+            >
+              Volver al inicio
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'rejected') {
+    return (
+      <div className="min-h-screen bg-[#F4EFE9] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-sm max-w-md w-full text-center border border-red-100">
+          <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-5">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </div>
+          <h2 className="font-nunito font-semibold text-[18px] text-[#231E1A] mb-3">
+            Pago Rechazado o Cancelado
+          </h2>
+          <p className="font-nunito text-[14px] text-[#7A6F5E] mb-6 leading-relaxed">
+            {errorMsg || 'No se pudo completar el pago de tu reserva. Si el dinero fue descontado, por favor ponte en contacto con soporte.'}
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => router.replace(`/checkout/${ticketId}`)}
+              className="w-full py-3 bg-[#686A54] hover:opacity-90 text-white font-semibold rounded-xl font-nunito uppercase tracking-wider text-[13px]"
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If approved:
+  if (!buyerInfo || !ticket) {
+    return null;
   }
 
   return (
