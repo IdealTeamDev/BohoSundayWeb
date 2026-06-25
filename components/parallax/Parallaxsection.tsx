@@ -44,7 +44,7 @@ export default function ParallaxSection() {
     >
       <div className="text-white text-center">
         <h2 className="text-md font-nunito font-light tracking-widest mb-6">FALTA PARA EL BOHO</h2>
-        <div className="font-nunito flex gap-3 lg:gap-6 items-end">
+        <div className="flex gap-3 lg:gap-6 items-end">
           {[
             { valor: timeLeft.dias, label: "Días" },
             { valor: timeLeft.horas, label: "Horas" },

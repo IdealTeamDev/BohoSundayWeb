@@ -38,9 +38,24 @@ export const Marquee = () => {
   return (
     <div className="flex w-full bg-[#231E1A] items-center justify-center pt-2  pb-2"> 
 
-        <div className="flex underline">
-           <p className="underline text-[#FFB956] text-sm font-nunito">OPEN DOORS EN: 15d 10h 20m</p>
+        <div className="flex border-b-1 border-amber-500">
+           <div className="flex gap-2 lg:gap-6 items-end  text-[#FFB956] text-sm font-nunito">OPEN DOORS EN: {[
+            { valor: timeLeft.dias, label: "D" },
+            { valor: timeLeft.horas, label: "H" },
+            { valor: timeLeft.minutos, label: "M" },
+  
+          ].map(({ valor, label }, i, arr) => (
+            <div key={label} className="flex items-center gap-1 lg:gap-6">
+              <div className="flex flex-row items-center">
+                <span className="text-sm lg:text-6xl font-displayFlyer">
+                  {String(valor).padStart(2, "0")}
+                </span>
+                <span className="font-nunito text-sm font-light">{label}</span>
+              </div>
             
+            </div>
+          ))}</div>
+           
             
       
         </div>
