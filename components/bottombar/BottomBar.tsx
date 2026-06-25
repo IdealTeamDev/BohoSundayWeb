@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { translations } from '@/data/translations';
 import EventMap from '@/components/eventmap/EventMap';
 import IndividualTickets from '@/components/individual/IndividualTickets';
 
@@ -11,6 +13,9 @@ interface BottomBarProps {
 
 export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
   const [openIndividual, setOpenIndividual] = useState(false);
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
 
   // Block body scroll when map or individual tickets are open
   useEffect(() => {
@@ -41,7 +46,7 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
 
         {/* Drawer del mapa e individual — sale desde abajo hacia arriba */}
         <div
-          className="w-full max-w-lg lg:max-w-4xl px-2 lg:px-0 pt-20 mb-[-25px] lg:mb-[30px] overflow-y-none"
+          className="w-full max-w-lg lg:max-w-2xl px-2 lg:px-0 pt-20 mb-[-25px] lg:mb-[30px] overflow-y-none"
           style={{
             maxHeight: 'calc(100vh - 80px)',
             transform: (openMap || openIndividual) ? 'translateY(0)' : 'translateY(100%)',
@@ -73,7 +78,7 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
                 color: '#F4EFE9',
               }}
             >
-              MAPA DE MESAS
+              {t.bottomBar.map}
             </button>
 
             {/* BOLETERÍA INDIVIDUAL */}
@@ -87,7 +92,7 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
                 backgroundColor: openIndividual ? '#47311F' : '#686A54',
                 color: '#F4EFE9',
               }}            >
-              BOLETERÍA INDIVIDUAL
+              {t.bottomBar.individual}
             </button>
           </div>
         </div>

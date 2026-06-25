@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { translations } from '@/data/translations';
 import { tickets } from '@/data/tickets';
 import CardTicketIndividual from '@/components/cardticket/CardTicketIndividual';
 import type { Ticket } from '@/types';
@@ -12,6 +14,9 @@ interface IndividualTicketsProps {
 export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketStatuses, setTicketStatuses] = useState<Record<string, { status: string; remaining: number }>>({});
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
 
   const earlyTicket = tickets.find((t) => t.id === 'early');
   const anytimeTicket = tickets.find((t) => t.id === 'anytime');
@@ -68,7 +73,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
 
       {/* Title */}
       <h2 className="font-displayFlyer text-center text-4xl lg:text-5xl uppercase text-[#231E1A] mt-3 mb-8">
-        GENERAL
+        {t.generalModal.title}
       </h2>
 
       {/* Tickets List */}
@@ -86,7 +91,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
           style={{
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundImage: 'url("images/individual-ticket/early.png")',
+            backgroundImage: 'url("/images/individual-ticket/early.png")',
             backgroundColor: '#4E4F44',
           }}
         >
@@ -102,10 +107,10 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
           )}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
             <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
-              ENTRADA
+              {t.generalModal.entrada}
             </span>
             <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
-              EARLY
+              {t.generalModal.early}
             </span>
             <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
             </span>
@@ -124,7 +129,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
           style={{
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundImage: 'url("images/individual-ticket/anytime.png")',
+            backgroundImage: 'url("/images/individual-ticket/anytime.png")',
             backgroundColor: '#45463C',
           }}
         >
@@ -140,10 +145,10 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
           )}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
             <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
-              ENTRADA
+              {t.generalModal.entrada}
             </span>
             <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
-              ANYTIME
+              {t.generalModal.anytime}
             </span>
             <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
             </span>

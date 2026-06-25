@@ -31,7 +31,7 @@ export const tickets: Ticket[] = [
   
 
   // ── CAMA BOHEMIAN ·7 mesas · fila inferior ───────────────────────────
-  { id:'bohemian-9', zone:'bohemian', iconCard:'images/icon/icon-bohemian.png', img:'images/ticketsImage/BOHEMIAN.png', name:'CAMA BOHEMIAN', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)',number:9, persons:8, price:4800000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:4, redBull:4}, available:true,  position:{x:29.4, y:62} },
+  { id:'bohemian-9', zone:'bohemian', iconCard:'images/icon/icon-bohemian.png', img:'images/ticketsImage/BOHEMIAN.png', name:'CAMA BOHEMIAN', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)', number:9, persons:8, price:4800000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:4, redBull:4}, available:true,  position:{x:29.4, y:62} },
   { id:'bohemian-10', zone:'bohemian', iconCard:'images/icon/icon-bohemian.png', img:'images/ticketsImage/BOHEMIAN.png', name:'CAMA BOHEMIAN',description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)', number:10, persons:8, price:4800000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:4, redBull:4}, available:true,  position:{x:36, y:62} },
   { id:'bohemian-11', zone:'bohemian', iconCard:'images/icon/icon-bohemian.png', img:'images/ticketsImage/BOHEMIAN.png', name:'CAMA BOHEMIAN',description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)', number:11, persons:8, price:4800000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:4, redBull:4}, available:true,  position:{x:43, y:62} },
   // ── CAMA PRIMITIVO · fila superior  derecha ─────────────────────────4
@@ -55,7 +55,7 @@ export const tickets: Ticket[] = [
   
 
   // ── MESA CANDELA · 2 mesas ────────────────────────────────────────────
-  { id:'candela-1', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:1, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true,  position:{x:84, y:70} },
+  { id:'candela-1', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:1, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:84, y:70} },
   { id:'candela-2', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:2, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:73, y:71} },
   { id:'candela-3', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:3, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:24, y:71} },
   { id:'candela-4', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:4, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:14, y:70} },
@@ -77,7 +77,7 @@ export const tickets: Ticket[] = [
     includes: { licor: 'Antes de las 2PM', agua: 0, redBull: 0 },
     available: true,
     position: { x: 0, y: 0 },
-    stock: 0
+    stock: 10
   },
   {
     id: 'anytime',

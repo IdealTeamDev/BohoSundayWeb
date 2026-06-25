@@ -9,6 +9,28 @@ interface SendMailParams {
   quantity?: number;
 }
 
+// ==========================================
+// CÓDIGO HTML EN INGLÉS (EMAILIFY FIGMA)
+// Copia y pega tu código HTML en inglés exportado dentro de las comillas invertidas (backticks) abajo.
+// ==========================================
+export const EMAIL_HTML_EN = `
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Boho Sunday Confirmation</title>
+</head>
+<body>
+  <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
+    <h2>Your Boho Sunday Booking is Confirmed!</h2>
+    <p>Dear Customer,</p>
+    <p>Thank you for your purchase. Please find your ticket QR code attached to this email.</p>
+    <p>We look forward to seeing you at the event!</p>
+  </div>
+</body>
+</html>
+`;
+
 /**
  * Creates the Nodemailer transport dynamically from environment variables
  */
@@ -85,8 +107,10 @@ export async function sendConfirmationEmail({ ticketId, orderId, buyerInfo, quan
   const transport = createTransport();
   const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday" <reservas@bohosunday.com>';
 
+  const isEnglish = buyerInfo.locale === 'en';
+
   // Compose Email HTML
-  const mailHtml = `
+  const mailHtml = isEnglish ? EMAIL_HTML_EN : `
 <!doctype html>
 <html lang="en" dir="auto" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -835,7 +859,7 @@ img { background-color: transparent !important; }
   await transport.sendMail({
     from: fromAddress,
     to: buyerInfo.email,
-    subject: '¡Tu reserva para Boho Sunday está confirmada!',
+    subject: isEnglish ? 'Your Boho Sunday reservation is confirmed!' : '¡Tu reserva para Boho Sunday está confirmada!',
     html: mailHtml,
     attachments,
   });

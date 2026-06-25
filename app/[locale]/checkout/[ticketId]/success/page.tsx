@@ -5,12 +5,15 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { tickets } from '@/data/tickets';
 import type { BuyerInfo } from '@/types/checkout';
 import Image from 'next/image';
+import { translations } from '@/data/translations';
 
 export default function SuccessPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
   const ticketId = params.ticketId as string;
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
 
   const [buyerInfo, setBuyerInfo] = useState<BuyerInfo | null>(null);
   const [orderId, setOrderId] = useState<string>('');
@@ -33,7 +36,7 @@ export default function SuccessPage() {
 
     if (!targetOrderId) {
       console.warn('No order ID found in URL or sessionStorage. Redirecting home.');
-      router.replace('/');
+      router.replace(locale === 'en' ? '/en' : '/');
       return;
     }
 
@@ -42,7 +45,7 @@ export default function SuccessPage() {
     // If query parameters explicitly say payment rejected, mark immediately
     if (mpStatus === 'rejected' || mpStatus === 'cancelled') {
       setStatus('rejected');
-      setErrorMsg('El pago fue rechazado o cancelado en la pasarela. Por favor intenta de nuevo.');
+      setErrorMsg(t.success.rejectedDefaultMsg);
       return;
     }
 
@@ -73,7 +76,7 @@ export default function SuccessPage() {
             clearInterval(pollInterval);
             return;
           }
-          setErrorMsg(data.error || 'No pudimos verificar el estado de tu compra.');
+          setErrorMsg(data.error || t.success.rejectedDefaultMsg);
           setStatus('rejected');
           clearInterval(pollInterval);
           return;
@@ -97,7 +100,7 @@ export default function SuccessPage() {
           
           clearInterval(pollInterval);
         } else if (data.status === 'rejected') {
-          setErrorMsg(data.errorDetail || 'El pago fue rechazado por la pasarela.');
+          setErrorMsg(data.errorDetail || t.success.rejectedDefaultMsg);
           setStatus('rejected');
           clearInterval(pollInterval);
         } else {
@@ -127,16 +130,20 @@ export default function SuccessPage() {
   }, [ticketId, searchParams, router]);
 
   function handleShare(method: 'copy' | 'whatsapp' | 'instagram' | 'facebook') {
-    const message = `¡${ticket?.stock === undefined ? 'Mesa' : 'Boleta'} asegurada! 🎉\n${ticket?.name}${ticket?.stock === undefined ? ` #${ticket?.number}` : ''}\nOrden: ${orderId}\nMuestra este QR en la entrada.`;
+    const ticketKey = (ticket?.id === 'early' || ticket?.id === 'anytime') ? ticket?.id : ticket?.zone;
+    const tTicketName = ticketKey ? (t.tickets[ticketKey as keyof typeof t.tickets] as { name: string }).name : ticket?.name;
+
+    const baseMsg = ticket?.stock === undefined ? t.success.shareMessageTable : t.success.shareMessageTicket;
+    const message = baseMsg.replace('{name}', `${tTicketName}${ticket?.stock === undefined ? ` #${ticket?.number}` : ''}`).replace('{orderId}', orderId);
 
     if (method === 'copy') {
       navigator.clipboard.writeText(qrUrl);
-      alert('Enlace del QR copiado');
+      alert(t.success.copiedAlert);
     } else if (method === 'whatsapp') {
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
     } else if (method === 'instagram') {
       navigator.clipboard.writeText(message);
-      alert('Mensaje copiado — pégalo en Instagram');
+      alert(t.success.copiedMsgAlert);
     } else if (method === 'facebook') {
       window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(qrUrl)}`);
     }
@@ -146,7 +153,7 @@ export default function SuccessPage() {
     return (
       <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center justify-center p-4">
         <div className="w-10 h-10 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="font-nunito text-[#231E1A] font-light text-center">Verificando transacción de pago...</p>
+        <p className="font-nunito text-[#231E1A] font-light text-center">{t.success.verifying}</p>
       </div>
     );
   }
@@ -157,18 +164,17 @@ export default function SuccessPage() {
         <div className="bg-white rounded-2xl p-8 shadow-sm max-w-md w-full text-center border border-[#E8E2DA]">
           <div className="w-12 h-12 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-5" />
           <h2 className="font-nunito font-semibold text-[18px] text-[#231E1A] mb-3">
-            Validando pago con tu banco...
+            {t.success.validatingBank}
           </h2>
           <p className="font-nunito text-[14px] text-[#7A6F5E] mb-6 leading-relaxed">
-            Estamos esperando la confirmación de la pasarela de pago. Esto puede tardar un momento.
-            Te enviaremos un correo con tus entradas tan pronto como se reciba la confirmación de pago.
+            {t.success.waitingConfirmation}
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => router.replace('/')}
+              onClick={() => router.replace(locale === 'en' ? '/en' : '/')}
               className="w-full py-3 bg-[#686A54] hover:opacity-90 text-white font-semibold rounded-xl font-nunito uppercase tracking-wider text-[13px]"
             >
-              Volver al inicio
+              {t.success.goHome}
             </button>
           </div>
         </div>
@@ -187,17 +193,17 @@ export default function SuccessPage() {
             </svg>
           </div>
           <h2 className="font-nunito font-semibold text-[18px] text-[#231E1A] mb-3">
-            Pago Rechazado o Cancelado
+            {t.success.rejectedTitle}
           </h2>
           <p className="font-nunito text-[14px] text-[#7A6F5E] mb-6 leading-relaxed">
-            {errorMsg || 'No se pudo completar el pago de tu reserva. Si el dinero fue descontado, por favor ponte en contacto con soporte.'}
+            {errorMsg || t.success.rejectedDefaultMsg}
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => router.replace(`/checkout/${ticketId}`)}
+              onClick={() => router.replace(locale === 'en' ? `/en/checkout/${ticketId}` : `/checkout/${ticketId}`)}
               className="w-full py-3 bg-[#686A54] hover:opacity-90 text-white font-semibold rounded-xl font-nunito uppercase tracking-wider text-[13px]"
             >
-              Intentar de nuevo
+              {t.success.tryAgain}
             </button>
           </div>
         </div>
@@ -231,7 +237,7 @@ export default function SuccessPage() {
               <img src="/images/icon/Íconos WEB 1.png" alt="Colombia Moda" width={100} className="rounded-lg" />
             </div>
             <h2 className="font-displayFlyer font-medium text-[26px] text-[#231E1A] leading-tight mb-1">
-              ¡Tu pago ha sido<br />exitoso!
+              {t.success.successTitle}
             </h2>
           {/* Success icon */}
           <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -242,7 +248,7 @@ export default function SuccessPage() {
 
           <div className="bg-[#686A54]/8 border border-[#686A54]/20 rounded-xl px-4 py-3 mb-4 mx-2">
             <p className="font-nunito text-[12px] text-[#231E1A] leading-relaxed text-center">
-              Te hemos enviado un correo de confirmación con tu código QR a:<br />
+              {t.success.sentEmail}<br />
               <strong className="text-[#231E1A]">{buyerInfo.email}</strong>
             </p>
           </div>
@@ -255,11 +261,11 @@ export default function SuccessPage() {
           )}
 
           <p className="font-nunito font-semibold text-[14px] text-[#231E1A] mb-2">
-            Tu {ticket.stock === undefined ? 'mesa tiene' : 'reserva es válida para'} <strong>{ticket.stock === undefined ? ticket.persons : quantity} {(ticket.stock === undefined ? ticket.persons : quantity) === 1 ? 'acceso' : 'accesos'}</strong>.<br />
+            Tu {ticket.stock === undefined ? t.success.tableValidation : t.success.ticketValidation} <strong>{ticket.stock === undefined ? ticket.persons : quantity} {(ticket.stock === undefined ? ticket.persons : quantity) === 1 ? t.success.access_one : t.success.access_other}</strong>.<br />
           </p>
           <ul className="list-disc list-outinside pl-12 text-left font-nunito font-semibold text-[14px] text-[#231E1A]">
-            <li>Comparte este código QR por WhastApp</li>
-            <li><strong>Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)</strong></li>
+            <li>{t.success.instruction1}</li>
+            <li><strong>{t.success.instruction2}</strong></li>
           </ul>
 
           {/* Share buttons */}
@@ -272,7 +278,7 @@ export default function SuccessPage() {
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
               </svg>
-              Copiar link
+              {t.success.copyLink}
             </button>
             <button
               onClick={() => handleShare('whatsapp')}
@@ -286,10 +292,10 @@ export default function SuccessPage() {
           </div>
 
           <button
-            onClick={() => router.replace('/')}
+            onClick={() => router.replace(locale === 'en' ? '/en' : '/')}
             className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[15px] bg-[#686A54] text-[#F4EFE9]  uppercase font-semibold hover:bg-[#FAF8F5] transition-colors"
           >
-            Cerrar
+            {t.success.close}
           </button>
         </div>
       </div>
@@ -321,21 +327,21 @@ export default function SuccessPage() {
                 </div>
 
                 <h2 className="font-displayFlyer text-center font-medium text-[48px] text-[#231E1A] leading-[1.05] mb-5">
-                  ¡Tu pago ha sido<br />exitoso!
+                  {t.success.successTitle}
                 </h2>
                 <div className="flex justify-center items-center">
                   <p className="font-nunito font-semibold text-[18px] text-[#231E1A] mb-3">
-                    Tu {ticket.stock === undefined ? 'mesa tiene' : 'reserva es válida para'}{' '}
+                    Tu {ticket.stock === undefined ? t.success.tableValidation : t.success.ticketValidation}{' '}
                     <strong>
                       {ticket.stock === undefined ? ticket.persons : quantity}{' '}
-                      {(ticket.stock === undefined ? ticket.persons : quantity) === 1 ? 'acceso' : 'accesos'}
+                      {(ticket.stock === undefined ? ticket.persons : quantity) === 1 ? t.success.access_one : t.success.access_other}
                     </strong>.
                   </p>
                 </div>
                 <div className="flex justify-center items-center">
                   <ul className="list-disc list-outside pl-5 font-nunito font-semibold text-[15px] text-[#231E1A] space-y-1.5 mb-6">
-                    <li>Comparte este código QR por WhatsApp</li>
-                    <li><strong>Las camas fueron creadas para disfrutarse entre amigos, <br />en grupos mixtos (hombres y mujeres)</strong></li>
+                    <li>{t.success.instruction1}</li>
+                    <li><strong>{t.success.instruction2}</strong></li>
                   </ul>
                 </div>
                 {/* Share icons */}

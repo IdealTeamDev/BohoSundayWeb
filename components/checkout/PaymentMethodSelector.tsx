@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
+import { translations } from '@/data/translations';
 
 export interface PaymentMethodOption {
   id: 'wompi' | 'mercadopago';
@@ -29,6 +31,9 @@ const MercadoPagoLogo = () => (
 export default function PaymentMethodSelector({ selected, onChange, error }: PaymentMethodSelectorProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
 
   const options: PaymentMethodOption[] = [
     {
@@ -59,7 +64,7 @@ export default function PaymentMethodSelector({ selected, onChange, error }: Pay
   return (
     <div className="flex flex-col gap-1.5 relative w-full" ref={containerRef}>
       <label className="font-nunito text-[18px] text-[#231E1A] font-normal">
-        Método de pago
+        {t.checkout.paymentMethodLabel}
       </label>
       
       <div className="relative">
@@ -83,7 +88,7 @@ export default function PaymentMethodSelector({ selected, onChange, error }: Pay
             </div>
           ) : (
             <span className="font-nunito font-light text-[15px] text-[#BDB39B]">
-              Selecciona tu método de pago
+              {t.checkout.paymentMethodPlaceholder}
             </span>
           )}
           

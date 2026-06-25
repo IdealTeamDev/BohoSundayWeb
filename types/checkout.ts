@@ -21,4 +21,5 @@ export interface BuyerInfo {
   email: string;
   docType?: string;
   docNumber?: string;
+  locale?: string;
 }

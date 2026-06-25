@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
+import { translations } from '@/data/translations';
 import AlliesCarousel from '@/components/alliesaarousel/AlliesCarousel';
 import Parallaxsection from "@/components/parallax/Parallaxsection";
 import BottomBar from '@/components/bottombar/BottomBar';
@@ -11,6 +13,9 @@ import {Footer} from "@/components/footer/Footer";
 
 export default function Home() {
   const [openMap, setOpenMap] = useState(false)
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-[#F4EFE9] font-sans pb-28">
@@ -21,12 +26,12 @@ export default function Home() {
         {/* Mobile / Tablet Hero Layout */}
         <div className="flex flex-col items-center justify-center lg:hidden w-full">
           <img
-            src="images/logo/logo-boho-colombiamoda.png"
+            src={t.home.logoBoho}
             alt="Boho Sunday Colombia Moda Edition"
             className="block sm:hidden w-50"        
             />
           <img
-            src="images/logo/logo-boho-colombiamoda-desk.png"
+            src={t.home.logoBohoDesk}
             alt="Boho Sunday"
             className="hidden sm:block sm:w-80"
           />
@@ -72,7 +77,7 @@ export default function Home() {
             {/* Center: Logo */}
             <div className="flex justify-center mx-4">
               <img
-                src="images/logo/logo-boho-colombiamoda-desk.png"
+                src={t.home.logoBohoDesk}
                 alt="Boho Sunday"
                 className="w-[400px] xl:w-[450px]"
               />
@@ -104,18 +109,17 @@ export default function Home() {
             alt="Boho Sunday Colombia Moda Edition"
             width={30}
             height={20}
-            
         />
-        <p className="text-black lg:text-[18px] text-[17px]/5 font-semibold text-center lg:pt-4 lg:py-0 py-2 font-nunito">Plan de domingo: Boho Sunday Colombiamoda Edition.</p>
-        <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-1 font-nunito">Una experiencia llena de moda, música, diversión y los pequeños detalles crean buena energía.</p>
-        <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-2 font-nunito">No te pierdas la oportunidad de formar parte de <span className="font-semibold">la mejor fiesta de Sopetrán.</span></p>
+        <p className="text-black lg:text-[18px] text-[17px]/5 font-semibold text-center lg:pt-4 lg:py-0 py-2 font-nunito">{t.home.plan}</p>
+        <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-1 font-nunito">{t.home.experience}</p>
+        <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-2 font-nunito">{t.home.opportunity}</p>
       </div>
       <LineUp/>
       <Parallaxsection />
       <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center items-center gap-6 lg:py-10 lg:min-h-[450px] w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 lg:px-0 mb-5">
         <div className="flex lg:col-span-2 justify-center w-full h-full">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.6198796279923!2d-75.73034718782313!3d6.442831024065319!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e45cd00070ad22b%3A0x423df42d5961a089!2sCasa%20candela!5e0!3m2!1ses-419!2sco!4v1780683973432!5m2!1ses-419!2sco"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.3199079475135!2d-75.75312807442276!3d6.481107206882632!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e45cb91916f8017%3A0x5ee4e4528ea7467b!2sHotel%20Casa%20Candela!5e0!3m2!1sen!2sco!4v1782406438536!5m2!1sen!2sco"
             className="w-full h-[350px] lg:h-[450px] rounded-xl"
             style={{ border: 0 }}
             allowFullScreen
@@ -125,9 +129,9 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col lg:col-span-1 items-center lg:items-center justify-center px-7 py-4 lg:py-0 text-center lg:text-left h-full">
-          <p className="text-black text-[17px] font-light font-nunito">LUGAR:</p>
-          <p className="text-black text-[17px] font-semibold font-nunito mt-1">Casa Candela</p>
-          <p className="text-black text-[17px] font-nunito text-center mt-2 leading-relaxed">Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia</p>
+          <p className="text-black text-[17px] font-light font-nunito">{t.home.location}</p>
+          <p className="text-black text-[17px] font-semibold font-nunito mt-1">{t.hero.place}</p>
+          <p className="text-black text-[17px] font-nunito text-center mt-2 leading-relaxed">{t.home.address}</p>
         </div>
       </div>
       <AlliesCarousel />

@@ -1,9 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
+import { translations } from '@/data/translations';
 
 interface CardTicketIndividualProps {
   ticket: Ticket;
@@ -14,6 +15,13 @@ interface CardTicketIndividualProps {
 export default function CardTicketIndividual({ ticket, remainingStock, onClose }: CardTicketIndividualProps) {
   const cfg = zoneConfig[ticket.zone];
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
+
+  const ticketKey = (ticket.id === 'early' || ticket.id === 'anytime') ? ticket.id : ticket.zone;
+  const tTicket = t.tickets[ticketKey as keyof typeof t.tickets] as { name: string; description: string; licor: string };
+
   const [loading, setLoading] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
@@ -43,12 +51,12 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'La cantidad seleccionada ya no está disponible. Intenta de nuevo.');
+        alert(data.error || t.tickets.qtyAlert);
         return;
       }
-      router.push(`/checkout/${ticket.id}`);
+      router.push(locale === 'en' ? `/en/checkout/${ticket.id}` : `/checkout/${ticket.id}`);
     } catch {
-      alert('Error de conexión. Intenta nuevamente.');
+      alert(t.tickets.connError);
     } finally {
       setLoading(false);
     }
@@ -61,25 +69,25 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
       <div className="flex items-center justify-center  gap-2 mb-1">
         <img src={iconSrc} alt="" width={28} height={28} />
         <h2 className="text-3xl font-displayFlyer uppercase text-[#231E1A]">
-          {ticket.name}
+          {tTicket.name}
         </h2>
       </div>
 
       {/* Subtitle */}
       <p className="font-nunito text-center  font-light text-[14px] text-[#231E1A] mb-3">
-        {ticket.includes.licor}
+        {tTicket.licor}
       </p>
 
       <div className="h-px bg-[#BDB39B]/50 mb-4" />
 
       {/* Availability notice */}
       <p className="text-[13px] font-nunito font-light text-[#7A6F5E] mb-3 text-center">
-        Solo se permiten 10 boletas por persona
+        {t.tickets.only10}
       </p>
 
       {/* Quantity label */}
       <div className="text-center font-nunito font-semibold text-[15px] text-[#231E1A] mb-1">
-        {quantity} {quantity === 1 ? 'boleta' : 'boletas'}
+        {quantity} {quantity === 1 ? t.tickets.ticketQty_one : t.tickets.ticketQty_other}
       </div>
 
       {/* Price selector */}
@@ -101,7 +109,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
           </div>
           {quantity > 1 && (
             <span className="text-[12px] font-nunito text-[#7A6F5E] mt-0.5">
-              (${new Intl.NumberFormat('es-CO').format(ticket.price)} COP c/u)
+              (${new Intl.NumberFormat('es-CO').format(ticket.price)} COP {locale === 'en' ? 'each' : 'c/u'})
             </span>
           )}
         </div>
@@ -124,12 +132,12 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
             onClick={handleReserve}
             disabled={loading}
           >
-            {loading ? 'Procesando...' : 'Reservar esta mesa'}
+            {loading ? (locale === 'en' ? 'Processing...' : 'Procesando...') : t.tickets.reserve}
           </button>
         </div>
       ) : (
         <div className="w-full py-2.5 rounded-lg text-center text-[11px] uppercase tracking-widest bg-red-500/15 border border-red-400/30 text-red-300/70">
-          Boleta agotada
+          {t.tickets.soldout}
         </div>
       )}
     </>

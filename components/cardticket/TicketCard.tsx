@@ -1,8 +1,9 @@
 'use client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useEffect } from "react";
 import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
+import { translations } from '@/data/translations';
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -12,6 +13,13 @@ interface TicketCardProps {
 export default function TicketCard({ ticket, onClose }: TicketCardProps) {
   const cfg = zoneConfig[ticket.zone];
   const router = useRouter();
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
+
+  const ticketKey = (ticket.id === 'early' || ticket.id === 'anytime') ? ticket.id : ticket.zone;
+  const tTicket = t.tickets[ticketKey as keyof typeof t.tickets] as { name: string; description: string; licor: string };
+
   const formattedPrice = new Intl.NumberFormat('es-CO').format(ticket.price);
 
   const iconSrc = ticket.iconCard
@@ -35,12 +43,12 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Esta mesa ya está siendo procesada. Intenta en unos minutos.');
+        alert(data.error || t.tickets.processingAlert);
         return;
       }
-      router.push(`/checkout/${ticket.id}`);
+      router.push(locale === 'en' ? `/en/checkout/${ticket.id}` : `/checkout/${ticket.id}`);
     } catch {
-      alert('Error de conexión. Intenta nuevamente.');
+      alert(t.tickets.connError);
     }
   }
 
@@ -80,14 +88,14 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           <div className="grid grid-cols-[44px_1fr] items-center gap-1 w-fit mx-auto">
             <img src={iconSrc} alt="" width={28} height={44} />
             <h2 className="text-3xl font-displayFlyer tracking-wider uppercase text-[#231E1A] my-4">
-              {ticket.name} #{ticket.number}
+              {tTicket.name} #{ticket.number}
             </h2>
             
           </div>
           {/* Description si existe */}
-          {ticket.description && (
+          {tTicket.description && (
             <p className="text-[14px] text-center leading-[1.2] font-nunito font-light text-[#7A6F5E] mb-4 mx-16">
-              {ticket.description}
+              {tTicket.description}
             </p>
           )}
           
@@ -96,13 +104,13 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           <div className="flex items-center justify-center gap-15 mb-3.5 border-t border-b border-[#BDB39B]">
             <div className="flex flex-col items-center justify-center my-4">
               <p className="text-[19px] font-nunito text-[#231E1A]">{ticket.persons}</p>
-              <p className="text-[16px] font-nunito font-extralight text-[#231E1A] mb-1">Personas</p>
+              <p className="text-[16px] font-nunito font-extralight text-[#231E1A] mb-1">{t.tickets.people}</p>
             </div>
             <div className="flex flex-col justify-center">
               {[
-                ticket.includes.licor,
-                `${ticket.includes.agua} Agua`,
-                `${ticket.includes.redBull} Red Bull`,
+                tTicket.licor,
+                `${ticket.includes.agua} ${ticket.includes.agua === 1 ? t.tickets.water : t.tickets.waters}`,
+                `${ticket.includes.redBull} ${t.tickets.redbull}`,
               ].map((item) => (
                 <div key={item} className="flex items-center gap-2">
                   <span className="text-[15px] font-extralight font-nunito text-[#231E1A]">{item}</span>
@@ -127,12 +135,12 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
                 style={{ background: '#686A54' }}
                 onClick={handleReserve}
               >
-                Reservar esta mesa
+                {t.tickets.reserve}
               </button>
             </div>
           ) : (
             <div className="w-full py-2.5 rounded-lg text-center text-[11px] uppercase tracking-widest bg-red-500/15 border border-red-400/30 text-red-300/70">
-              Boleta agotada
+              {t.tickets.soldout}
             </div>
           )}
         </div>
@@ -168,14 +176,14 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           <div className="flex items-center gap-3 mb-2">
             <img src={iconSrc} alt="" width={28} height={28} />
             <h2 className="text-3xl font-displayFlyer tracking-wider uppercase text-[#231E1A]">
-              {ticket.name} #{ticket.number}
+              {tTicket.name} #{ticket.number}
             </h2>
           </div>
 
           {/* Description si existe */}
-          {ticket.description && (
+          {tTicket.description && (
             <p className="text-[14px] text-center leading-[1.2] font-nunito font-light text-[#7A6F5E] mb-4">
-              {ticket.description}
+              {tTicket.description}
             </p>
           )}
 
@@ -183,13 +191,13 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           <div className="flex items-start gap-10 mb-4 border-t border-b border-[#BDB39B] py-4">
             <div className="flex flex-col items-center">
               <p className="text-[22px] font-nunito text-[#231E1A]">{ticket.persons}</p>
-              <p className="text-[14px] font-nunito font-extralight text-[#231E1A]">Personas</p>
+              <p className="text-[14px] font-nunito font-extralight text-[#231E1A]">{t.tickets.people}</p>
             </div>
             <div className="flex flex-col gap-1">
               {[
-                ticket.includes.licor,
-                `${ticket.includes.agua} Aguas`,
-                `${ticket.includes.redBull} Red Bull`,
+                tTicket.licor,
+                `${ticket.includes.agua} ${ticket.includes.agua === 1 ? t.tickets.water : t.tickets.waters}`,
+                `${ticket.includes.redBull} ${t.tickets.redbull}`,
               ].map((item) => (
                 <span key={item} className="text-[15px] font-extralight font-nunito text-[#231E1A]">
                   {item}
@@ -213,11 +221,11 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
               style={{ background: '#686A54' }}
               onClick={handleReserve}
             >
-              Reservar esta mesa
+              {t.tickets.reserve}
             </button>
           ) : (
             <div className="w-full py-2.5 rounded-lg text-center text-[11px] uppercase tracking-widest bg-red-500/15 border border-red-400/30 text-red-300/70">
-              Boleta agotada
+              {t.tickets.soldout}
             </div>
           )}
         </div>

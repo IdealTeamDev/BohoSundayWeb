@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { tickets } from '@/data/tickets';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { BuyerInfo } from '@/types/checkout';
+import { translations } from '@/data/translations';
 import CountdownTimer from '@/components/checkout/CountdownTimer';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 
@@ -12,6 +13,8 @@ export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
   const ticketId = params.ticketId as string;
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
 
   const [remainingSeconds, setRemainingSeconds] = useState<number>(600);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
@@ -43,8 +46,8 @@ export default function CheckoutPage() {
         setQuantity(data.quantity);
       }
     }
-    if (!data.valid) router.replace('/');
-  }, [ticketId, router]);
+    if (!data.valid) router.replace(locale === 'en' ? '/en' : '/');
+  }, [ticketId, router, locale]);
 
   useEffect(() => {
     verifySession();
@@ -57,27 +60,27 @@ export default function CheckoutPage() {
       setRemainingSeconds((s) => {
         if (s <= 1) {
           clearInterval(interval);
-          router.replace('/');
+          router.replace(locale === 'en' ? '/en' : '/');
           return 0;
         }
         return s - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [sessionValid, router]);
+  }, [sessionValid, router, locale]);
 
   function validate() {
     const newErrors: Partial<typeof form & { paymentMethod: string }> = {};
-    if (!form.name.trim()) newErrors.name = 'Ingresa tu nombre completo';
-    if (!form.docNumber.trim()) newErrors.docNumber = 'Ingresa tu identificación';
+    if (!form.name.trim()) newErrors.name = t.checkout.errorEmptyName;
+    if (!form.docNumber.trim()) newErrors.docNumber = t.checkout.errorEmptyDoc;
     if (!/^\d{7,15}$/.test(form.phone.replace(/\s/g, '')))
-      newErrors.phone = 'Número inválido';
+      newErrors.phone = t.checkout.errorInvalidPhone;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      newErrors.email = 'Correo inválido';
+      newErrors.email = t.checkout.errorInvalidEmail;
     if (form.email !== form.confirmEmail)
-      newErrors.confirmEmail = 'Los correos no coinciden';
+      newErrors.confirmEmail = t.checkout.errorMismatchEmail;
     if (!paymentMethod)
-      newErrors.paymentMethod = 'Selecciona un método de pago';
+      newErrors.paymentMethod = t.checkout.errorEmptyPayment;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -93,6 +96,7 @@ export default function CheckoutPage() {
       email: form.email,
       docType: form.docType,
       docNumber: form.docNumber,
+      locale,
     };
 
     try {
@@ -110,7 +114,7 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setSubmitError(data.error || 'Error al iniciar la sesión de pago.');
+        setSubmitError(data.error || t.checkout.submitErrorDefault);
         setLoading(false);
         return;
       }
@@ -124,7 +128,7 @@ export default function CheckoutPage() {
       window.location.href = data.checkoutUrl;
     } catch (err) {
       console.error('Error submitting payment session:', err);
-      setSubmitError('Error de red. Por favor intenta de nuevo.');
+      setSubmitError(t.checkout.networkError);
       setLoading(false);
     }
   }
@@ -139,6 +143,9 @@ export default function CheckoutPage() {
 
   if (!ticket) return null;
 
+  const ticketKey = (ticket.id === 'early' || ticket.id === 'anytime') ? ticket.id : ticket.zone;
+  const tTicket = t.tickets[ticketKey as keyof typeof t.tickets] as { name: string; description: string; licor: string };
+
   const totalPrice = ticket.stock !== undefined ? ticket.price * quantity : ticket.price;
   const formattedPrice = new Intl.NumberFormat('es-CO').format(totalPrice);
 
@@ -150,21 +157,10 @@ export default function CheckoutPage() {
     <div className="w-full bg-[#F4EFE9] flex flex-col items-center">
 
       {/* Timer banner */}
-      <CountdownTimer seconds={remainingSeconds} ticketName={`${ticket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} />
+      <CountdownTimer seconds={remainingSeconds} ticketName={`${tTicket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} />
 
       {/* Card */}
       <div className="w-full lg:max-w-3xl bg-[#F4EFE9] overflow-hidden lg:shadow-none shadow-sm">
-
-        {/* Ticket image 
-        {ticket.img && (
-          <div className="w-full h-36 overflow-hidden">
-            <img
-              src={`/${ticket.img}`}
-              alt={ticket.name}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}*/}
 
         <div className="px-5 py-4">
           {/* Title with Icon */}
@@ -177,32 +173,32 @@ export default function CheckoutPage() {
               className="object-contain"
             />
             <h2 className="font-displayFlyer text-3xl uppercase tracking-wider text-[#231E1A]">
-              {ticket.name}{ticket.stock === undefined ? ` #${ticket.number}` : ''}
+              {tTicket.name}{ticket.stock === undefined ? ` #${ticket.number}` : ''}
             </h2>
           </div>
 
           {ticket.stock !== undefined && (
             <p className="font-nunito text-[15px] text-center text-[#686A54] mb-6">
-              {quantity} {quantity === 1 ? 'boleta' : 'boletas'} · ${formattedPrice} COP
+              {quantity} {quantity === 1 ? t.checkout.ticketQty_one : t.checkout.ticketQty_other} · ${formattedPrice} COP
             </p>
           )}
 
           {/* Form */}
           <div className="flex flex-col gap-4">
             <Field
-              label="Nombres y Apellidos"
+              label={t.checkout.nameLabel}
               value={form.name}
               onChange={(v) => setForm({ ...form, name: v })}
               error={errors.name}
-              placeholder="Ingresa tu nombre y apellido"
+              placeholder={t.checkout.namePlaceholder}
               type="text"
             />
             <DropdownField
-              label="Documento de Identificación"
+              label={t.checkout.docLabel}
               value={form.docNumber}
               onChange={(v) => setForm({ ...form, docNumber: v })}
               error={errors.docNumber}
-              placeholder="Ingresa tu identificación"
+              placeholder={t.checkout.docPlaceholder}
               dropdownValue={form.docType}
               onDropdownChange={(v) => setForm({ ...form, docType: v })}
               dropdownOptions={[
@@ -213,11 +209,11 @@ export default function CheckoutPage() {
               type="text"
             />
             <DropdownField
-              label="WhatsApp"
+              label={t.checkout.whatsappLabel}
               value={form.phone}
               onChange={(v) => setForm({ ...form, phone: v })}
               error={errors.phone}
-              placeholder="Ingresa tu número de WhatsApp"
+              placeholder={t.checkout.whatsappPlaceholder}
               dropdownValue={form.phonePrefix}
               onDropdownChange={(v) => setForm({ ...form, phonePrefix: v })}
               dropdownOptions={[
@@ -233,19 +229,19 @@ export default function CheckoutPage() {
               type="tel"
             />
             <Field
-              label="Email"
+              label={t.checkout.emailLabel}
               value={form.email}
               onChange={(v) => setForm({ ...form, email: v })}
               error={errors.email}
-              placeholder="tu@correo.com"
+              placeholder={t.checkout.emailPlaceholder}
               type="email"
             />
             <Field
-              label="Confirmar Email"
+              label={t.checkout.confirmEmailLabel}
               value={form.confirmEmail}
               onChange={(v) => setForm({ ...form, confirmEmail: v })}
               error={errors.confirmEmail}
-              placeholder="Repite tu correo"
+              placeholder={t.checkout.confirmEmailPlaceholder}
               type="email"
               noPaste
             />
@@ -275,10 +271,10 @@ export default function CheckoutPage() {
               )}
             </div>
             <p className="font-nunito text-[15px] text-[#231E1A] leading-relaxed">
-              Confirmo que soy mayor de 18 años, acepto las políticas de no reembolso y las normas del evento (sin mascotas, libre de humo/drogas).
+              {t.checkout.termsConfirm}
             </p>
           </label>
-          <a href='/policy' target="_blank" rel="noopener noreferrer" className="text-[#47311F] font-nunito text-[15px] underline">Leer reglas completas</a>
+          <a href={locale === 'en' ? '/en/policy' : '/policy'} target="_blank" rel="noopener noreferrer" className="text-[#47311F] font-nunito text-[15px] underline">{t.checkout.readTerms}</a>
 
           {submitError && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mt-4 text-center">
@@ -291,7 +287,7 @@ export default function CheckoutPage() {
             disabled={loading || !acceptedTerms}
             className="w-full mt-8 mb-6 py-3 rounded-lg bg-[#686A54] text-white text-[15px] font-semibold font-nunito uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? 'Redirigiendo...' : 'FINALIZAR COMPRA'}
+            {loading ? t.checkout.loading : t.checkout.finishButton}
           </button>
         </div>
       </div>
