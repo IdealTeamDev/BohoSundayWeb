@@ -908,7 +908,7 @@ const TARGET_DATE_STRING = '2026-06-25T14:00:00-05:00';
 
 // Lista de destinatarios
 const RECIPIENTS = [
-  'alejandra@idealteamcolombia.com'
+  'alejandra@idealteamcolombia.com', 'daniela@idealteamcolombia.com','juana@idealteamcolombia.com', 'manuel@idealteamcolombia.com','marketing@idealteamcolombia.com','santiagoaguirre@idealteamcolombia.com','saragomez@idealteamcolombia.com'
   // Puedes agregar más correos aquí separados por comas, ej: 'correo2@ejemplo.com'
 ];
 
