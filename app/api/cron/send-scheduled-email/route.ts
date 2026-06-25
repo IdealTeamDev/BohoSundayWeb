@@ -801,7 +801,7 @@ C&oacute;digo de vestimenta</p><p style="Margin:0;mso-line-height-alt:18px;font-
 </table>
 </div>
 <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r ey y" style="background:#1e1e1e;background-color:#1e1e1e;margin:0px auto;max-width:600px;">
+<div class="r ey y" style="background:white;background-color:#1e1e1e;margin:0px auto;max-width:600px;">
 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#1e1e1e;background-color:#1e1e1e;width:100%;">
 <tbody>
 <tr>
@@ -903,8 +903,8 @@ C&oacute;digo de vestimenta</p><p style="Margin:0;mso-line-height-alt:18px;font-
 // ==========================================
 // 2. CONFIGURACIÓN DE ENVÍO
 // ==========================================
-// Hora programada: 25 de Junio de 2026, 9:20 AM (Hora Colombia: UTC-5)
-const TARGET_DATE_STRING = '2026-06-25T09:20:00-05:00';
+// Hora programada: 25 de Junio de 2026, 9:25 AM (Hora Colombia: UTC-5)
+const TARGET_DATE_STRING = '2026-06-25T09:25:00-05:00';
 
 // Lista de destinatarios
 const RECIPIENTS = [
@@ -936,7 +936,7 @@ export async function GET(req: NextRequest) {
       const secondsLeft = Math.ceil((targetTime.getTime() - now.getTime()) / 1000);
       return NextResponse.json({
         success: false,
-        message: `Aún no es la hora programada. Faltan ${secondsLeft} segundos para el envío (9:20 AM Colombia).`,
+        message: `Aún no es la hora programada. Faltan ${secondsLeft} segundos para el envío (9:25 AM Colombia).`,
         currentTime: now.toISOString(),
         targetTime: targetTime.toISOString()
       }, { status: 200 });
@@ -968,8 +968,10 @@ export async function GET(req: NextRequest) {
       console.log(`[Scheduled Email] ✅ Email successfully sent to ${recipient}`);
     }
 
-    // Marcar como enviado en este contenedor
-    hasBeenSentInCurrentContainer = true;
+    // Marcar como enviado en este contenedor solo si fue un envío programado real (sin forzar)
+    if (!force) {
+      hasBeenSentInCurrentContainer = true;
+    }
 
     return NextResponse.json({
       success: true,
