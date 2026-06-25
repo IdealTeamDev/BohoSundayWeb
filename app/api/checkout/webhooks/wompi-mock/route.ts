@@ -31,15 +31,15 @@ export async function POST(req: NextRequest) {
       // Lock ticket permanently
       markAsSold(order.ticketId, order.sessionToken);
 
-      // Queue confirmation email
-      addEmailToQueue({
+      // Queue and send confirmation email
+      await addEmailToQueue({
         ticketId: order.ticketId,
         orderId: order.orderId,
         buyerInfo: order.buyerInfo,
         quantity: order.quantity,
       });
 
-      console.log(`[Wompi Mock Webhook] ✅ Order ${orderId} finalized and email queued.`);
+      console.log(`[Wompi Mock Webhook] ✅ Order ${orderId} finalized and email sent.`);
     } else {
       // Rejected
       rejectOrder(orderId, 'Pago rechazado en el simulador de Wompi.');

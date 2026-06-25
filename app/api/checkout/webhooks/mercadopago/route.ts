@@ -127,15 +127,15 @@ export async function POST(req: NextRequest) {
       // Permanently claim ticket lock
       markAsSold(order.ticketId, order.sessionToken);
 
-      // Queue confirmation email
-      addEmailToQueue({
+      // Queue and send confirmation email
+      await addEmailToQueue({
         ticketId: order.ticketId,
         orderId: order.orderId,
         buyerInfo: order.buyerInfo,
         quantity: order.quantity,
       });
 
-      console.log(`[Webhook Mercado Pago] ✅ Order ${orderId} finalized and confirmation email queued.`);
+      console.log(`[Webhook Mercado Pago] ✅ Order ${orderId} finalized and confirmation email sent.`);
 
     } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
       // 2. If payment was REJECTED / CANCELLED

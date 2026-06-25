@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       approveOrder(orderId, `bypass-${Date.now()}`);
       markAsSold(ticketId, sessionToken);
       try {
-        addEmailToQueue({
+        await addEmailToQueue({
           ticketId,
           orderId,
           buyerInfo,

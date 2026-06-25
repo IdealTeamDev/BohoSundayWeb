@@ -6,87 +6,48 @@ export interface EmailJob {
   orderId: string;
   buyerInfo: BuyerInfo;
   quantity?: number;
-  attempts: number;
 }
 
-// Persist email queue in Next.js development across hot-reloads
-const globalForEmailQueue = globalThis as unknown as {
-  emailQueue?: EmailJob[];
-  isProcessing?: boolean;
-};
-
-const emailQueue = globalForEmailQueue.emailQueue ?? [];
-globalForEmailQueue.emailQueue = emailQueue;
-
-const MAX_ATTEMPTS = 5;
-const BASE_RETRY_DELAY_MS = 5000; // 5 seconds initial delay
-
-if (globalForEmailQueue.isProcessing === undefined) {
-  globalForEmailQueue.isProcessing = false;
-}
+const MAX_ATTEMPTS = 3;
+const BASE_RETRY_DELAY_MS = 2000;
 
 /**
- * Adds an email job to the queue and triggers execution in the background
+ * Sends a confirmation email and awaits completion, with built-in retry logic.
  */
-export function addEmailToQueue(jobData: Omit<EmailJob, 'attempts'>) {
-  const job: EmailJob = {
-    ...jobData,
-    attempts: 0,
-  };
-
-  emailQueue.push(job);
-  console.log(`[EmailQueue] Queued email confirmation for ${job.buyerInfo.email} (Order: ${job.orderId})`);
+export async function addEmailToQueue(jobData: EmailJob) {
+  let attempts = 0;
   
-  // Start the queue runner if it's not already running
-  if (!globalForEmailQueue.isProcessing) {
-    processQueue();
-  }
-}
-
-/**
- * Queue runner loop
- */
-async function processQueue() {
-  if (globalForEmailQueue.isProcessing) return;
-  globalForEmailQueue.isProcessing = true;
-
-  while (emailQueue.length > 0) {
-    const job = emailQueue.shift();
-    if (!job) continue;
-
+  console.log(`[EmailQueue] Queued email confirmation for ${jobData.buyerInfo.email} (Order: ${jobData.orderId})`);
+  
+  while (attempts < MAX_ATTEMPTS) {
     try {
-      console.log(`[EmailQueue] Processing job for ${job.buyerInfo.email}. Attempt ${job.attempts + 1}/${MAX_ATTEMPTS}`);
+      attempts++;
+      console.log(`[EmailQueue] Processing job for ${jobData.buyerInfo.email}. Attempt ${attempts}/${MAX_ATTEMPTS}`);
       
       // Send the email
       await sendConfirmationEmail({
-        ticketId: job.ticketId,
-        orderId: job.orderId,
-        buyerInfo: job.buyerInfo,
-        quantity: job.quantity,
+        ticketId: jobData.ticketId,
+        orderId: jobData.orderId,
+        buyerInfo: jobData.buyerInfo,
+        quantity: jobData.quantity,
       });
 
-      console.log(`[EmailQueue] ✅ Email successfully sent to ${job.buyerInfo.email} for order ${job.orderId}`);
+      console.log(`[EmailQueue] ✅ Email successfully sent to ${jobData.buyerInfo.email} for order ${jobData.orderId}`);
+      return; // Success, exit function
     } catch (error) {
-      console.error(`[EmailQueue] ❌ Error sending email to ${job.buyerInfo.email}:`, error);
+      console.error(`[EmailQueue] ❌ Error sending email to ${jobData.buyerInfo.email} on attempt ${attempts}:`, error);
       
-      job.attempts += 1;
-      
-      if (job.attempts < MAX_ATTEMPTS) {
-        const delay = BASE_RETRY_DELAY_MS * Math.pow(2, job.attempts - 1);
-        console.log(`[EmailQueue] Rescheduling email for ${job.buyerInfo.email} in ${delay / 1000}s (Attempt ${job.attempts + 1}/${MAX_ATTEMPTS})`);
+      if (attempts < MAX_ATTEMPTS) {
+        const delay = BASE_RETRY_DELAY_MS * Math.pow(2, attempts - 1);
+        console.log(`[EmailQueue] Rescheduling email for ${jobData.buyerInfo.email} in ${delay / 1000}s (Attempt ${attempts + 1}/${MAX_ATTEMPTS})`);
         
-        // Wait and put back in queue
-        setTimeout(() => {
-          emailQueue.push(job);
-          if (!globalForEmailQueue.isProcessing) {
-            processQueue();
-          }
-        }, delay);
+        // Wait inline
+        await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
-        console.error(`[EmailQueue] 🚨 Max attempts (${MAX_ATTEMPTS}) reached. Email delivery failed for ${job.buyerInfo.email}`);
+        console.error(`[EmailQueue] 🚨 Max attempts (${MAX_ATTEMPTS}) reached. Email delivery failed for ${jobData.buyerInfo.email}`);
+        throw error;
       }
     }
   }
-
-  globalForEmailQueue.isProcessing = false;
 }
+
