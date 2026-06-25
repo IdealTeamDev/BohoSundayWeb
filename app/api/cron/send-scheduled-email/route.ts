@@ -903,8 +903,8 @@ C&oacute;digo de vestimenta</p><p style="Margin:0;mso-line-height-alt:18px;font-
 // ==========================================
 // 2. CONFIGURACIÓN DE ENVÍO
 // ==========================================
-// Hora programada: 25 de Junio de 2026, 9:35 AM (Hora Colombia: UTC-5)
-const TARGET_DATE_STRING = '2026-06-25T09:35:00-05:00';
+// Hora programada: 25 de Junio de 2026, 9:50 AM (Hora Colombia: UTC-5)
+const TARGET_DATE_STRING = '2026-06-25T09:50:00-05:00';
 
 // Lista de destinatarios
 const RECIPIENTS = [
@@ -936,7 +936,7 @@ export async function GET(req: NextRequest) {
       const secondsLeft = Math.ceil((targetTime.getTime() - now.getTime()) / 1000);
       return NextResponse.json({
         success: false,
-        message: `Aún no es la hora programada. Faltan ${secondsLeft} segundos para el envío (9:35 AM Colombia).`,
+        message: `Aún no es la hora programada. Faltan ${secondsLeft} segundos para el envío (9:50 AM Colombia).`,
         currentTime: now.toISOString(),
         targetTime: targetTime.toISOString()
       }, { status: 200 });
