@@ -44,7 +44,7 @@ export default function ParallaxSection() {
     >
       <div className="text-white text-center">
         <h2 className="text-md font-nunito font-light tracking-widest mb-6">FALTA PARA EL BOHO</h2>
-        <div className="flex gap-3 lg:gap-6 items-end">
+        <div className="font-nunito flex gap-3 lg:gap-6 items-end">
           {[
             { valor: timeLeft.dias, label: "Días" },
             { valor: timeLeft.horas, label: "Horas" },
@@ -59,7 +59,7 @@ export default function ParallaxSection() {
                 <span className="font-nunito text-md font-light mt-1">{label}</span>
               </div>
               {i < arr.length - 1 && (
-                <span className="font-displayFlyer text-md mb-6 lg:mb-10 lg:text-lg">:</span>
+                <span className="font-displayFlyer text-md mb-10 lg:mb-10 lg:text-lg">:</span>
               )}
             </div>
           ))}

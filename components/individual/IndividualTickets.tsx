@@ -43,6 +43,9 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
   const earlyRemaining = ticketStatuses['early']?.remaining ?? earlyTicket?.stock ?? 0;
   const anytimeRemaining = ticketStatuses['anytime']?.remaining ?? anytimeTicket?.stock ?? 0;
 
+  const isEarlySoldOut = earlyRemaining <= 0 || ticketStatuses['early']?.status === 'sold';
+  const isAnytimeSoldOut = anytimeRemaining <= 0 || ticketStatuses['anytime']?.status === 'sold';
+
   return (
     <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center">
       {/* Close button */}
@@ -73,8 +76,13 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
         
         {/* ENTRADA EARLY */}
         <button
-          onClick={() => earlyTicket && setSelectedTicket(earlyTicket)}
-          className="w-full h-36 rounded-2xl overflow-hidden shadow-md relative hover:scale-[1.02] active:scale-[0.99] transition-all duration-200 group cursor-pointer border border-[#BDB39B]/30"
+          onClick={() => !isEarlySoldOut && earlyTicket && setSelectedTicket(earlyTicket)}
+          disabled={isEarlySoldOut}
+          className={`w-full h-36 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
+            isEarlySoldOut
+              ? 'cursor-not-allowed'
+              : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
+          }`}
           style={{
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -82,6 +90,16 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
             backgroundColor: '#4E4F44',
           }}
         >
+          {isEarlySoldOut && (
+            <>
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-black/60 z-10" />
+              {/* Sold out badge */}
+              <div className="absolute top-3 right-3 z-20 border-2 border-[#D0803E] bg-[#F2DCC4] text-[#CF6E19] text-[12px] font-medium pt-1.5 pb-1 px-3 rounded-xl font-nunito">
+                SOLD OUT
+              </div>
+            </>
+          )}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
             <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
               ENTRADA
@@ -96,8 +114,13 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
 
         {/* ENTRADA ANYTIME */}
         <button
-          onClick={() => anytimeTicket && setSelectedTicket(anytimeTicket)}
-          className="w-full h-36 rounded-2xl overflow-hidden shadow-md relative hover:scale-[1.02] active:scale-[0.99] transition-all duration-200 group cursor-pointer border border-[#BDB39B]/30"
+          onClick={() => !isAnytimeSoldOut && anytimeTicket && setSelectedTicket(anytimeTicket)}
+          disabled={isAnytimeSoldOut}
+          className={`w-full h-36 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
+            isAnytimeSoldOut
+              ? 'cursor-not-allowed'
+              : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
+          }`}
           style={{
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -105,6 +128,16 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
             backgroundColor: '#45463C',
           }}
         >
+          {isAnytimeSoldOut && (
+            <>
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-black/60 z-10" />
+              {/* Sold out badge */}
+              <div className="absolute top-3 right-3 z-20 border-2 border-[#D0803E] bg-[#F2DCC4] text-[#D0803E] text-[11px] font-extrabold tracking-wider px-2.5 py-0.5 rounded-xl font-sans">
+                SOLD OUT
+              </div>
+            </>
+          )}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
             <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
               ENTRADA

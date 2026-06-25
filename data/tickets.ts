@@ -77,7 +77,7 @@ export const tickets: Ticket[] = [
     includes: { licor: 'Antes de las 2PM', agua: 0, redBull: 0 },
     available: true,
     position: { x: 0, y: 0 },
-    stock: 50
+    stock: 0
   },
   {
     id: 'anytime',

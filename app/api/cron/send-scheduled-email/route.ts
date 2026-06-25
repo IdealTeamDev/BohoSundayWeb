@@ -801,7 +801,7 @@ C&oacute;digo de vestimenta</p><p style="Margin:0;mso-line-height-alt:18px;font-
 </table>
 </div>
 <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r ey y" style="background:white;background-color:#1e1e1e;margin:0px auto;max-width:600px;">
+<div class="r ey y" style="background:white;background-color:white;margin:0px auto;max-width:600px;">
 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#1e1e1e;background-color:#1e1e1e;width:100%;">
 <tbody>
 <tr>

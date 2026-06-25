@@ -14,15 +14,15 @@ export const Footer = () => {
         {/* Contacto */}
         <div className="lg:flex lg:basis-200">  
           <div className="text-[#D9D1C0] pb-4 pt-8 font-nunito font-extralight border-b lg:border-b-0 lg:border-r lg:border-[#D9D1C0]/30 lg:pr-5 lg:pl-0 lg:py-5">
-            <p className="uppercase mb-3 text-xl font-extralight">Contacto</p>
-            <p className="text-lg mb-2">323 3114995</p>
-            <p className="text-lg underline">info@casacandela.co</p>
+            <p className="uppercase mb-3 text-sm lg:text-lg font-extralight">Contacto</p>
+            <p className="text-sm lg:text-lg mb-2">323 3114995</p>
+            <p className="text-sm lg:text-lg underline">info@casacandela.co</p>
           </div>
 
           {/* Legal */}
           <div className="text-[#D9D1C0] py-4 font-nunito border-b lg:border-b-0 lg:px-6 lg:py-5">
-            <p className="uppercase text-xl font-extralight mb-3">Legal</p>
-            <a href="/policy"><p className=" mb-2 text-lg font-extralight underline">Política de reservas</p></a>
+            <p className="uppercase text-sm lg:text-lg font-extralight mb-3">Legal</p>
+            <a href="/policy"><p className=" mb-2 text-sm lg:text-lg font-extralight underline">Política de reservas</p></a>
           </div>
         </div>
         {/* Redes sociales */}
@@ -48,7 +48,7 @@ export const Footer = () => {
       </div>
 {/* ── Copyright ── */}
       <div className="border-t border-[#D9D1C0]/30 lg:max-w-6xl lg:mx-auto">
-        <p className="font-nunito text-center text-[#D9D1C0] py-4 text-sm">
+        <p className="font-nunito text-center text-[#D9D1C0] py-4 text-xs lg:tex-sm">
           2026 Casa Candela. Todos los derechos reservados.
         </p>
       </div>
