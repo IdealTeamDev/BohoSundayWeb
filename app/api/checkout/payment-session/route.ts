@@ -3,6 +3,7 @@ import { verifyLock, getRemainingSeconds, markAsSold } from '@/lib/lockStore';
 import { createOrder, approveOrder } from '@/lib/orderStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
 import { tickets } from '@/data/tickets';
+import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
@@ -152,9 +153,40 @@ export async function POST(req: NextRequest) {
       });
 
     } else {
-      // Wompi (Simulated flow for this phase)
-      const checkoutUrl = `${siteUrl}/checkout/${ticketId}/wompi-mock?orderId=${orderId}`;
-      console.log(`[Wompi] 🚀 Redirecting to Wompi Mock: ${checkoutUrl}`);
+      // Wompi Integration (Real/Simulated fallback)
+      const wompiPublicKey = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY;
+      const wompiIntegrityKey = process.env.WOMPI_INTEGRITY_KEY;
+
+      // If keys are not configured or are placeholder text, fallback to simulation
+      if (!wompiPublicKey || !wompiIntegrityKey || wompiPublicKey === 'pub_test_' || wompiIntegrityKey === 'test_integrity_') {
+        console.warn('⚠️ Wompi credentials not configured in .env. Falling back to simulated Wompi checkout.');
+        const mockRedirectUrl = `${siteUrl}/checkout/${ticketId}/wompi-mock?orderId=${orderId}`;
+        return NextResponse.json({
+          success: true,
+          orderId,
+          checkoutUrl: mockRedirectUrl,
+        });
+      }
+
+      const amountInCents = totalPrice * 100;
+      const currency = 'COP';
+
+      // Generate Wompi integrity signature: reference + amountInCents + currency + integrityKey
+      const signatureRaw = `${orderId}${amountInCents}${currency}${wompiIntegrityKey}`;
+      const signature = crypto.createHash('sha256').update(signatureRaw).digest('hex');
+
+      // Construct Web Checkout URL
+      let checkoutUrl = `https://checkout.wompi.co/p/?public-key=${wompiPublicKey}&currency=${currency}&amount-in-cents=${amountInCents}&reference=${orderId}&signature%3Aintegrity=${signature}`;
+
+      // Only append redirect-url if it uses secure HTTPS to prevent CloudFront 403 blocks (which trigger on http:// or localhost)
+      const redirectUrl = `${siteUrl}/checkout/${ticketId}/success?orderId=${orderId}`;
+      if (redirectUrl.startsWith('https://')) {
+        checkoutUrl += `&redirect-url=${encodeURIComponent(redirectUrl)}`;
+      } else {
+        console.warn(`[Wompi] ⚠️ siteUrl is not secure HTTPS (${siteUrl}). Omitting 'redirect-url' parameter to prevent CloudFront 403 errors.`);
+      }
+
+      console.log(`[Wompi] 🚀 Redirecting to Wompi Web Checkout: ${checkoutUrl}`);
 
       return NextResponse.json({
         success: true,

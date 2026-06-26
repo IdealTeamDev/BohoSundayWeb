@@ -5,12 +5,15 @@ import { useEffect, useState } from 'react';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
 import { translations } from '@/data/translations';
+import {PlusIcon, DashIcon} from '@primer/octicons-react'
 
 interface CardTicketIndividualProps {
   ticket: Ticket;
   remainingStock: number;
   onClose: () => void;
 }
+// Render the icon component
+
 
 export default function CardTicketIndividual({ ticket, remainingStock, onClose }: CardTicketIndividualProps) {
   const cfg = zoneConfig[ticket.zone];
@@ -97,7 +100,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
           disabled={quantity <= 1 || remainingStock <= 0}
           className="w-9 h-9 rounded-full border border-[#BDB39B] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
         >
-          -
+          <DashIcon size={16} />
         </button>
 
         <div className="flex flex-col items-center">
@@ -119,7 +122,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
           disabled={quantity >= maxAllowed || remainingStock <= 0}
           className="w-9 h-9 rounded-full border border-[#BDB39B] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
         >
-          +
+          <PlusIcon size={16} />
         </button>
       </div>
 
