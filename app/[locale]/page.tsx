@@ -114,7 +114,7 @@ export default function Home() {
         <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-1 font-nunito">{t.home.experience}</p>
         <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-2 font-nunito">{t.home.opportunity}</p>
       </div>
-      <LineUp/>
+      
       <Parallaxsection />
       <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center items-center gap-6 lg:py-10 lg:min-h-[450px] w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 lg:px-0 mb-5">
         <div className="flex lg:col-span-2 justify-center w-full h-full">
