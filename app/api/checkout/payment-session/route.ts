@@ -70,91 +70,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (paymentMethod === 'mercadopago') {
-      const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
-
-      // Fallback: If Mercado Pago credentials are not configured, use a simulation redirect
-      if (!accessToken) {
-        console.warn('⚠️ MERCADOPAGO_ACCESS_TOKEN not configured. Returning simulated Mercado Pago checkout URL.');
-        
-        // Setup a mock URL that takes them directly to our success page with simulation parameters
-        const mockRedirectUrl = `${siteUrl}/checkout/${ticketId}/success?external_reference=${orderId}&payment_id=mock-mp-payment-${Date.now()}&status=approved`;
-        
-        return NextResponse.json({
-          success: true,
-          orderId,
-          checkoutUrl: mockRedirectUrl,
-        });
-      }
-
-      // Prepare expiration date matching the lock expiration
-      const expirationDateStr = new Date(Date.now() + remainingSeconds * 1000).toISOString();
-
-      // Mercado Pago requires HTTPS for auto_return. We only enable it if the siteUrl is secure.
-      const useAutoReturn = siteUrl.startsWith('https://');
-
-      // Create Mercado Pago Preference using REST API
-      const mpPreferenceBody: any = {
-        items: [
-          {
-            id: ticketId,
-            title: `${ticket.name} - Boho Sunday`,
-            quantity: finalQty,
-            unit_price: ticket.price,
-            currency_id: 'COP',
-          },
-        ],
-        payer: {
-          name: buyerInfo.name,
-          email: buyerInfo.email,
-        },
-        back_urls: {
-          success: `${siteUrl}/checkout/${ticketId}/success`,
-          failure: `${siteUrl}/checkout/${ticketId}/success`,
-          pending: `${siteUrl}/checkout/${ticketId}/success`,
-        },
-        external_reference: orderId,
-        notification_url: `${siteUrl}/api/checkout/webhooks/mercadopago`,
-        expires: true,
-        date_of_expiration: expirationDateStr,
-      };
-
-      if (useAutoReturn) {
-        mpPreferenceBody.auto_return = 'approved';
-      }
-
-      console.log(`[Mercado Pago] 🚀 Creating preference for Order ${orderId}. Expiration: ${expirationDateStr}`);
-      
-      const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(mpPreferenceBody),
-      });
-
-      const mpData = await mpRes.json();
-
-      if (!mpRes.ok) {
-        console.error('[Mercado Pago] ❌ Preference creation failed:', mpData);
-        return NextResponse.json({
-          error: 'Error al generar la pasarela de Mercado Pago. Intenta nuevamente.',
-        }, { status: 502 });
-      }
-
-      // Use live init_point for production tokens, sandbox_init_point for testing tokens
-      const isProduction = accessToken.startsWith('APP_USR-');
-      const checkoutUrl = isProduction
-        ? (mpData.init_point || mpData.sandbox_init_point)
-        : (mpData.sandbox_init_point || mpData.init_point);
-      console.log(`[Mercado Pago] ✅ Preference created. Checkout URL: ${checkoutUrl}`);
-
+      // Use Checkout Bricks: return useBricks flag and order details so frontend displays card input
       return NextResponse.json({
         success: true,
         orderId,
-        checkoutUrl,
+        useBricks: true,
+        totalAmount: totalPrice,
       });
-
     } else {
       // Wompi Integration (Real/Simulated fallback)
       const wompiPublicKey = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY;

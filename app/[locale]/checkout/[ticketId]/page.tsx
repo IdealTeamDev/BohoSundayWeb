@@ -8,6 +8,7 @@ import type { BuyerInfo } from '@/types/checkout';
 import { translations } from '@/data/translations';
 import CountdownTimer from '@/components/checkout/CountdownTimer';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
+import MPCardBrick from '@/components/checkout/MPCardBrick';
 
 export default function CheckoutPage() {
   const params = useParams();
@@ -33,6 +34,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [checkoutOrderId, setCheckoutOrderId] = useState<string>('');
+  const [showMPBrick, setShowMPBrick] = useState<boolean>(false);
 
   const ticket = tickets.find((t) => t.id === ticketId);
 
@@ -119,6 +122,14 @@ export default function CheckoutPage() {
         return;
       }
 
+      // If Mercado Pago expects Card Bricks processing
+      if (data.useBricks) {
+        setCheckoutOrderId(data.orderId);
+        setShowMPBrick(true);
+        setLoading(false);
+        return;
+      }
+
       // Save info in sessionStorage as fallback
       sessionStorage.setItem(`checkout_buyer_${ticketId}`, JSON.stringify(buyerInfo));
       sessionStorage.setItem(`checkout_quantity_${ticketId}`, quantity.toString());
@@ -130,6 +141,53 @@ export default function CheckoutPage() {
       console.error('Error submitting payment session:', err);
       setSubmitError(t.checkout.networkError);
       setLoading(false);
+    }
+  }
+
+  async function handleBrickSubmit(param: any) {
+    setLoading(true);
+    setSubmitError(null);
+    try {
+      const response = await fetch('/api/checkout/process-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: checkoutOrderId,
+          ticketId: ticketId,
+          formData: param.formData,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setSubmitError(data.error || 'El pago fue rechazado. Intenta con otra tarjeta.');
+        setLoading(false);
+        setShowMPBrick(false);
+        return;
+      }
+
+      const buyerInfo = {
+        name: form.name,
+        phone: `${form.phonePrefix} ${form.phone}`,
+        email: form.email,
+        docType: form.docType,
+        docNumber: form.docNumber,
+        locale,
+      };
+
+      // Save info in sessionStorage as fallback
+      sessionStorage.setItem(`checkout_buyer_${ticketId}`, JSON.stringify(buyerInfo));
+      sessionStorage.setItem(`checkout_quantity_${ticketId}`, quantity.toString());
+      sessionStorage.setItem(`checkout_order_${ticketId}`, checkoutOrderId);
+
+      // Redirect to success screen
+      router.push(`/checkout/${ticketId}/success?orderId=${checkoutOrderId}`);
+    } catch (err) {
+      console.error('Error submitting brick payment:', err);
+      setSubmitError('Error de conexión al procesar el pago.');
+      setLoading(false);
+      setShowMPBrick(false);
     }
   }
 
@@ -291,6 +349,40 @@ export default function CheckoutPage() {
           </button>
         </div>
       </div>
+
+      {/* Mercado Pago Bricks Modal Overlay */}
+      {showMPBrick && ticket && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-[#F4EFE9] rounded-2xl p-6 w-full max-w-md shadow-lg border border-[#BDB39B]/30 relative flex flex-col items-center">
+            <button
+              onClick={() => setShowMPBrick(false)}
+              className="absolute top-4 right-4 text-[#231E1A] hover:opacity-60 transition-opacity font-semibold w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center cursor-pointer"
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+            
+            <img
+              src="/images/icon/icons-tickets.png"
+              alt="Secure Payment"
+              width={26}
+              className="object-contain mb-3"
+            />
+            
+            <h3 className="font-displayFlyer text-center text-2xl uppercase text-[#231E1A] mb-5 tracking-wide">
+              {locale === 'en' ? 'Card Payment' : 'Pago con Tarjeta'}
+            </h3>
+            
+            <div className="w-full max-h-[80vh] overflow-y-auto">
+              <MPCardBrick
+                amount={ticket.stock !== undefined ? ticket.price * quantity : ticket.price}
+                locale={locale}
+                onSubmit={handleBrickSubmit}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
