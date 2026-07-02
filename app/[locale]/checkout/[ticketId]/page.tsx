@@ -359,7 +359,7 @@ export default function CheckoutPage() {
       {/* Mercado Pago Bricks Modal Overlay */}
       {showMPBrick && ticket && (
         <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-2">
-          <div className="bg-[#F4EFE9] rounded-2xl p-6 w-full max-w-md shadow-lg border border-[#BDB39B]/30 relative flex flex-col items-center">
+          <div className="bg-[#F4EFE9] rounded-2xl p-2 w-full max-w-md shadow-lg border border-[#BDB39B]/30 relative flex flex-col items-center">
             <button
               onClick={() => setShowMPBrick(false)}
               className="absolute top-4 right-4 text-[#231E1A] hover:opacity-60 transition-opacity font-semibold w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center cursor-pointer"
