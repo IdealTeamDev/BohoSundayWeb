@@ -226,7 +226,7 @@ export default function CheckoutPage() {
       {/* Card */}
       <div className="w-full lg:max-w-3xl bg-[#F4EFE9] overflow-hidden lg:shadow-none shadow-sm">
 
-        <div className="px-5 py-4">
+        <div className="px-0 py-4">
           {/* Title with Icon */}
           <div className="flex justify-center items-center gap-3 pb-6 pt-4">
             <img
@@ -374,10 +374,6 @@ export default function CheckoutPage() {
               width={26}
               className="object-contain mb-3"
             />
-            
-            <h3 className="font-displayFlyer text-center text-2xl uppercase text-[#231E1A] mb-5 tracking-wide">
-              {locale === 'en' ? 'Card Payment' : 'Pago con Tarjeta'}
-            </h3>
             
             <div className="w-full max-h-[80vh] overflow-y-auto">
               <MPCardBrick
