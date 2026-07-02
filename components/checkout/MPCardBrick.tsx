@@ -15,6 +15,7 @@ export default function MPCardBrick({
   locale = 'es',
 }: MPCardBrickProps) {
   const [initialized, setInitialized] = useState(false);
+  const [sdkError, setSdkError] = useState<string | null>(null);
   const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
 
   useEffect(() => {
@@ -44,6 +45,14 @@ export default function MPCardBrick({
 
   return (
     <div className="w-full bg-white p-4 rounded-xl border border-[#E8E2DA] shadow-sm max-w-md mx-auto">
+      {sdkError && (
+        <div className="p-3 mb-4 border border-red-200 bg-red-50 rounded-lg text-red-600 font-nunito text-[12px] break-all text-left">
+          <strong>Error de inicialización SDK:</strong> {sdkError}
+          <div className="mt-2 text-[11px] text-gray-500">
+            Asegúrate de no estar mezclando credenciales de prueba con producción (ej. clave pública TEST con token de acceso APP_USR).
+          </div>
+        </div>
+      )}
       <CardPayment
         initialization={{
           amount: amount,
@@ -64,6 +73,7 @@ export default function MPCardBrick({
         }}
         onError={(error) => {
           console.error('[MPCardBrick] Mercado Pago SDK Error:', error);
+          setSdkError(JSON.stringify(error) || error.message || 'Error de comunicación del SDK');
         }}
       />
     </div>
