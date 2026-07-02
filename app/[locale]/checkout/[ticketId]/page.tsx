@@ -226,7 +226,7 @@ export default function CheckoutPage() {
       {/* Card */}
       <div className="w-full lg:max-w-3xl bg-[#F4EFE9] overflow-hidden lg:shadow-none shadow-sm">
 
-        <div className="px-0 py-4">
+        <div className="px-3 py-4">
           {/* Title with Icon */}
           <div className="flex justify-center items-center gap-3 pb-6 pt-4">
             <img
@@ -358,7 +358,7 @@ export default function CheckoutPage() {
 
       {/* Mercado Pago Bricks Modal Overlay */}
       {showMPBrick && ticket && (
-        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-2">
           <div className="bg-[#F4EFE9] rounded-2xl p-6 w-full max-w-md shadow-lg border border-[#BDB39B]/30 relative flex flex-col items-center">
             <button
               onClick={() => setShowMPBrick(false)}

@@ -12,7 +12,7 @@ export default function WhatsAppButton() {
       href="https://api.whatsapp.com/send?phone=573233114995"
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-28 lg:bottom-25 right-10 z-[9980] flex items-center justify-center group"
+      className="fixed bottom-25 lg:bottom-25 right-5 lg:right-10 z-[9980] flex items-center justify-center group"
       aria-label="WhatsApp"
     >
       {/* Tooltip */}
