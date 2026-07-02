@@ -25,9 +25,10 @@ export default function SuccessPage() {
   const ticket = tickets.find((t) => t.id === ticketId);
 
   useEffect(() => {
-    // 1. Get orderId from query params (Mercado Pago redirects or Wompi redirects)
+    // 1. Get orderId and Wompi transaction ID from query params
     const urlOrderId = searchParams.get('orderId') || searchParams.get('external_reference');
     const mpStatus = searchParams.get('status'); // approved, pending, rejected
+    const wompiTxId = searchParams.get('id'); // Wompi redirects with transaction ID as 'id'
     
     // 2. Fallback to sessionStorage
     const sessionOrderId = sessionStorage.getItem(`checkout_order_${ticketId}`);
@@ -55,7 +56,12 @@ export default function SuccessPage() {
 
     const checkOrderStatus = async () => {
       try {
-        const res = await fetch(`/api/checkout/order-status?orderId=${targetOrderId}`);
+        const queryParams = new URLSearchParams({ orderId: targetOrderId });
+        if (wompiTxId) {
+          queryParams.append('wompiTxId', wompiTxId);
+        }
+        
+        const res = await fetch(`/api/checkout/order-status?${queryParams.toString()}`);
         const data = await res.json();
 
         if (!res.ok) {
