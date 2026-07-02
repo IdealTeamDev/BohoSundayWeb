@@ -35,7 +35,7 @@ export const Footer = () => {
         {/* Redes sociales */}
         <div className="lg:pl-16 lg:py-10">
           <div className="flex justify-center lg:justify-start mb-6 mt-3 gap-4">
-            <a href="https://www.instagram.com/casacandela.co?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="><img
+            <a href="https://www.instagram.com/boho.sunday?igsh=OWR1cjRhcmd3dWRh"><img
               src="/images/icon/icon-instagram.png"
               alt="Instagram"
               width={40}

@@ -141,7 +141,7 @@ export default function CheckoutPage() {
     );
   }
 
-  if (!ticket) return null;
+  if (!ticket || ticket.disabled) return null;
 
   const ticketKey = (ticket.id === 'early' || ticket.id === 'anytime') ? ticket.id : ticket.zone;
   const tTicket = t.tickets[ticketKey as keyof typeof t.tickets] as { name: string; description: string; licor: string };

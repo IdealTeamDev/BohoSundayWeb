@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import { useParams } from 'next/navigation';
+import { translations } from '@/data/translations';
 
 const allies = [
   { id: 1, name: '3NomadsX', logo: '/images/allies/3nomads.png' },
@@ -16,6 +18,10 @@ function getDotIndex(current: number, total: number): number {
 }
 
 export default function AlliesCarousel() {
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
+
   const [current, setCurrent] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [direction, setDirection] = useState<'left' | 'right'>('right');
@@ -62,7 +68,7 @@ export default function AlliesCarousel() {
         {/* Titulo */}
         <div className="rounded-lg mt-4 px-4 text-center">
           <p className="font-nunito text-[#F4EFE9] text-[20px] font-light uppercase text-[#7A6F5E]">
-            Aliados
+            {t.allies.title}
           </p>
         </div>
         
@@ -137,7 +143,7 @@ export default function AlliesCarousel() {
         {/* Titulo */}
         <div className="text-center mb-6">
           <p className="font-nunito text-[#F4EFE9] text-[20px] font-light uppercase tracking-widest">
-            Aliados
+            {t.allies.title}
           </p>
         </div>
         {/* Logos Row */}

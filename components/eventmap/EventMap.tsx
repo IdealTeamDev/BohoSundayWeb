@@ -178,7 +178,7 @@ export default function EventMap({ onClose }: EventMapProps) {
         ))}
 
         {/* ── Puntos de tickets ── */}
-        {tickets.filter(t => t.zone !== 'general').map((ticket) => {
+        {tickets.filter(t => t.zone !== 'general' && !t.disabled).map((ticket) => {
           const cfg = zoneConfig[ticket.zone];
           const status = ticketStatuses[ticket.id] || 'available';
           const isAvailable = ticket.available && status === 'available';

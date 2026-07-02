@@ -1,7 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { translations } from "@/data/translations";
 
 export default function ParallaxSection() {
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
 
   const eventDate = new Date("2026-07-26T00:00:00");
 
@@ -43,13 +48,13 @@ export default function ParallaxSection() {
       }}
     >
       <div className="text-white text-center">
-        <h2 className="text-md font-nunito font-light tracking-widest mb-6">FALTA PARA EL BOHO</h2>
+        <h2 className="text-md font-nunito font-light tracking-widest mb-6">{t.parallax.title}</h2>
         <div className="flex gap-3 lg:gap-6 items-end">
           {[
-            { valor: timeLeft.dias, label: "Días" },
-            { valor: timeLeft.horas, label: "Horas" },
-            { valor: timeLeft.minutos, label: "Minutos" },
-            { valor: timeLeft.segundos, label: "Segundos" },
+            { valor: timeLeft.dias, label: t.parallax.days },
+            { valor: timeLeft.horas, label: t.parallax.hours },
+            { valor: timeLeft.minutos, label: t.parallax.minutes },
+            { valor: timeLeft.segundos, label: t.parallax.seconds },
           ].map(({ valor, label }, i, arr) => (
             <div key={label} className="flex items-end gap-4 lg:gap-6">
               <div className="flex flex-col items-center">

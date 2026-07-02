@@ -1,8 +1,8 @@
-
-
 'use client';
  
 import { useState } from 'react';
+import { useParams } from 'next/navigation';
+import { translations } from '@/data/translations';
  
 const djs = [
   { id: 1, name: 'ANTDOT',       photo: '/images/lineup/ANTIDOT.png' },
@@ -15,6 +15,9 @@ const djs = [
  
 export default function LineUp() {
   const [activeId, setActiveId] = useState<number | null>(null);
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
  
   function toggle(id: number) {
     setActiveId((prev) => (prev === id ? null : id));
@@ -26,7 +29,7 @@ export default function LineUp() {
       {/* Title */}
       <div className="text-center mb-6">
         <p className="font-nunito text-[18px] uppercase text-[#000000]">
-          Conoce el
+          {t.lineup.title}
         </p>
         <p className="font-displayFlyer text-[34px] text-[#000000] leading-tight">
           Line Up

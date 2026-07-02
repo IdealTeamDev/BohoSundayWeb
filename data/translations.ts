@@ -20,8 +20,8 @@ export const translations = {
       logoBohoDesk: '/images/logo/logo-boho-colombiamoda-desk.png',
     },
     bottomBar: {
-      map: 'MAPA DE MESAS',
-      individual: 'BOLETERÍA INDIVIDUAL'
+      map: 'COMPRA MESAS',
+      individual: 'COMPRA BOLETERÍA'
     },
     generalModal: {
       title: 'GENERAL',
@@ -34,7 +34,7 @@ export const translations = {
       cancellationTitle: 'Políticas de Cancelación',
       cancellationText: 'Todas las compras son finales. En caso de cancelación por parte del cliente, no aplica devolución del dinero ni reembolso total o parcial.',
       securityTitle: 'Reservas y Seguridad',
-      warning: 'Ten en cuenta que las Camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres), y compartir juntos la mejor energía Boho.',
+      warning: 'Ten en cuenta que las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres), y compartir juntos la mejor energía Boho.',
       items: [
         'La edad mínima para ingresar es de 18 años. ¡Un parche pensado solo para adultos!',
         'Las mascotas no están permitidas. Lo sentimos, peluditos...',
@@ -156,7 +156,7 @@ export const translations = {
       water: 'Agua',
       waters: 'Aguas',
       redbull: 'Red Bull',
-      reserve: 'Reservar esta mesa',
+      reserve: 'Comprar aquí',
       soldout: 'Boleta agotada',
       processingAlert: 'Esta mesa ya está siendo procesada. Intenta en unos minutos.',
       qtyAlert: 'La cantidad seleccionada ya no está disponible. Intenta de nuevo.',
@@ -164,6 +164,19 @@ export const translations = {
       only10: 'Solo se permiten 10 boletas por persona',
       ticketQty_one: 'boleta',
       ticketQty_other: 'boletas',
+    },
+    lineup: {
+      title: 'Conoce el',
+    },
+    parallax: {
+      title: 'FALTA PARA EL BOHO',
+      days: 'Días',
+      hours: 'Horas',
+      minutes: 'Minutos',
+      seconds: 'Segundos',
+    },
+    allies: {
+      title: 'Aliados',
     }
   },
   en: {
@@ -187,8 +200,8 @@ export const translations = {
       logoBohoDesk: '/images/logo/logo-boho-colombiamoda-desk.png',
     },
     bottomBar: {
-      map: 'TABLE MAP',
-      individual: 'INDIVIDUAL TICKETS'
+      map: 'BUY TABLES',
+      individual: 'PURCHASE TICKETS'
     },
     generalModal: {
       title: 'GENERAL',
@@ -331,6 +344,19 @@ export const translations = {
       only10: 'Only 10 tickets per person are allowed',
       ticketQty_one: 'ticket',
       ticketQty_other: 'tickets',
+    },
+    lineup: {
+      title: 'Meet the',
+    },
+    parallax: {
+      title: 'COUNTDOWN TO BOHO',
+      days: 'Days',
+      hours: 'Hours',
+      minutes: 'Minutes',
+      seconds: 'Seconds',
+    },
+    allies: {
+      title: 'Allies',
     }
   }
 };

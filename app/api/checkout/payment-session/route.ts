@@ -142,8 +142,11 @@ export async function POST(req: NextRequest) {
         }, { status: 502 });
       }
 
-      // Return sandbox_init_point for testing, fallback to init_point
-      const checkoutUrl = mpData.sandbox_init_point || mpData.init_point;
+      // Use live init_point for production tokens, sandbox_init_point for testing tokens
+      const isProduction = accessToken.startsWith('APP_USR-');
+      const checkoutUrl = isProduction
+        ? (mpData.init_point || mpData.sandbox_init_point)
+        : (mpData.sandbox_init_point || mpData.init_point);
       console.log(`[Mercado Pago] ✅ Preference created. Checkout URL: ${checkoutUrl}`);
 
       return NextResponse.json({

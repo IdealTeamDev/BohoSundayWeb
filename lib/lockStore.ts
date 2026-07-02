@@ -36,8 +36,12 @@ export function acquireLock(ticketId: string, sessionToken: string, quantity: nu
 
   const ticket = tickets.find((t) => t.id === ticketId);
 
+  if (!ticket || ticket.disabled) {
+    return null;
+  }
+
   // If the ticket has a stock defined (individual ticket)
-  if (ticket && ticket.stock !== undefined) {
+  if (ticket.stock !== undefined) {
     let soldCount = 0;
     let lockedCount = 0;
 

@@ -1,5 +1,6 @@
 import { displayFlyer, nunito, agilera } from "../fonts";
 import SplashScreen from '@/components/splash/SplashScreen';
+import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono} from "next/font/google";
@@ -38,7 +39,7 @@ export default async function RootLayout({
       <body>
         <SplashScreen />
         <main>{children}</main>
-
+        <WhatsAppButton />
       </body>
     </html>
   );

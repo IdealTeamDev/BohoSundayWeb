@@ -50,15 +50,15 @@ export const tickets: Ticket[] = [
 
   
   // ── CAMA VIP · 4 mesas · abajo dispersas ─────────────────────────────
-  { id:'vip-1', zone:'vip', iconCard:'images/icon/icons-tickets.png', img:'images/ticketsImage/CAMA VIP.png', name:'CAMA VIP', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)',  number:1, persons:6, price:5200000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:3, redBull:3}, available:true,  position:{x:35.6,  y:70.2} },
-  { id:'vip-2', zone:'vip', iconCard:'images/icon/icons-tickets.png', img:'images/ticketsImage/CAMA VIP.png', name:'CAMA VIP', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)',  number:2, persons:6, price:5200000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:3, redBull:3}, available:true,  position:{x:55, y:70.2} },
+  { id:'vip-1', zone:'vip', iconCard:'images/icon/icons-tickets.png', img:'images/ticketsImage/CAMA VIP.png', name:'CAMA VIP', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)',  number:1, persons:6, price:5200000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:3, redBull:3}, available:true, disabled:true,  position:{x:35.6,  y:70.2} },
+  { id:'vip-2', zone:'vip', iconCard:'images/icon/icons-tickets.png', img:'images/ticketsImage/CAMA VIP.png', name:'CAMA VIP', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)',  number:2, persons:6, price:5200000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:3, redBull:3}, available:true, disabled:true,  position:{x:55, y:70.2} },
   
 
   // ── MESA CANDELA · 2 mesas ────────────────────────────────────────────
-  { id:'candela-1', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:1, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:84, y:70} },
-  { id:'candela-2', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:2, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:73, y:71} },
-  { id:'candela-3', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:3, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:24, y:71} },
-  { id:'candela-4', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:4, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, position:{x:14, y:70} },
+  { id:'candela-1', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:1, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, disabled:true, position:{x:84, y:70} },
+  { id:'candela-2', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:2, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, disabled:true, position:{x:73, y:71} },
+  { id:'candela-3', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:3, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, disabled:true, position:{x:24, y:71} },
+  { id:'candela-4', zone:'candela', iconCard:'images/icon/icon-mesacandela.png', img:'images/ticketsImage/CANDELA.png', name:'MESA CANDELA', number:4, persons:6, price:2650000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:1, redBull:3}, available:true, disabled:true, position:{x:14, y:70} },
 
   // ── BACKSTAGE · zona única ────────────────────────────────────────────
   { id:'backstage-1', zone:'backstage', img:'images/ticketsImage/BACKSTAGE.png', name:'BACKSTAGE', number:1, persons:20, price:18000000, currency:'COP', includes:{licor:'3 Botellas licor premium', agua:10, redBull:10}, available:true, position:{x:90, y:49.1} },
@@ -72,7 +72,7 @@ export const tickets: Ticket[] = [
     name: 'EARLY',
     number: 1,
     persons: 1,
-    price: 2900,
+    price: 1,
     currency: 'COP',
     includes: { licor: 'Antes de las 2PM', agua: 0, redBull: 0 },
     available: true,
@@ -87,7 +87,7 @@ export const tickets: Ticket[] = [
     name: 'ANYTIME',
     number: 2,
     persons: 1,
-    price: 3400,
+    price: 1,
     currency: 'COP',
     includes: { licor: 'Ingresa en cualquier horario', agua: 0, redBull: 0 },
     available: true,

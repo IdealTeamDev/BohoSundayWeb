@@ -31,6 +31,7 @@ export interface Ticket{
     currency: string;
     includes: TicketIncluides;
     available: boolean;
+    disabled?: boolean; // Para inhabilitar tickets sin mostrarlos en el mapa
     position: { x:number; y:number}; //posicion del mapa
     stock?: number;
 
