@@ -38,22 +38,42 @@ export async function POST(req: NextRequest) {
     const payment = new Payment(client);
 
     // Call Mercado Pago API to create payment
-    console.log(`[Checkout API] 🚀 Processing card payment for Order ${orderId}`);
+    console.log(`[Checkout API] 🚀 Processing payment for Order ${orderId} using method: ${formData.payment_method_id}`);
     
-    const paymentResult = await payment.create({
-      body: {
-        transaction_amount: formData.transaction_amount,
-        token: formData.token,
-        installments: formData.installments,
-        payment_method_id: formData.payment_method_id,
-        issuer_id: formData.issuer_id,
-        payer: {
-          email: formData.payer.email,
-          identification: formData.payer.identification,
-        },
-        external_reference: orderId,
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const callbackUrl = `${siteUrl}/checkout/${ticketId}/success?orderId=${orderId}`;
+
+    const paymentBody: any = {
+      transaction_amount: formData.transaction_amount,
+      payment_method_id: formData.payment_method_id,
+      description: `${ticket.name} - Boho Sunday`,
+      notification_url: `${siteUrl}/api/checkout/webhooks/mercadopago`,
+      external_reference: orderId,
+      payer: {
+        email: formData.payer.email,
+        identification: formData.payer.identification,
+        ...(formData.payer.entity_type && {
+          entity_type: formData.payer.entity_type,
+        }),
       },
-    });
+    };
+
+    // Include token details if paying with credit/debit card
+    if (formData.token) {
+      paymentBody.token = formData.token;
+      paymentBody.installments = formData.installments;
+      paymentBody.issuer_id = formData.issuer_id;
+    }
+
+    // Include PSE specifics if transfer was chosen
+    if (formData.payment_method_id === 'pse') {
+      paymentBody.transaction_details = {
+        financial_institution: formData.transaction_details?.financial_institution,
+      };
+      paymentBody.callback_url = callbackUrl;
+    }
+
+    const paymentResult = await payment.create({ body: paymentBody });
 
     const paymentStatus = paymentResult.status;
     const paymentId = String(paymentResult.id);
@@ -76,8 +96,22 @@ export async function POST(req: NextRequest) {
       });
 
       return NextResponse.json({ success: true, status: 'approved', paymentId });
+    } else if (paymentStatus === 'pending') {
+      // Fetch the redirect bank page (PSE) or print ticket (Efecty) URL
+      const externalResourceUrl =
+        paymentResult.transaction_details?.external_resource_url ||
+        paymentResult.point_of_interaction?.transaction_data?.ticket_url;
+
+      console.log(`[Checkout API] ⏳ Payment pending. External Resource URL: ${externalResourceUrl}`);
+
+      return NextResponse.json({
+        success: true,
+        status: 'pending',
+        paymentId,
+        externalResourceUrl: externalResourceUrl || null,
+      });
     } else {
-      // Payment rejected, failed, or pending
+      // Payment rejected, failed, etc.
       const detail = paymentResult.status_detail || 'Payment was not approved';
       console.warn(`[Checkout API] ❌ Payment not approved for Order ${orderId}: ${paymentStatus} (${detail})`);
       
@@ -87,7 +121,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: false,
         status: paymentStatus,
-        error: `El pago fue rechazado (${detail}). Por favor intenta con otra tarjeta.`,
+        error: `El pago fue rechazado (${detail}). Por favor intenta con otra tarjeta o medio de pago.`,
       });
     }
   } catch (error: any) {

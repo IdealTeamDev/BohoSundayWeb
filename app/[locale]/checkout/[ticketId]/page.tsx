@@ -181,7 +181,13 @@ export default function CheckoutPage() {
       sessionStorage.setItem(`checkout_quantity_${ticketId}`, quantity.toString());
       sessionStorage.setItem(`checkout_order_${ticketId}`, checkoutOrderId);
 
-      // Redirect to success screen
+      // Handle redirect for bank transfer (PSE) or ticket cash payment (Efecty)
+      if (data.status === 'pending' && data.externalResourceUrl) {
+        window.location.href = data.externalResourceUrl;
+        return;
+      }
+
+      // Redirect to success screen (Credit/Debit Card approved)
       router.push(`/checkout/${ticketId}/success?orderId=${checkoutOrderId}`);
     } catch (err) {
       console.error('Error submitting brick payment:', err);

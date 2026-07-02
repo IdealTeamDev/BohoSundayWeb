@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react';
+import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
 interface MPCardBrickProps {
   amount: number;
-  onSubmit: (param: any) => Promise<void>;
+  onSubmit: (param: { selectedPaymentMethod: string; formData: any }) => Promise<void>;
   locale?: string;
 }
 
@@ -53,7 +53,7 @@ function MPCardBrickComponent({
           </div>
         </div>
       )}
-      <CardPayment
+      <Payment
         initialization={{
           amount: amount,
         }}
@@ -64,15 +64,18 @@ function MPCardBrickComponent({
             },
           },
           paymentMethods: {
-            maxInstallments: 1, // Only 1 installment for quick event checkout
+            creditCard: 'all',
+            debitCard: 'all',
+            bankTransfer: 'all',  // PSE Colombia
+            ticket: 'all',        // Efecty Colombia
           }
         }}
-        onSubmit={async (param) => {
-          // Send brick's form data payload to the parent handler
-          await onSubmit(param);
+        onSubmit={async ({ selectedPaymentMethod, formData }) => {
+          // Send both the selected method and form details to the parent
+          await onSubmit({ selectedPaymentMethod, formData });
         }}
         onError={(error) => {
-          console.error('[MPCardBrick] Mercado Pago SDK Error:', error);
+          console.error('[MPPaymentBrick] Mercado Pago SDK Error:', error);
           setSdkError(JSON.stringify(error) || error.message || 'Error de comunicación del SDK');
         }}
       />
