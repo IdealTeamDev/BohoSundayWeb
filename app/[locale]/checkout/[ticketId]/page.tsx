@@ -144,7 +144,7 @@ export default function CheckoutPage() {
     }
   }
 
-  async function handleBrickSubmit(param: any) {
+  const handleBrickSubmit = useCallback(async (param: any) => {
     setLoading(true);
     setSubmitError(null);
     try {
@@ -189,7 +189,7 @@ export default function CheckoutPage() {
       setLoading(false);
       setShowMPBrick(false);
     }
-  }
+  }, [checkoutOrderId, ticketId, form, quantity, locale, router]);
 
   if (sessionValid === null) {
     return (

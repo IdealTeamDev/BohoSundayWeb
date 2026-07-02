@@ -1,7 +1,7 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react';
-import { useEffect, useState } from 'react';
 
 interface MPCardBrickProps {
   amount: number;
@@ -9,7 +9,7 @@ interface MPCardBrickProps {
   locale?: string;
 }
 
-export default function MPCardBrick({
+function MPCardBrickComponent({
   amount,
   onSubmit,
   locale = 'es',
@@ -79,3 +79,6 @@ export default function MPCardBrick({
     </div>
   );
 }
+
+const MPCardBrick = React.memo(MPCardBrickComponent);
+export default MPCardBrick;
