@@ -43,6 +43,10 @@ export async function POST(req: NextRequest) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const callbackUrl = `${siteUrl}/checkout/${ticketId}/success?orderId=${orderId}`;
 
+    // Capture buyer's IP address (mandatory for fraud checks in some methods like PSE)
+    const xForwardedFor = req.headers.get('x-forwarded-for');
+    const ip = xForwardedFor ? xForwardedFor.split(',')[0].trim() : '127.0.0.1';
+
     const paymentBody: any = {
       transaction_amount: formData.transaction_amount,
       payment_method_id: formData.payment_method_id,
@@ -55,6 +59,9 @@ export async function POST(req: NextRequest) {
         ...(formData.payer.entity_type && {
           entity_type: formData.payer.entity_type,
         }),
+      },
+      additional_info: {
+        ip_address: ip,
       },
     };
 
