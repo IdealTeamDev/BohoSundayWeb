@@ -51,7 +51,7 @@ export const tickets: Ticket[] = [
   
   // ── CAMA VIP · 4 mesas · abajo dispersas ─────────────────────────────
   { id:'vip-1', zone:'vip', iconCard:'images/icon/icons-tickets.png', img:'images/ticketsImage/CAMA VIP.png', name:'CAMA VIP', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)',  number:1, persons:6, price:5200000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:3, redBull:3}, available:true, disabled:true,  position:{x:35.6,  y:70.2} },
-  { id:'vip-2', zone:'vip', iconCard:'images/icon/icons-tickets.png', img:'images/ticketsImage/CAMA VIP.png', name:'CAMA VIP', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)',  number:2, persons:6, price:5200000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:3, redBull:3}, available:true, disabled:true,  position:{x:55, y:70.2} },
+  { id:'vip-2', zone:'vip', iconCard:'images/icon/icons-tickets.png', img:'images/ticketsImage/CAMA VIP.png', name:'CAMA VIP', description:'Las camas fueron creadas para disfrutarse entre amigos, en grupos mixtos (hombres y mujeres)',  number:2, persons:6, price:100000, currency:'COP', includes:{licor:'1 Botella licor premium', agua:3, redBull:3}, available:true, disabled:true,  position:{x:55, y:70.2} },
   
 
   // ── MESA CANDELA · 2 mesas ────────────────────────────────────────────
