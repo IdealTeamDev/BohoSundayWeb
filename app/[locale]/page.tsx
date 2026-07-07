@@ -95,6 +95,7 @@ export default function Home() {
             <img
               src="images/logo/logo-casa-candela.png"
               alt="Boho Sunday Colombia Moda Edition"
+              
               width={280}
               height={25}
             />
@@ -102,7 +103,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="px-7 mb-6 text-center"> 
+      <div className="px-10 mb-10 lg:mb-15 mt-5 text-center"> 
         <img
             className="inline-block"
             src="images/icon/icon-palm.png"
