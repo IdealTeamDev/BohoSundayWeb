@@ -111,7 +111,7 @@ export default function EventMap({ onClose }: EventMapProps) {
           ✕
         </button>
       {/* ── Legend ── */}
-      <div className="relative grid grid-cols-2 lg:grid-cols-3 lg:px-18 gap-2 justify-items-left px-4 pt-3 pb-2">
+      <div className="relative grid grid-cols-2 lg:grid-cols-2 lg:px-18 gap-2 justify-items-left px-4 pt-3 pb-2">
         
 
         {Object.entries(zoneConfig).filter(([zone]) => zone !== 'general' && zone !== 'vip' && zone !== 'candela').map(([zone, cfg]) => {
