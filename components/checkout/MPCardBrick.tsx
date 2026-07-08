@@ -66,8 +66,6 @@ function MPCardBrickComponent({
           paymentMethods: {
             creditCard: 'all',
             debitCard: 'all',
-            bankTransfer: 'all',  // PSE Colombia
-            ticket: 'all',        // Efecty Colombia
           }
         }}
         onSubmit={async ({ selectedPaymentMethod, formData }) => {

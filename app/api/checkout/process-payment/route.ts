@@ -47,6 +47,11 @@ export async function POST(req: NextRequest) {
     const xForwardedFor = req.headers.get('x-forwarded-for');
     const ip = xForwardedFor ? xForwardedFor.split(',')[0].trim() : '127.0.0.1';
 
+    // Extract first and last names (required for PSE/Bank Transfers in Mercado Pago)
+    const nameParts = (order.buyerInfo.name || '').trim().split(/\s+/);
+    const firstName = formData.payer?.first_name || nameParts[0] || 'Cliente';
+    const lastName = formData.payer?.last_name || nameParts.slice(1).join(' ') || 'Boho';
+
     const paymentBody: any = {
       transaction_amount: formData.transaction_amount,
       payment_method_id: formData.payment_method_id,
@@ -56,6 +61,8 @@ export async function POST(req: NextRequest) {
       payer: {
         email: formData.payer.email,
         identification: formData.payer.identification,
+        first_name: firstName,
+        last_name: lastName,
         ...(formData.payer.entity_type && {
           entity_type: formData.payer.entity_type,
         }),
@@ -133,8 +140,11 @@ export async function POST(req: NextRequest) {
     }
   } catch (error: any) {
     console.error('[ProcessPayment] 🚨 Exception processing payment:', error);
+    // Extract detailed Mercado Pago API response errors if present
+    const detailedError = error.apiResponse?.body || error.cause || error.message || error;
+    console.error('Detailed Error object:', JSON.stringify(detailedError));
     return NextResponse.json({
-      error: error.message || 'Error interno al procesar el pago',
+      error: typeof detailedError === 'object' ? JSON.stringify(detailedError) : String(detailedError),
     }, { status: 500 });
   }
 }

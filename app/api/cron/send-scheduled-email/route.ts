@@ -903,8 +903,8 @@ C&oacute;digo de vestimenta</p><p style="Margin:0;mso-line-height-alt:18px;font-
 // ==========================================
 // 2. CONFIGURACIÓN DE ENVÍO
 // ==========================================
-// Hora programada: 25 de Junio de 2026, 2:00 PM (Hora Colombia: UTC-5)
-const TARGET_DATE_STRING = '2026-06-25T14:00:00-05:00';
+// Hora programada: 25 de Julio de 2026, 2:00 PM (Hora Colombia: UTC-5)
+const TARGET_DATE_STRING = '2026-07-25T14:00:00-05:00';
 
 // Lista de destinatarios
 const RECIPIENTS = [
@@ -913,7 +913,7 @@ const RECIPIENTS = [
 ];
 
 // Asunto del correo
-const EMAIL_SUBJECT = 'Boho Sunday - Correo Programado de Prueba';
+const EMAIL_SUBJECT = 'Boho Sunday - Correo Programado';
 
 // Bandera en memoria para evitar envíos duplicados en el mismo contenedor
 let hasBeenSentInCurrentContainer = false;
@@ -928,6 +928,16 @@ export async function GET(req: NextRequest) {
 
     console.log(`[Scheduled Email] 🕒 Current time (UTC): ${now.toISOString()}`);
     console.log(`[Scheduled Email] 🎯 Target time (UTC): ${targetTime.toISOString()}`);
+
+    // Evitar ejecuciones en años diferentes al 2026 (por ejemplo 2027+) para que sea un envío único
+    if (now.getFullYear() !== 2026 && !force) {
+      return NextResponse.json({
+        success: false,
+        message: `El envío programado está configurado estrictamente para el año 2026. Año actual: ${now.getFullYear()}.`,
+        currentTime: now.toISOString(),
+        targetTime: targetTime.toISOString()
+      }, { status: 200 });
+    }
 
     // Verificar si ya pasó la hora programada (o si se fuerza el envío manualmente)
     const isPastTargetTime = now.getTime() >= targetTime.getTime();
