@@ -10,7 +10,7 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
   const baseUrl = process.env.WORDPRESS_API_URL || 'https://bohosundayapp.wpenginepowered.com';
   
   // WordPress plain permalink route fallback for robustness
-  const url = `${baseUrl.replace(/\/$/, '')}/?rest_route=/wp/v2/camas&nocache=${Date.now()}`;
+  const url = `${baseUrl.replace(/\/$/, '')}/?rest_route=/wp/v2/camas&lang=es&nocache=${Date.now()}`;
   
   try {
     const res = await fetch(url, {
@@ -36,9 +36,16 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
     const wordpressTickets: Ticket[] = wpData.map((item: any) => {
       const acf = item.acf || {};
       
-      // Resolve zone safely (handles string, term object, or array of terms)
+      // Resolve zone safely (handles class_list categories slug extraction or direct acf zone)
       let zoneVal: ZoneType = 'general';
-      if (acf.zone) {
+      if (item.class_list && Array.isArray(item.class_list)) {
+        const catClass = item.class_list.find((cls: string) => cls.startsWith('categoria-de-camas-'));
+        if (catClass) {
+          zoneVal = catClass.replace('categoria-de-camas-', '').toLowerCase() as ZoneType;
+        }
+      }
+      
+      if (zoneVal === 'general' && acf.zone) {
         if (typeof acf.zone === 'string') {
           zoneVal = acf.zone as ZoneType;
         } else if (typeof acf.zone === 'object') {
@@ -56,20 +63,30 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
       let licor = '';
       let agua = 0;
       let redBull = 0;
+      let row: any = null;
       if (Array.isArray(acf.includes) && acf.includes.length > 0) {
-        const row = acf.includes[0];
+        row = acf.includes[0];
         licor = row.licor || '';
         agua = Number(row.agua) || 0;
         redBull = Number(row.redbull) || 0;
       }
       
-      // Resolve position safely from Repeater
+      // Resolve available safely from root or nested row
+      let isAvailable = true;
+      if (acf.available !== undefined) {
+        isAvailable = acf.available === true || acf.available === '1' || acf.available === 1;
+      } else if (row && row.available !== undefined) {
+        isAvailable = row.available === true || row.available === '1' || row.available === 1;
+      }
+      
+      // Resolve position safely from root or nested row
       let x = 0;
       let y = 0;
-      if (Array.isArray(acf.position) && acf.position.length > 0) {
-        const row = acf.position[0];
-        x = Number(row.x) || 0;
-        y = Number(row.y) || 0;
+      const positionSource = acf.position || (row ? row.position : null);
+      if (Array.isArray(positionSource) && positionSource.length > 0) {
+        const posRow = positionSource[0];
+        x = Number(posRow.x) || 0;
+        y = Number(posRow.y) || 0;
       }
       
       return {
@@ -84,8 +101,8 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
         price: Number(acf.price) || 0,
         currency: acf.currency || 'COP',
         includes: { licor, agua, redBull },
-        available: acf.available === true || acf.available === '1',
-        disabled: acf.available !== true && acf.available !== '1',
+        available: isAvailable,
+        disabled: !isAvailable,
         position: { x, y }
       };
     });
