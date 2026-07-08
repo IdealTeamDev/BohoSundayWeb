@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, approveOrder, rejectOrder } from '@/lib/orderStore';
 import { markAsSold, releaseLock } from '@/lib/lockStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
+import { getDynamicTickets } from '@/lib/tickets';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +19,8 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Wompi Mock Webhook] 🔔 Simulating webhook. Order ID: ${orderId}, Status: ${status}`);
 
+    const tickets = await getDynamicTickets();
+
     if (status === 'approved') {
       if (order.status === 'approved') {
         return NextResponse.json({ success: true, message: 'Already approved' });
@@ -29,7 +32,7 @@ export async function POST(req: NextRequest) {
       approveOrder(orderId, paymentId);
 
       // Lock ticket permanently
-      markAsSold(order.ticketId, order.sessionToken);
+      markAsSold(order.ticketId, order.sessionToken, tickets);
 
       // Queue and send confirmation email
       await addEmailToQueue({
@@ -45,7 +48,7 @@ export async function POST(req: NextRequest) {
       rejectOrder(orderId, 'Pago rechazado en el simulador de Wompi.');
       
       // Release lock
-      releaseLock(order.ticketId, order.sessionToken);
+      releaseLock(order.ticketId, order.sessionToken, tickets);
       console.log(`[Wompi Mock Webhook] ❌ Order ${orderId} rejected and ticket lock released.`);
     }
 

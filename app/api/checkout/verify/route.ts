@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyLock, getRemainingSeconds, getLockQuantity } from '@/lib/lockStore';
+import { getDynamicTickets } from '@/lib/tickets';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -15,9 +16,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ valid: false, reason: 'no_session' });
   }
 
-  const valid = verifyLock(ticketId, sessionToken);
-  const remainingSeconds = valid ? getRemainingSeconds(ticketId, sessionToken) : 0;
-  const quantity = valid ? getLockQuantity(ticketId, sessionToken) : 0;
+  const tickets = await getDynamicTickets();
+  const valid = verifyLock(ticketId, sessionToken, tickets);
+  const remainingSeconds = valid ? getRemainingSeconds(ticketId, sessionToken, tickets) : 0;
+  const quantity = valid ? getLockQuantity(ticketId, sessionToken, tickets) : 0;
+  const ticket = tickets.find((t) => t.id === ticketId);
 
-  return NextResponse.json({ valid, remainingSeconds, sessionToken, quantity });
+  return NextResponse.json({ valid, remainingSeconds, sessionToken, quantity, ticket });
 }

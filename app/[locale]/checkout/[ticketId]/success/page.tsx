@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { tickets } from '@/data/tickets';
 import type { BuyerInfo } from '@/types/checkout';
+import type { Ticket } from '@/types';
 import Image from 'next/image';
 import { translations } from '@/data/translations';
 
@@ -22,7 +22,23 @@ export default function SuccessPage() {
   const [status, setStatus] = useState<'loading' | 'approved' | 'rejected' | 'pending_verification'>('loading');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const ticket = tickets.find((t) => t.id === ticketId);
+  const [ticket, setTicket] = useState<Ticket | null>(null);
+
+  useEffect(() => {
+    async function loadTicket() {
+      try {
+        const res = await fetch('/api/tickets');
+        if (res.ok) {
+          const ticketsList: Ticket[] = await res.json();
+          const tk = ticketsList.find(t => t.id === ticketId);
+          if (tk) setTicket(tk);
+        }
+      } catch (err) {
+        console.error('Error fetching ticket:', err);
+      }
+    }
+    loadTicket();
+  }, [ticketId]);
 
   useEffect(() => {
     // 1. Get orderId and Wompi transaction ID from query params

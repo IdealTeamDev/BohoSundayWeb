@@ -3,7 +3,7 @@ import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getOrder, approveOrder, rejectOrder } from '@/lib/orderStore';
 import { markAsSold, releaseLock } from '@/lib/lockStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
-import { tickets } from '@/data/tickets';
+import { getDynamicTickets } from '@/lib/tickets';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, status: 'approved' });
     }
 
+    const tickets = await getDynamicTickets();
     const ticket = tickets.find((t) => t.id === ticketId);
     if (!ticket) {
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
       approveOrder(orderId, paymentId);
 
       // Permanently lock ticket
-      markAsSold(order.ticketId, order.sessionToken);
+      markAsSold(order.ticketId, order.sessionToken, tickets);
 
       // Queue email confirmation
       await addEmailToQueue({
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
       console.warn(`[Checkout API] ❌ Payment not approved for Order ${orderId}: ${paymentStatus} (${detail})`);
       
       rejectOrder(orderId, `Mercado Pago payment status: ${paymentStatus}. Detail: ${detail}`);
-      releaseLock(order.ticketId, order.sessionToken);
+      releaseLock(order.ticketId, order.sessionToken, tickets);
 
       return NextResponse.json({
         success: false,

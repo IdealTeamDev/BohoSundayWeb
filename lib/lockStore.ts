@@ -1,5 +1,6 @@
 import type { TicketLock } from '@/types/checkout';
 import { tickets } from '@/data/tickets';
+import type { Ticket } from '@/types';
 
 // In-memory store — replace with Redis when DB is ready
 // We use globalThis to persist the Map in Next.js development mode across HMR/hot-reloads
@@ -31,10 +32,11 @@ function cleanExpiredLocks(): void {
  * Try to lock a ticket for a session.
  * Returns the lock if successful, null if already locked or no stock.
  */
-export function acquireLock(ticketId: string, sessionToken: string, quantity: number = 1): TicketLock | null {
+export function acquireLock(ticketId: string, sessionToken: string, quantity: number = 1, ticketsList?: Ticket[]): TicketLock | null {
   cleanExpiredLocks();
 
-  const ticket = tickets.find((t) => t.id === ticketId);
+  const list = ticketsList || tickets;
+  const ticket = list.find((t) => t.id === ticketId);
 
   if (!ticket || ticket.disabled) {
     return null;
@@ -99,8 +101,9 @@ export function acquireLock(ticketId: string, sessionToken: string, quantity: nu
 /**
  * Verify a session still holds the lock for a ticket.
  */
-export function verifyLock(ticketId: string, sessionToken: string): boolean {
-  const ticket = tickets.find((t) => t.id === ticketId);
+export function verifyLock(ticketId: string, sessionToken: string, ticketsList?: Ticket[]): boolean {
+  const list = ticketsList || tickets;
+  const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
 
   const lock = lockStore.get(lockKey);
@@ -124,8 +127,9 @@ export function verifyLock(ticketId: string, sessionToken: string): boolean {
 /**
  * Release a lock — call after successful payment or user cancels.
  */
-export function releaseLock(ticketId: string, sessionToken: string): void {
-  const ticket = tickets.find((t) => t.id === ticketId);
+export function releaseLock(ticketId: string, sessionToken: string, ticketsList?: Ticket[]): void {
+  const list = ticketsList || tickets;
+  const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
 
   const lock = lockStore.get(lockKey);
@@ -137,8 +141,9 @@ export function releaseLock(ticketId: string, sessionToken: string): void {
 /**
  * Mark a ticket as sold — permanent, no expiry.
  */
-export function markAsSold(ticketId: string, sessionToken?: string): void {
-  const ticket = tickets.find((t) => t.id === ticketId);
+export function markAsSold(ticketId: string, sessionToken?: string, ticketsList?: Ticket[]): void {
+  const list = ticketsList || tickets;
+  const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined && sessionToken) ? `${ticketId}_${sessionToken}` : ticketId;
 
   const lock = lockStore.get(lockKey);
@@ -150,8 +155,9 @@ export function markAsSold(ticketId: string, sessionToken?: string): void {
 /**
  * Get remaining lock time in seconds for display.
  */
-export function getRemainingSeconds(ticketId: string, sessionToken: string): number {
-  const ticket = tickets.find((t) => t.id === ticketId);
+export function getRemainingSeconds(ticketId: string, sessionToken: string, ticketsList?: Ticket[]): number {
+  const list = ticketsList || tickets;
+  const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
 
   const lock = lockStore.get(lockKey);
@@ -166,8 +172,9 @@ export function getRemainingSeconds(ticketId: string, sessionToken: string): num
 /**
  * Get current status of a ticket.
  */
-export function getTicketStatus(ticketId: string): 'available' | 'locked' | 'sold' {
-  const ticket = tickets.find((t) => t.id === ticketId);
+export function getTicketStatus(ticketId: string, ticketsList?: Ticket[]): 'available' | 'locked' | 'sold' {
+  const list = ticketsList || tickets;
+  const ticket = list.find((t) => t.id === ticketId);
 
   if (ticket && ticket.stock !== undefined) {
     cleanExpiredLocks();
@@ -228,8 +235,9 @@ export function getRemainingStock(ticketId: string, totalStock: number): number 
 /**
  * Get quantity for an active lock.
  */
-export function getLockQuantity(ticketId: string, sessionToken: string): number {
-  const ticket = tickets.find((t) => t.id === ticketId);
+export function getLockQuantity(ticketId: string, sessionToken: string, ticketsList?: Ticket[]): number {
+  const list = ticketsList || tickets;
+  const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
 
   const lock = lockStore.get(lockKey);

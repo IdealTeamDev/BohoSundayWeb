@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { tickets } from '@/data/tickets';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { BuyerInfo } from '@/types/checkout';
+import type { Ticket } from '@/types';
 import { translations } from '@/data/translations';
 import CountdownTimer from '@/components/checkout/CountdownTimer';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
@@ -37,7 +37,7 @@ export default function CheckoutPage() {
   const [checkoutOrderId, setCheckoutOrderId] = useState<string>('');
   const [showMPBrick, setShowMPBrick] = useState<boolean>(false);
 
-  const ticket = tickets.find((t) => t.id === ticketId);
+  const [ticket, setTicket] = useState<Ticket | null>(null);
 
   const verifySession = useCallback(async () => {
     const res = await fetch(`/api/checkout/verify?ticketId=${ticketId}`);
@@ -48,6 +48,7 @@ export default function CheckoutPage() {
       if (typeof data.quantity === 'number') {
         setQuantity(data.quantity);
       }
+      setTicket(data.ticket);
     }
     if (!data.valid) router.replace(locale === 'en' ? '/en' : '/');
   }, [ticketId, router, locale]);

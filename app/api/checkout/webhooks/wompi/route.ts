@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, approveOrder, rejectOrder } from '@/lib/orderStore';
 import { markAsSold, releaseLock } from '@/lib/lockStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
-import { tickets } from '@/data/tickets';
+import { getDynamicTickets } from '@/lib/tickets';
 import crypto from 'crypto';
 
 // Helper to validate the Wompi signature
@@ -83,6 +83,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 200 }); // Return 200 to Wompi so it stops retrying
     }
 
+    const tickets = await getDynamicTickets();
+
     if (status === 'APPROVED') {
       if (order.status === 'approved') {
         console.log(`[Wompi Webhook] ℹ️ Order ${orderId} is already approved. Idempotent success.`);
@@ -100,7 +102,7 @@ export async function POST(req: NextRequest) {
       if (Math.abs(amountInCents - expectedAmountInCents) > 100) { // Tolerate small rounding diff (up to $1 COP in cents)
         console.error(`[Wompi Webhook] 🚨 Amount mismatch! Paid cents: ${amountInCents}, Expected cents: ${expectedAmountInCents}`);
         rejectOrder(orderId, `Amount mismatch. Paid cents: ${amountInCents}, expected: ${expectedAmountInCents}`);
-        releaseLock(order.ticketId, order.sessionToken);
+        releaseLock(order.ticketId, order.sessionToken, tickets);
         return NextResponse.json({ error: 'Amount mismatch' }, { status: 200 });
       }
 
@@ -108,7 +110,7 @@ export async function POST(req: NextRequest) {
       approveOrder(orderId, paymentId);
 
       // Permanently lock ticket
-      markAsSold(order.ticketId, order.sessionToken);
+      markAsSold(order.ticketId, order.sessionToken, tickets);
 
       // Queue email confirmation
       await addEmailToQueue({
@@ -123,7 +125,7 @@ export async function POST(req: NextRequest) {
     } else if (status === 'DECLINED' || status === 'VOIDED' || status === 'ERROR') {
       console.log(`[Wompi Webhook] ❌ Transaction for Order ${orderId} failed with status ${status}. Rejecting order and releasing lock.`);
       rejectOrder(orderId, `Wompi payment failed with status: ${status}`);
-      releaseLock(order.ticketId, order.sessionToken);
+      releaseLock(order.ticketId, order.sessionToken, tickets);
     }
 
     return NextResponse.json({ success: true });

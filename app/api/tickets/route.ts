@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { tickets } from '@/data/tickets';
+import { getDynamicTickets } from '@/lib/tickets';
 import { getTicketStatus, getRemainingStock } from '@/lib/lockStore';
 
 export async function GET() {
   try {
+    const tickets = await getDynamicTickets();
     const data = tickets.map((t) => ({
-      id: t.id,
+      ...t,
       status: getTicketStatus(t.id),
       remaining: t.stock !== undefined ? getRemainingStock(t.id, t.stock) : undefined,
     }));

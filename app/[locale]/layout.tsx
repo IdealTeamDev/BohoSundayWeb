@@ -35,6 +35,7 @@ export default async function RootLayout({
     <html
       lang={locale || "es"}
       className={`${displayFlyer.variable} ${nunito.variable} ${agilera.variable}`}
+      suppressHydrationWarning
     >
       <body>
         <SplashScreen />

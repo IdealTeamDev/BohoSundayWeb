@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { tickets } from '@/data/tickets';
+import { getDynamicTickets } from '@/lib/tickets';
 import type { BuyerInfo } from '@/types/checkout';
 
 interface SendMailParams {
@@ -848,6 +848,7 @@ async function fetchQrBuffer(orderId: string, ticketId: string, email: string): 
  * Sends a confirmation email to the buyer containing the ticket info and access QR code
  */
 export async function sendConfirmationEmail({ ticketId, orderId, buyerInfo, quantity = 1 }: SendMailParams) {
+  const tickets = await getDynamicTickets();
   const ticket = tickets.find((t) => t.id === ticketId);
   if (!ticket) {
     throw new Error(`Ticket with ID ${ticketId} not found in database.`);

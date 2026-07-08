@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { tickets } from '@/data/tickets';
+import type { Ticket } from '@/types';
 
 export default function WompiMockPage() {
   const params = useParams();
@@ -15,7 +15,23 @@ export default function WompiMockPage() {
   const [error, setError] = useState<string | null>(null);
   const [orderData, setOrderData] = useState<any>(null);
 
-  const ticket = tickets.find((t) => t.id === ticketId);
+  const [ticket, setTicket] = useState<Ticket | null>(null);
+
+  useEffect(() => {
+    async function loadTicket() {
+      try {
+        const res = await fetch('/api/tickets');
+        if (res.ok) {
+          const ticketsList: Ticket[] = await res.json();
+          const tk = ticketsList.find(t => t.id === ticketId);
+          if (tk) setTicket(tk);
+        }
+      } catch (err) {
+        console.error('Error fetching ticket:', err);
+      }
+    }
+    loadTicket();
+  }, [ticketId]);
 
   // Fetch current order status from orderStore to display details
   useEffect(() => {

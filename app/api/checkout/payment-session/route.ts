@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyLock, getRemainingSeconds, markAsSold } from '@/lib/lockStore';
 import { createOrder, approveOrder } from '@/lib/orderStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
-import { tickets } from '@/data/tickets';
+import { getDynamicTickets } from '@/lib/tickets';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -19,8 +19,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Sesión inválida o expirada' }, { status: 401 });
     }
 
+    const tickets = await getDynamicTickets();
+
     // Verify lock is still valid
-    const isLocked = verifyLock(ticketId, sessionToken);
+    const isLocked = verifyLock(ticketId, sessionToken, tickets);
     if (!isLocked) {
       return NextResponse.json({
         error: 'Tu tiempo de reserva expiró. Por favor regresa a la página principal.',
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
 
-    const remainingSeconds = getRemainingSeconds(ticketId, sessionToken);
+    const remainingSeconds = getRemainingSeconds(ticketId, sessionToken, tickets);
     const isIndividual = ticket.stock !== undefined;
     const finalQty = isIndividual ? quantity : 1;
     const totalPrice = ticket.price * finalQty;
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
     if (process.env.BYPASS_PAYMENT === 'true') {
       console.log(`[Bypass Payment] ⚡ BYPASS_PAYMENT is enabled. Simulating instant approval...`);
       approveOrder(orderId, `bypass-${Date.now()}`);
-      markAsSold(ticketId, sessionToken);
+      markAsSold(ticketId, sessionToken, tickets);
       try {
         await addEmailToQueue({
           ticketId,

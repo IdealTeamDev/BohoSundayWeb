@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, approveOrder, rejectOrder } from '@/lib/orderStore';
 import { markAsSold, releaseLock } from '@/lib/lockStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
-import { tickets } from '@/data/tickets';
+import { getDynamicTickets } from '@/lib/tickets';
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const tickets = await getDynamicTickets();
+
     // 1. If payment is APPROVED
     if (paymentStatus === 'approved') {
       if (order.status === 'approved') {
@@ -114,7 +116,7 @@ export async function POST(req: NextRequest) {
       if (Math.abs(transactionAmount - expectedAmount) > 1) {
         console.error(`[Webhook Mercado Pago] 🚨 Payment amount mismatch! Paid: ${transactionAmount}, Expected: ${expectedAmount}`);
         rejectOrder(orderId, `Amount mismatch. Paid ${transactionAmount}, expected ${expectedAmount}`);
-        releaseLock(order.ticketId, order.sessionToken);
+        releaseLock(order.ticketId, order.sessionToken, tickets);
         return new Response(JSON.stringify({ error: 'Amount mismatch' }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -125,7 +127,7 @@ export async function POST(req: NextRequest) {
       approveOrder(orderId, paymentId);
 
       // Permanently claim ticket lock
-      markAsSold(order.ticketId, order.sessionToken);
+      markAsSold(order.ticketId, order.sessionToken, tickets);
 
       // Queue and send confirmation email
       await addEmailToQueue({
@@ -141,7 +143,7 @@ export async function POST(req: NextRequest) {
       // 2. If payment was REJECTED / CANCELLED
       console.log(`[Webhook Mercado Pago] ❌ Payment for Order ${orderId} was ${paymentStatus}. Rejecting order & releasing lock.`);
       rejectOrder(orderId, `Payment ${paymentStatus} by provider.`);
-      releaseLock(order.ticketId, order.sessionToken);
+      releaseLock(order.ticketId, order.sessionToken, tickets);
     }
 
     return new Response(JSON.stringify({ success: true }), {

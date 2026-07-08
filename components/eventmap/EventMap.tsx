@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { tickets } from '@/data/tickets';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
 import TicketCard from '@/components/cardticket/TicketCard';
@@ -55,27 +54,29 @@ export default function EventMap({ onClose }: EventMapProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [ticketStatuses, setTicketStatuses] = useState<Record<string, 'available' | 'locked' | 'sold'>>({});
+  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dotSize, setDotSize] = useState(DOT_PX);
 
   useEffect(() => {
-    async function fetchStatuses() {
+    async function fetchTicketsAndStatuses() {
       try {
-        const res = await fetch('/api/tickets');
+        const res = await fetch(`/api/tickets?nocache=${Date.now()}`);
         if (res.ok) {
-          const data = await res.json();
+          const data: Ticket[] = await res.json();
+          setAllTickets(data);
           const mapping: Record<string, 'available' | 'locked' | 'sold'> = {};
-          data.forEach((item: { id: string; status: 'available' | 'locked' | 'sold' }) => {
+          data.forEach((item: any) => {
             mapping[item.id] = item.status;
           });
           setTicketStatuses(mapping);
         }
       } catch (error) {
-        console.error('Error fetching ticket statuses:', error);
+        console.error('Error fetching tickets and statuses:', error);
       }
     }
-    fetchStatuses();
-    const interval = setInterval(fetchStatuses, 5000);
+    fetchTicketsAndStatuses();
+    const interval = setInterval(fetchTicketsAndStatuses, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -178,7 +179,7 @@ export default function EventMap({ onClose }: EventMapProps) {
         ))}
 
         {/* ── Puntos de tickets ── */}
-        {tickets.filter(t => t.zone !== 'general' && !t.disabled && t.zone !== 'vip' && t.zone !== 'candela').map((ticket) => {
+        {allTickets.filter(t => t.zone !== 'general' && !t.disabled && t.zone !== 'vip' && t.zone !== 'candela').map((ticket) => {
           const cfg = zoneConfig[ticket.zone];
           const status = ticketStatuses[ticket.id] || 'available';
           const isAvailable = ticket.available && status === 'available';

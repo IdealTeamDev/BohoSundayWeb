@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, approveOrder, rejectOrder } from '@/lib/orderStore';
 import { markAsSold, releaseLock } from '@/lib/lockStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
+import { getDynamicTickets } from '@/lib/tickets';
 
 export async function GET(req: NextRequest) {
   try {
@@ -41,8 +42,10 @@ export async function GET(req: NextRequest) {
               const updated = approveOrder(orderId, wompiTxId);
               if (updated) order = updated;
 
+              const tickets = await getDynamicTickets();
+
               // Confirm seat lock
-              markAsSold(order.ticketId, order.sessionToken);
+              markAsSold(order.ticketId, order.sessionToken, tickets);
 
               // Send email
               await addEmailToQueue({
@@ -58,8 +61,10 @@ export async function GET(req: NextRequest) {
               const updated = rejectOrder(orderId, `Transacción Wompi: ${transactionStatus}. Detalle: ${transaction.status_message || ''}`);
               if (updated) order = updated;
 
+              const tickets = await getDynamicTickets();
+
               // Release seat lock
-              releaseLock(order.ticketId, order.sessionToken);
+              releaseLock(order.ticketId, order.sessionToken, tickets);
 
               console.log(`[Wompi API Polling] ❌ Wompi transaction ${wompiTxId} ${transactionStatus}. Order updated.`);
             } else {

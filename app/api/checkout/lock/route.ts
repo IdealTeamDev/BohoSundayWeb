@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { acquireLock } from '@/lib/lockStore';
+import { getDynamicTickets } from '@/lib/tickets';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: NextRequest) {
@@ -15,7 +16,8 @@ export async function POST(req: NextRequest) {
     // Generate a unique session token for this checkout attempt
     const sessionToken = uuidv4();
 
-    const lock = acquireLock(ticketId, sessionToken, reqQuantity);
+    const tickets = await getDynamicTickets();
+    const lock = acquireLock(ticketId, sessionToken, reqQuantity, tickets);
 
     if (!lock) {
       return NextResponse.json(
