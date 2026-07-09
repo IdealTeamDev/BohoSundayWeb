@@ -165,12 +165,12 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
     hasIndividualError = true;
   }
 
-  // Graceful Fallbacks to static data if either WordPress request fails or returns empty
-  const finalCamas = hasCamasError || wordpressCamas.length === 0
+  // Graceful Fallbacks to static data ONLY if the WordPress request fails
+  const finalCamas = hasCamasError
     ? staticTickets.filter(t => t.zone !== 'general')
     : wordpressCamas;
 
-  const finalIndividual = hasIndividualError || wordpressIndividual.length === 0
+  const finalIndividual = hasIndividualError
     ? staticTickets.filter(t => t.zone === 'general')
     : wordpressIndividual;
 

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
-import { tickets } from '@/data/tickets';
 import CardTicketIndividual from '@/components/cardticket/CardTicketIndividual';
 import type { Ticket } from '@/types';
 
@@ -14,12 +13,13 @@ interface IndividualTicketsProps {
 export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [ticketStatuses, setTicketStatuses] = useState<Record<string, { status: string; remaining: number }>>({});
+  const [dynamicTickets, setDynamicTickets] = useState<Ticket[]>([]);
   const params = useParams();
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
 
-  const earlyTicket = tickets.find((t) => t.id === 'early');
-  const anytimeTicket = tickets.find((t) => t.id === 'anytime');
+  const earlyTicket = dynamicTickets.find((t) => t.id === 'early');
+  const anytimeTicket = dynamicTickets.find((t) => t.id === 'anytime');
 
   useEffect(() => {
     async function fetchStatuses() {
@@ -27,6 +27,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
         const res = await fetch('/api/tickets');
         if (res.ok) {
           const data = await res.json();
+          setDynamicTickets(data);
           const mapping: Record<string, { status: string; remaining: number }> = {};
           data.forEach((item: { id: string; status: string; remaining?: number }) => {
             mapping[item.id] = {
@@ -45,11 +46,11 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
     return () => clearInterval(interval);
   }, []);
 
-  const earlyRemaining = ticketStatuses['early']?.remaining ?? earlyTicket?.stock ?? 0;
-  const anytimeRemaining = ticketStatuses['anytime']?.remaining ?? anytimeTicket?.stock ?? 0;
+  const earlyRemaining = earlyTicket ? (ticketStatuses['early']?.remaining ?? earlyTicket.stock ?? 0) : 0;
+  const anytimeRemaining = anytimeTicket ? (ticketStatuses['anytime']?.remaining ?? anytimeTicket.stock ?? 0) : 0;
 
-  const isEarlySoldOut = earlyRemaining <= 0 || ticketStatuses['early']?.status === 'sold';
-  const isAnytimeSoldOut = anytimeRemaining <= 0 || ticketStatuses['anytime']?.status === 'sold';
+  const isEarlySoldOut = !earlyTicket || earlyRemaining <= 0 || ticketStatuses['early']?.status === 'sold';
+  const isAnytimeSoldOut = !anytimeTicket || anytimeRemaining <= 0 || ticketStatuses['anytime']?.status === 'sold';
 
   return (
     <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center">
