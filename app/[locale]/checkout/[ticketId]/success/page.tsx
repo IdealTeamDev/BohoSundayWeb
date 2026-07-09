@@ -90,9 +90,9 @@ export default function SuccessPage() {
             setQuantity(parseInt(qtyStr, 10));
             
             // Generate QR
-            const qrData = encodeURIComponent(
-              JSON.stringify({ orderId: targetOrderId, ticketId, email: parsedBuyer.email })
-            );
+            const siteUrl = window.location.origin;
+            const qrUrl = `${siteUrl}/api/qrs/${targetOrderId}`;
+            const qrData = encodeURIComponent(qrUrl);
             setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`);
             setStatus('approved');
             clearInterval(pollInterval);
@@ -109,9 +109,9 @@ export default function SuccessPage() {
           setQuantity(data.quantity);
           
           // Generate QR
-          const qrData = encodeURIComponent(
-            JSON.stringify({ orderId: targetOrderId, ticketId, email: data.buyerInfo.email })
-          );
+          const siteUrl = window.location.origin;
+          const qrUrl = `${siteUrl}/api/qrs/${targetOrderId}`;
+          const qrData = encodeURIComponent(qrUrl);
           setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`);
           setStatus('approved');
           

@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 import { getDynamicTickets } from '@/lib/tickets';
 import type { BuyerInfo } from '@/types/checkout';
+import type { OrderDetail } from './orderStore';
 
 interface SendMailParams {
   ticketId: string;
@@ -821,14 +823,11 @@ Attachments count: ${options.attachments?.length || 0}
   });
 }
 
-/**
- * Downloads the QR code from the external API to embed it in the email
- */
 async function fetchQrBuffer(orderId: string, ticketId: string, email: string): Promise<Buffer | null> {
   try {
-    const qrData = encodeURIComponent(
-      JSON.stringify({ orderId, ticketId, email })
-    );
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://bohosunday.com';
+    const qrUrl = `${siteUrl.replace(/\/$/, '')}/api/qrs/${orderId}`;
+    const qrData = encodeURIComponent(qrUrl);
     const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
     
     const response = await fetch(url);
@@ -1615,4 +1614,116 @@ img { background-color: transparent !important; }
     html: mailHtml,
     attachments,
   });
+}
+
+/**
+ * Send admin notification email containing transaction JSON (for successful and failed payments)
+ */
+export async function sendAdminNotificationEmail(order: OrderDetail, status: 'approved' | 'rejected') {
+  try {
+    const tickets = await getDynamicTickets();
+    const ticket = tickets.find((t) => t.id === order.ticketId);
+
+    const ticketName = ticket?.name || 'Boleto/Cama';
+    const ticketNumber = ticket?.number || 0;
+    const zone = ticket?.zone || 'general';
+
+    // Calculate total capacity (persons per ticket * quantity)
+    const basePersons = ticket ? (ticket.stock !== undefined ? 1 : (ticket.persons || 1)) : 1;
+    const totalAccesos = basePersons * order.quantity;
+    
+    // Checksum: unique hash of the order details
+    const checksum = crypto
+      .createHash('sha256')
+      .update(`${order.orderId}-${order.buyerInfo.email}-${order.paymentId || ''}-${status}`)
+      .digest('hex')
+      .substring(0, 16);
+
+    const jsonStatus = status === 'approved' ? 'paid' : 'failed';
+
+    const orderJson = {
+      order_id: order.orderId,
+      ticket_id: order.ticketId,
+      ticket_name: ticketName,
+      ticket_number: ticketNumber,
+      zone: zone,
+      buyer_name: order.buyerInfo.name,
+      buyer_email: order.buyerInfo.email,
+      buyer_phone: order.buyerInfo.phone,
+      total_accesos: totalAccesos,
+      accesos_restantes: totalAccesos,
+      status: jsonStatus,
+      checksum: checksum,
+      payment_ref: order.paymentId || order.errorDetail || 'N/A',
+      created_at: new Date(order.createdAt).toISOString()
+    };
+
+    const transport = createTransport();
+    const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday" <reservas@bohosunday.com>';
+    const adminEmail = 'alejandra@idealteamcolombia.com';
+
+    // Fetch client QR code buffer to attach to the email
+    const qrBuffer = await fetchQrBuffer(order.orderId, order.ticketId, order.buyerInfo.email);
+    const attachments: any[] = [];
+    if (qrBuffer) {
+      attachments.push({
+        filename: `qr-${order.orderId}.png`,
+        content: qrBuffer,
+      });
+    }
+
+    const subject = status === 'approved' 
+      ? `🟢 Compra EXITOSA - Orden ${order.orderId}`
+      : `🔴 Compra FALLIDA - Orden ${order.orderId}`;
+
+    const htmlContent = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+        <h2 style="color: ${status === 'approved' ? '#2e7d32' : '#c62828'}; border-bottom: 2px solid ${status === 'approved' ? '#2e7d32' : '#c62828'}; padding-bottom: 10px; margin-top: 0;">
+          ${status === 'approved' ? '🟢 Nueva Compra Exitosa' : '🔴 Compra Fallida/Rechazada'}
+        </h2>
+        <p>Se ha registrado una transacción en Boho Sunday:</p>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold; width: 150px;">ID Orden:</td>
+            <td style="padding: 8px 0;">${order.orderId}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Cliente:</td>
+            <td style="padding: 8px 0;">${order.buyerInfo.name}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Correo:</td>
+            <td style="padding: 8px 0;">${order.buyerInfo.email}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Celular:</td>
+            <td style="padding: 8px 0;">${order.buyerInfo.phone}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Producto:</td>
+            <td style="padding: 8px 0;">${ticketName} (Cant: ${order.quantity})</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: bold;">Referencia Pago:</td>
+            <td style="padding: 8px 0; font-family: monospace;">${order.paymentId || order.errorDetail || 'N/A'}</td>
+          </tr>
+        </table>
+        ${status === 'approved' ? '<p style="color: #2e7d32; font-weight: bold;">El código QR generado para el cliente ha sido adjuntado a este correo.</p>' : ''}
+        <p><strong>JSON de la Compra (para tus registros):</strong></p>
+        <pre style="background: #1e1e1e; color: #a9b7c6; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: monospace; font-size: 13px; line-height: 1.5;">${JSON.stringify(orderJson, null, 2)}</pre>
+      </div>
+    `;
+
+    await transport.sendMail({
+      from: fromAddress,
+      to: adminEmail,
+      subject: subject,
+      html: htmlContent,
+      attachments,
+    });
+
+    console.log(`[Admin Notification] Email sent successfully to ${adminEmail} for Order ${order.orderId} (Status: ${status})`);
+  } catch (error) {
+    console.error(`[Admin Notification] ❌ Error sending admin notification email:`, error);
+  }
 }
