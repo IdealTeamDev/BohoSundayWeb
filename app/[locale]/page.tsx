@@ -130,7 +130,7 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col lg:col-span-1 items-center lg:items-center justify-center px-7 py-4 lg:py-0 text-center lg:text-left h-full">
-          <p className="text-black text-[17px] font-light font-nunito">{t.home.location}</p>
+          <h1 className="text-black text-[17px] font-light font-nunito">{t.home.location}</h1>
           <p className="text-black text-[17px] font-semibold font-nunito mt-1">{t.hero.place}</p>
           <p className="text-black text-[17px] font-nunito text-center mt-2 leading-relaxed">{t.home.address}</p>
         </div>

@@ -1,4 +1,5 @@
 import type { BuyerInfo } from '@/types/checkout';
+import { decreaseWordPressStock } from './tickets';
 
 export interface OrderDetail {
   orderId: string;
@@ -79,6 +80,12 @@ export function approveOrder(orderId: string, paymentId: string): OrderDetail | 
   
   orderStore.set(orderId, updatedOrder);
   console.log(`[OrderStore] ✅ Order ${orderId} approved with paymentId ${paymentId}`);
+
+  // Decrease stock in WordPress asynchronously
+  decreaseWordPressStock(order.ticketId, order.quantity).catch((err) => {
+    console.error('[OrderStore] Error calling decreaseWordPressStock:', err);
+  });
+
   return updatedOrder;
 }
 
