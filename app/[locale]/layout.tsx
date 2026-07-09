@@ -18,11 +18,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Fiesta afrobeat en Medellín | Boho sunday",
-  description: "Disfruta el Boho Sunday Colombiamoda Edition, una fiesta de afrobeats en Sopetrán que se realiza en el hotel Casa Candela. Reserva aquí.",
-  keywords: ['Boho Sunday', 'Colombia moda', 'Casa Candela', 'Fiesta boho']
+type Props = {
+  params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+
+  if (locale === "en") {
+    return {
+      title: "Afrobeat party in Medellín | Boho sunday",
+      description: "Enjoy Boho Sunday Colombiamoda Edition, an Afrobeat party in Sopetrán held at Casa Candela hotel. Book here.",
+      keywords: ["Boho Sunday", "Colombia fashion", "Casa Candela", "Boho party", "Afrobeat party"]
+    };
+  }
+
+  return {
+    title: "Fiesta afrobeat en Medellín | Boho sunday",
+    description: "Disfruta el Boho Sunday Colombiamoda Edition, una fiesta de afrobeats en Sopetrán que se realiza en el hotel Casa Candela. Reserva aquí.",
+    keywords: ["Boho Sunday", "Colombia moda", "Casa Candela", "Fiesta boho"]
+  };
+}
 
 export default async function RootLayout({
   children,
