@@ -10,7 +10,7 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
   const baseUrl = process.env.WORDPRESS_API_URL || 'https://bohosundayapp.wpenginepowered.com';
   
   // WordPress plain permalink route fallback for robustness
-  const url = `${baseUrl.replace(/\/$/, '')}/?rest_route=/wp/v2/camas&lang=es&nocache=${Date.now()}`;
+  const url = `${baseUrl.replace(/\/$/, '')}/?rest_route=/wp/v2/camas&per_page=100&lang=es&nocache=${Date.now()}`;
   
   try {
     const res = await fetch(url, {
