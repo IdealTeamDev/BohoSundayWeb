@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { translations } from '@/data/translations';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
 import TicketCard from '@/components/cardticket/TicketCard';
@@ -51,6 +53,10 @@ const infoZones = [
 const DOT_PX = 28;
 
 export default function EventMap({ onClose }: EventMapProps) {
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
+  const t = translations[locale] || translations.es;
+
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [ticketStatuses, setTicketStatuses] = useState<Record<string, 'available' | 'locked' | 'sold'>>({});
@@ -152,31 +158,34 @@ export default function EventMap({ onClose }: EventMapProps) {
         />
 
         {/* ── Zonas informativas ── */}
-        {infoZones.map((zone) => (
-          <div
-            key={zone.id}
-            className="absolute flex items-center justify-center pointer-events-none"
-            style={{
-              left: zone.left,
-              top: zone.top,
-              width: zone.width,
-              height: zone.height,
-              background: zone.bg,
-            }}
-          >
-            <span
-              className="font-nunito font-bold uppercase tracking-wider text-center"
+        {infoZones.map((zone) => {
+          const label = zone.id === 'pasarela' ? t.map.runway : zone.label;
+          return (
+            <div
+              key={zone.id}
+              className="absolute flex items-center justify-center pointer-events-none"
               style={{
-                fontSize: `${Math.max(6, dotSize * 0.45)}px`,
-                color: zone.textColor,
-                writingMode: zone.vertical ? 'vertical-rl' : 'horizontal-tb',
-                lineHeight: 1.2,
+                left: zone.left,
+                top: zone.top,
+                width: zone.width,
+                height: zone.height,
+                background: zone.bg,
               }}
             >
-              {zone.label}
-            </span>
-          </div>
-        ))}
+              <span
+                className="font-nunito font-bold uppercase tracking-wider text-center"
+                style={{
+                  fontSize: `${Math.max(6, dotSize * 0.45)}px`,
+                  color: zone.textColor,
+                  writingMode: zone.vertical ? 'vertical-rl' : 'horizontal-tb',
+                  lineHeight: 1.2,
+                }}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
 
         {/* ── Puntos de tickets ── */}
         {allTickets.filter(t => t.zone !== 'general' && t.zone !== 'vip' && t.zone !== 'candela').map((ticket) => {

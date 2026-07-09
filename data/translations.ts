@@ -177,6 +177,9 @@ export const translations = {
     },
     allies: {
       title: 'Aliados',
+    },
+    map: {
+      runway: 'PASARELA'
     }
   },
   en: {
@@ -357,6 +360,9 @@ export const translations = {
     },
     allies: {
       title: 'Allies',
+    },
+    map: {
+      runway: 'RUNWAY'
     }
   }
 };
