@@ -1660,7 +1660,7 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
 
     const transport = createTransport();
     const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday" <reservas@bohosunday.com>';
-    const adminEmail = 'alejandra@idealteamcolombia.com';
+    const adminEmails = 'alejandra@idealteamcolombia.com, coordinacionreservas@casacandela.co';
 
     // Fetch client QR code buffer to attach to the email
     const qrBuffer = await fetchQrBuffer(order.orderId, order.ticketId, order.buyerInfo.email);
@@ -1716,13 +1716,13 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
 
     await transport.sendMail({
       from: fromAddress,
-      to: adminEmail,
+      to: adminEmails,
       subject: subject,
       html: htmlContent,
       attachments,
     });
 
-    console.log(`[Admin Notification] Email sent successfully to ${adminEmail} for Order ${order.orderId} (Status: ${status})`);
+    console.log(`[Admin Notification] Email sent successfully to ${adminEmails} for Order ${order.orderId} (Status: ${status})`);
   } catch (error) {
     console.error(`[Admin Notification] ❌ Error sending admin notification email:`, error);
   }
