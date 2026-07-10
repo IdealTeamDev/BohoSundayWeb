@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, updateOrderAccesses } from '@/lib/orderStore';
 import { getDynamicTickets } from '@/lib/tickets';
 import { validateSession } from '@/lib/authStore';
+import { supabase } from '@/lib/supabase';
 import crypto from 'crypto';
 
 // GET: Returns the detailed purchase info JSON (for QR display)
@@ -11,8 +12,37 @@ export async function GET(
 ) {
   try {
     const { orderId } = await context.params;
-    const order = getOrder(orderId);
 
+    // 1. Query Supabase purchased_tickets table first
+    const { data: ticketRecord, error: dbError } = await supabase
+      .from('purchased_tickets')
+      .select('*')
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    if (ticketRecord) {
+      const isEnglish = (ticketRecord.language || '').toUpperCase() === 'EN';
+      return NextResponse.json({
+        order_id: ticketRecord.order_id,
+        ticket_id: ticketRecord.ticket_id,
+        ticket_name: ticketRecord.ticket_name,
+        ticket_number: ticketRecord.ticket_number,
+        zone: ticketRecord.zone,
+        buyer_name: ticketRecord.buyer_name,
+        buyer_email: ticketRecord.buyer_email,
+        buyer_phone: ticketRecord.buyer_phone,
+        buyer_locale: isEnglish ? 'INGLES' : 'ESPAÑOL',
+        total_accesos: ticketRecord.total_accesos,
+        accesos_restantes: ticketRecord.accesos_restantes,
+        status: ticketRecord.status,
+        checksum: ticketRecord.checksum,
+        payment_ref: ticketRecord.payment_ref || 'N/A',
+        created_at: ticketRecord.created_at
+      });
+    }
+
+    // 2. Fallback to in-memory store (for local testing/development)
+    const order = getOrder(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
@@ -24,11 +54,9 @@ export async function GET(
     const ticketNumber = ticket?.number || 0;
     const zone = ticket?.zone || 'general';
 
-    // Calculate total capacity
     const basePersons = ticket ? (ticket.stock !== undefined ? 1 : (ticket.persons || 1)) : 1;
     const totalCapacity = basePersons * order.quantity;
 
-    // Checksum
     const checksum = crypto
       .createHash('sha256')
       .update(`${order.orderId}-${order.buyerInfo.email}-${order.paymentId || ''}-${order.status}`)
@@ -36,7 +64,6 @@ export async function GET(
       .substring(0, 16);
 
     const jsonStatus = order.status === 'approved' ? 'paid' : 'failed';
-
     const accessesUsed = order.accessesUsed || 0;
     const remainingAccesses = Math.max(0, totalCapacity - accessesUsed);
 
@@ -82,6 +109,49 @@ export async function POST(
     const body = await req.json();
     const count = Number(body.count) || 1;
 
+    // 1. Query Supabase purchased_tickets table first
+    const { data: ticketRecord, error: dbError } = await supabase
+      .from('purchased_tickets')
+      .select('*')
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    if (ticketRecord) {
+      if (ticketRecord.status !== 'paid') {
+        return NextResponse.json({ success: false, error: 'La orden no está en estado aprobado/pagado' }, { status: 400 });
+      }
+
+      const currentUsed = ticketRecord.total_accesos - ticketRecord.accesos_restantes;
+      const newUsed = currentUsed + count;
+
+      if (newUsed > ticketRecord.total_accesos) {
+        return NextResponse.json({
+          success: false,
+          error: `Límite de accesos excedido. Capacidad: ${ticketRecord.total_accesos}, Usados: ${currentUsed}, Solicitados: ${count}`,
+          remaining: ticketRecord.accesos_restantes
+        }, { status: 400 });
+      }
+
+      const newRemaining = ticketRecord.total_accesos - newUsed;
+      const { error: updateError } = await supabase
+        .from('purchased_tickets')
+        .update({ accesos_restantes: newRemaining })
+        .eq('order_id', orderId);
+
+      if (updateError) {
+        console.error(`[QR Check-In] ❌ Error updating remaining accesses in Supabase for ${orderId}:`, updateError);
+        return NextResponse.json({ success: false, error: 'Error al actualizar accesos en la base de datos' }, { status: 500 });
+      }
+
+      console.log(`[QR Check-In] 🎟️ Access validation via Supabase: order ${orderId} used ${count} more access(es). Total used: ${newUsed}/${ticketRecord.total_accesos}`);
+
+      return NextResponse.json({
+        success: true,
+        accesos_restantes: newRemaining
+      });
+    }
+
+    // 2. Fallback to in-memory store (for local testing/development)
     const order = getOrder(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
@@ -90,11 +160,9 @@ export async function POST(
     const tickets = await getDynamicTickets();
     const ticket = tickets.find((t) => t.id === order.ticketId);
 
-    // Calculate total capacity
     const basePersons = ticket ? (ticket.stock !== undefined ? 1 : (ticket.persons || 1)) : 1;
     const totalCapacity = basePersons * order.quantity;
 
-    // Validate and update accesses in the store
     const result = updateOrderAccesses(orderId, count, totalCapacity);
 
     if (!result.success) {
