@@ -204,7 +204,7 @@ export async function decreaseWordPressStock(ticketId: string, quantity: number)
 
     if (ticket.stock !== undefined) {
       // CASE A: Individual Ticket (Update stock)
-      const fetchUrl = `${baseUrl.replace(/\/$/, '')}/?rest_route=/wp/v2/boleteria-invidual/${ticket.wpPostId}`;
+      const fetchUrl = `${baseUrl.replace(/\/$/, '')}/wp-json/wp/v2/boleteria-invidual/${ticket.wpPostId}`;
       const getRes = await fetch(fetchUrl, {
         headers: { 'Authorization': authHeader },
         cache: 'no-store'
@@ -220,7 +220,7 @@ export async function decreaseWordPressStock(ticketId: string, quantity: number)
 
       console.log(`[WordPress Sync] 📉 Decreasing stock for post ${ticket.wpPostId} (${ticket.name}) from ${currentStock} to ${newStock}`);
 
-      const updateUrl = `${baseUrl.replace(/\/$/, '')}/?rest_route=/wp/v2/boleteria-invidual/${ticket.wpPostId}`;
+      const updateUrl = `${baseUrl.replace(/\/$/, '')}/wp-json/wp/v2/boleteria-invidual/${ticket.wpPostId}`;
       const updateRes = await fetch(updateUrl, {
         method: 'POST',
         headers: {
@@ -242,7 +242,7 @@ export async function decreaseWordPressStock(ticketId: string, quantity: number)
       // CASE B: Cama/Mesa (Mark as unavailable)
       console.log(`[WordPress Sync] 🚫 Disabling Cama/Mesa ${ticket.wpPostId} (${ticket.name}) in WordPress`);
 
-      const updateUrl = `${baseUrl.replace(/\/$/, '')}/?rest_route=/wp/v2/camas/${ticket.wpPostId}`;
+      const updateUrl = `${baseUrl.replace(/\/$/, '')}/wp-json/wp/v2/camas/${ticket.wpPostId}`;
       const updateRes = await fetch(updateUrl, {
         method: 'POST',
         headers: {
