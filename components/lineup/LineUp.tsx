@@ -5,12 +5,12 @@ import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
  
 const djs = [
-  { id: 1, name: 'MALÓNE MOREZ', photo: '/images/lineup/ANTIDOT.png' },
-  { id: 2, name: 'BARON (FR)',   photo: '/images/lineup/NOMADS.png' },
-  { id: 3, name: 'SEVENKEY', photo: '/images/lineup/ROLAND.png' },
-  { id: 4, name: 'BENJP',     photo: '/images/lineup/NICOLA.png' },
-  { id: 5, name: 'VLAIR',        photo: '/images/lineup/KUBHA.png' },
-  { id: 6, name: 'ELISABETH MOON',       photo: '/images/lineup/AMOSER.png' },
+  { id: 1, name: 'MALÓNE MOREZ', photo: '/images/lineup/malone-morez.png' },
+  { id: 2, name: 'BARON (FR)',   photo: '/images/lineup/baron.png' },
+  { id: 3, name: 'SEVENKEY', photo: '/images/lineup/sevenkey.png' },
+  { id: 4, name: 'BENJP',     photo: '/images/lineup/benjp.png' },
+  { id: 5, name: 'VLAIR',        photo: '/images/lineup/vlair.png' },
+  { id: 6, name: 'ELISABETH MOON',       photo: '/images/lineup/elisabetn.png' },
 ];
  
 export default function LineUp() {
