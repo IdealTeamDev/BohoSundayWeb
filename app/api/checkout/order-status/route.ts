@@ -19,6 +19,13 @@ export async function POST(req: NextRequest) {
     if (!order && buyerInfo && ticketId && quantity) {
       console.log(`[OrderStore] 🔄 Recreating missing order ${orderId} in memory for verification.`);
       order = createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi');
+      
+      // If it is a quick sale, approve it immediately
+      if (orderId.startsWith('ORD-QUICK-')) {
+        console.log(`[OrderStore] ⚡ Recreated order is a quick sale. Approving immediately.`);
+        order.status = 'approved';
+        order.paymentId = 'manual-sale';
+      }
     }
 
     if (!order) {
