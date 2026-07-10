@@ -89,3 +89,28 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function PUT(req: NextRequest) {
+  try {
+    const adminUser = await authCheck(req);
+    if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+
+    const body = await req.json();
+    const { id, pin } = body;
+
+    if (!id || !pin) {
+      return NextResponse.json({ error: 'Faltan campos' }, { status: 400 });
+    }
+
+    const { error } = await supabase.from('staff_users').update({
+      pin_hash: hashPassword(pin)
+    }).eq('id', id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating staff:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
