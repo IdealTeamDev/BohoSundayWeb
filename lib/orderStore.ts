@@ -110,6 +110,14 @@ export function getOrder(orderId: string): OrderDetail | null {
 }
 
 /**
+ * Retrieves all orders from the store
+ */
+export function getAllOrders(): OrderDetail[] {
+  const freshMap = readOrdersFromFile();
+  return Array.from(freshMap.values());
+}
+
+/**
  * Approves a pending order
  */
 export function approveOrder(orderId: string, paymentId: string): OrderDetail | null {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, updateOrderAccesses } from '@/lib/orderStore';
 import { getDynamicTickets } from '@/lib/tickets';
+import { validateSession } from '@/lib/authStore';
 import crypto from 'crypto';
 
 // GET: Returns the detailed purchase info JSON (for QR display)
@@ -67,6 +68,15 @@ export async function POST(
   context: { params: Promise<{ orderId: string }> }
 ) {
   try {
+    const token = req.headers.get('x-admin-token');
+    const secret = process.env.ADMIN_SECRET_TOKEN;
+    const isValidLegacy = secret && token === secret;
+    const sessionUser = validateSession(token);
+    
+    if (!isValidLegacy && !sessionUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { orderId } = await context.params;
     const body = await req.json();
     const count = Number(body.count) || 1;
