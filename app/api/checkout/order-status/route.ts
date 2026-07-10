@@ -1,20 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrder, approveOrder, rejectOrder } from '@/lib/orderStore';
+import { getOrder, approveOrder, rejectOrder, createOrder } from '@/lib/orderStore';
 import { markAsSold, releaseLock } from '@/lib/lockStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
 import { getDynamicTickets } from '@/lib/tickets';
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const orderId = searchParams.get('orderId');
-    const wompiTxId = searchParams.get('wompiTxId');
+    const body = await req.json();
+    const { orderId, wompiTxId, ticketId, buyerInfo, quantity } = body;
 
     if (!orderId) {
       return NextResponse.json({ error: 'orderId es requerido' }, { status: 400 });
     }
 
     let order = getOrder(orderId);
+
+    // If order is not found in memory (due to stateless serverless reset), recreate it using the details passed from sessionStorage
+    if (!order && buyerInfo && ticketId && quantity) {
+      console.log(`[OrderStore] 🔄 Recreating missing order ${orderId} in memory for verification.`);
+      order = createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi');
+    }
 
     if (!order) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });

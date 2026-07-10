@@ -72,12 +72,30 @@ export default function SuccessPage() {
 
     const checkOrderStatus = async () => {
       try {
-        const queryParams = new URLSearchParams({ orderId: targetOrderId });
-        if (wompiTxId) {
-          queryParams.append('wompiTxId', wompiTxId);
+        const buyer = sessionStorage.getItem(`checkout_buyer_${ticketId}`);
+        const qtyStr = sessionStorage.getItem(`checkout_quantity_${ticketId}`) || '1';
+        let parsedBuyer = null;
+        if (buyer) {
+          try {
+            parsedBuyer = JSON.parse(buyer);
+          } catch (e) {
+            console.error('Error parsing buyer info from sessionStorage:', e);
+          }
         }
-        
-        const res = await fetch(`/api/checkout/order-status?${queryParams.toString()}`);
+
+        const res = await fetch('/api/checkout/order-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            orderId: targetOrderId,
+            wompiTxId: wompiTxId || undefined,
+            ticketId,
+            buyerInfo: parsedBuyer,
+            quantity: parseInt(qtyStr, 10)
+          })
+        });
         const data = await res.json();
 
         if (!res.ok) {
