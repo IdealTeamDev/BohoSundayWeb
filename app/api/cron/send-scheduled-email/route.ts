@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createTransport } from '@/lib/emailService';
 
 // ==========================================
-// 1. VARIABLE PARA TU CÓDIGO HTML (EMAILIFY FIGMA)
-// Copia y pega tu código HTML exportado dentro de las comillas invertidas (backticks) abajo.
+// 1. CÓDIGO HTML EN ESPAÑOL (EMAILIFY FIGMA)
+// Copia y pega tu código HTML en español dentro de las comillas invertidas (backticks) abajo.
 // ==========================================
-const EMAIL_HTML = `
+const EMAIL_HTML_ES = `
 <!doctype html>
 <html lang="en" dir="auto" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -900,34 +900,55 @@ C&oacute;digo de vestimenta</p><p style="Margin:0;mso-line-height-alt:18px;font-
 </html>
 `;
 
+const EMAIL_HTML_EN = `
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Boho Sunday is tomorrow!</title>
+</head>
+<body style="background-color: #1e1e1e; color: #ffffff; font-family: sans-serif; padding: 40px; text-align: center;">
+  <h1>✨ Boho Sunday is tomorrow! ✨</h1>
+  <p>Replace this HTML template inside the variable <strong>EMAIL_HTML_EN</strong> in <code>app/api/cron/send-scheduled-email/route.ts</code> with your custom English Emailify design.</p>
+</body>
+</html>
+`;
+
 // ==========================================
-// 2. CONFIGURACIÓN DE ENVÍO
+// 3. CONFIGURACIÓN DE ENVÍO
 // ==========================================
 // Hora programada: 25 de Julio de 2026, 2:00 PM (Hora Colombia: UTC-5)
 const TARGET_DATE_STRING = '2026-07-25T14:00:00-05:00';
 
 // Lista de destinatarios
 const RECIPIENTS = [
-  'alejandra@idealteamcolombia.com'
-  // Puedes agregar más correos aquí separados por comas, ej: 'correo2@ejemplo.com'
+  'manuel@idealteamcolombia.com',
+  'sara@idealteamcolombia.com',
+  'alejandra@idealteamcolombia.com',
+  'santiagoaguirre@idealteamcolombia.com',
+  'marketing@idealteamcolombia.com'
 ];
 
-// Asunto del correo
-const EMAIL_SUBJECT = 'Boho Sunday - Correo Programado';
+// Asuntos del correo por idioma
+const SUBJECT_ES = '✨ ¡Boho Sunday es mañana!';
+const SUBJECT_EN = '✨ Boho Sunday is tomorrow!';
 
-// Bandera en memoria para evitar envíos duplicados en el mismo contenedor
-let hasBeenSentInCurrentContainer = false;
+// Banderas en memoria para evitar envíos duplicados en el mismo contenedor
+let hasBeenSentInContainerES = false;
+let hasBeenSentInContainerEN = false;
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const force = searchParams.get('force') === 'true';
+    const lang = searchParams.get('lang') || 'es'; // 'es' o 'en'
 
     const now = new Date();
     const targetTime = new Date(TARGET_DATE_STRING);
 
     console.log(`[Scheduled Email] 🕒 Current time (UTC): ${now.toISOString()}`);
     console.log(`[Scheduled Email] 🎯 Target time (UTC): ${targetTime.toISOString()}`);
+    console.log(`[Scheduled Email] 🌍 Selected Language: ${lang.toUpperCase()}`);
 
     // Evitar ejecuciones en años diferentes al 2026 (por ejemplo 2027+) para que sea un envío único
     if (now.getFullYear() !== 2026 && !force) {
@@ -953,16 +974,18 @@ export async function GET(req: NextRequest) {
     }
 
     // Evitar re-envíos duplicados si el cron sigue ejecutándose continuamente
-    // NOTA: En Serverless (Vercel), si el contenedor se reinicia, esta bandera se limpia.
-    // Para entornos reales de producción se debe usar una Base de Datos o Redis (KV) para persistir el estado de "enviado".
-    if (hasBeenSentInCurrentContainer && !force) {
+    const hasBeenSent = lang === 'en' ? hasBeenSentInContainerEN : hasBeenSentInContainerES;
+    if (hasBeenSent && !force) {
       return NextResponse.json({
         success: false,
-        message: 'El correo ya fue enviado en esta sesión del contenedor y no se volverá a enviar.'
+        message: `El correo en ${lang.toUpperCase()} ya fue enviado en esta sesión del contenedor y no se volverá a enviar.`
       }, { status: 200 });
     }
 
-    console.log(`[Scheduled Email] 🚀 Initiating scheduled email send to: ${RECIPIENTS.join(', ')}`);
+    const emailHtml = lang === 'en' ? EMAIL_HTML_EN : EMAIL_HTML_ES;
+    const emailSubject = lang === 'en' ? SUBJECT_EN : SUBJECT_ES;
+
+    console.log(`[Scheduled Email] 🚀 Initiating scheduled email send (${lang.toUpperCase()}) to: ${RECIPIENTS.join(', ')}`);
 
     const transport = createTransport();
     const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday" <reservas@bohosunday.com>';
@@ -972,20 +995,24 @@ export async function GET(req: NextRequest) {
       await transport.sendMail({
         from: fromAddress,
         to: recipient,
-        subject: EMAIL_SUBJECT,
-        html: EMAIL_HTML,
+        subject: emailSubject,
+        html: emailHtml,
       });
-      console.log(`[Scheduled Email] ✅ Email successfully sent to ${recipient}`);
+      console.log(`[Scheduled Email] ✅ Email (${lang.toUpperCase()}) successfully sent to ${recipient}`);
     }
 
     // Marcar como enviado en este contenedor solo si fue un envío programado real (sin forzar)
     if (!force) {
-      hasBeenSentInCurrentContainer = true;
+      if (lang === 'en') {
+        hasBeenSentInContainerEN = true;
+      } else {
+        hasBeenSentInContainerES = true;
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Correo(s) enviado(s) correctamente.',
+      message: `Correo(s) en ${lang.toUpperCase()} enviado(s) correctamente.`,
       recipients: RECIPIENTS,
       sentAt: new Date().toISOString()
     });
