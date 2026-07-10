@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import type { Ticket } from '@/types';
-import type { BuyerInfo } from '@/types/checkout';
 
 export default function QuickSellPage() {
   const router = useRouter();
@@ -30,6 +29,20 @@ export default function QuickSellPage() {
   });
 
   const [errors, setErrors] = useState<Partial<typeof form & { ticket: string }>>({});
+
+  // Modal State
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [modalData, setModalData] = useState<{
+    orderId: string;
+    buyerName: string;
+    buyerEmail: string;
+    ticketName: string;
+    qrUrl: string;
+    qrImageUrl: string;
+    isIndividual: boolean;
+    quantity: number;
+    locale: string;
+  } | null>(null);
 
   // Load tickets on mount
   useEffect(() => {
@@ -93,13 +106,15 @@ export default function QuickSellPage() {
       locale: form.locale,
     };
 
+    const finalQty = isIndividual ? quantity : 1;
+
     try {
       const res = await fetch('/api/admin/quick-sell', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ticketId: selectedTicketId,
-          quantity: isIndividual ? quantity : 1,
+          quantity: finalQty,
           buyerInfo,
         }),
       });
@@ -112,19 +127,71 @@ export default function QuickSellPage() {
         return;
       }
 
-      // Save info in sessionStorage as fallback (success page reads from here)
-      sessionStorage.setItem(`checkout_buyer_${selectedTicketId}`, JSON.stringify(buyerInfo));
-      sessionStorage.setItem(`checkout_quantity_${selectedTicketId}`, (isIndividual ? quantity : 1).toString());
-      sessionStorage.setItem(`checkout_order_${selectedTicketId}`, data.orderId);
+      // Generate URLs for the modal
+      const siteUrl = window.location.origin;
+      const qrUrl = `${siteUrl}/api/qrs/${data.orderId}`;
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`;
 
-      // Redirect to the success screen
-      const langPrefix = form.locale === 'en' ? '/en' : '';
-      router.push(`${langPrefix}/checkout/${selectedTicketId}/success?orderId=${data.orderId}`);
+      // Show success modal with all data
+      setModalData({
+        orderId: data.orderId,
+        buyerName: buyerInfo.name,
+        buyerEmail: buyerInfo.email,
+        ticketName: selectedTicket?.name || 'Boleta/Mesa',
+        qrUrl,
+        qrImageUrl,
+        isIndividual,
+        quantity: finalQty,
+        locale: form.locale,
+      });
+      setShowModal(true);
+      setLoading(false);
+
     } catch (err) {
       console.error('Error submitting quick sell:', err);
       setSubmitError('Ocurrió un error de red al procesar el registro.');
       setLoading(false);
     }
+  }
+
+  // Clear form and start a new sale
+  function handleResetForm() {
+    setForm({
+      ...form,
+      name: '',
+      phone: '',
+      email: '',
+      confirmEmail: '',
+      docNumber: '',
+    });
+    setQuantity(1);
+    setShowModal(false);
+    setModalData(null);
+    setErrors({});
+  }
+
+  // Share buttons handlers
+  function handleCopyQR() {
+    if (!modalData) return;
+    navigator.clipboard.writeText(modalData.qrUrl);
+    alert('¡Enlace del código QR copiado al portapapeles!');
+  }
+
+  function handleShareWhatsApp() {
+    if (!modalData) return;
+    
+    let message = '';
+    if (modalData.locale === 'en') {
+      message = modalData.isIndividual
+        ? `Hello! Your ticket entry (${modalData.ticketName} - Qty: ${modalData.quantity}) for Boho Sunday is confirmed. Access Code: ${modalData.orderId}. View your QR code here: ${modalData.qrUrl}`
+        : `Hello! Your table reservation (${modalData.ticketName}) for Boho Sunday is confirmed. Access Code: ${modalData.orderId}. View your QR code here: ${modalData.qrUrl}`;
+    } else {
+      message = modalData.isIndividual
+        ? `¡Hola! Tu entrada (${modalData.ticketName} - Cant: ${modalData.quantity}) para Boho Sunday ha sido confirmada. Código de Acceso: ${modalData.orderId}. Puedes ver tu código QR de ingreso aquí: ${modalData.qrUrl}`
+        : `¡Hola! Tu reserva de mesa (${modalData.ticketName}) para Boho Sunday ha sido confirmada. Código de Acceso: ${modalData.orderId}. Puedes ver tu código QR de ingreso aquí: ${modalData.qrUrl}`;
+    }
+
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   }
 
   if (fetchingTickets) {
@@ -137,7 +204,7 @@ export default function QuickSellPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4EFE9] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F4EFE9] py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden">
         
         {/* Header decoration */}
@@ -337,6 +404,89 @@ export default function QuickSellPage() {
 
         </form>
       </div>
+
+      {/* Success Modal */}
+      {showModal && modalData && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#F4EFE9] max-w-md w-full rounded-3xl p-6 shadow-xl border border-[#E8E2DA] flex flex-col items-center text-center max-h-[90vh] overflow-y-auto">
+            
+            {/* Success Checkmark Circle */}
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-[#22c55e]">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            <h2 className="font-sans font-bold text-xl text-[#231E1A] mb-1">¡VENTA REGISTRADA!</h2>
+            <p className="text-xs text-[#7A6F5E] mb-5 uppercase tracking-wider font-semibold">Correo y QR generados correctamente</p>
+
+            {/* Notification Alert Box */}
+            <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4 w-full text-left space-y-3 mb-5 text-sm">
+              <div>
+                <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Cliente</span>
+                <span className="font-semibold text-[#231E1A]">{modalData.buyerName}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Producto</span>
+                  <span className="font-semibold text-[#231E1A]">{modalData.ticketName}</span>
+                </div>
+                <div>
+                  <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Cantidad</span>
+                  <span className="font-semibold text-[#231E1A]">{modalData.quantity}</span>
+                </div>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide font-semibold text-[#686A54]">Correo de Envío</span>
+                <span className="font-semibold text-[#231E1A] break-all">{modalData.buyerEmail}</span>
+              </div>
+              <div>
+                <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Código de Orden</span>
+                <span className="font-mono text-[#231E1A] font-bold text-[12px]">{modalData.orderId}</span>
+              </div>
+            </div>
+
+            {/* QR Code Container */}
+            <div className="bg-[#D9D1C0] rounded-2xl p-4 w-fit mb-6">
+              <img src={modalData.qrImageUrl} alt="QR Code" width={150} height={150} className="rounded-lg shadow-inner bg-white p-1" />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-3 w-full">
+              {/* Send to WhatsApp */}
+              <button
+                onClick={handleShareWhatsApp}
+                className="w-full py-3 bg-[#25D366] text-white font-bold rounded-xl text-[13px] tracking-wider uppercase hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
+              >
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.457L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.451 5.436 0 9.86-4.42 9.864-9.864.002-2.637-1.03-5.114-2.905-6.989-1.874-1.875-4.351-2.907-6.985-2.907-5.439 0-9.865 4.421-9.869 9.867-.001 1.57.418 3.101 1.21 4.474l-.993 3.624 3.71-.973zm12.39-7.37c-.3-.15-1.772-.875-2.046-.975-.276-.1-.476-.15-.676.15-.2.3-.775.975-.95 1.175-.175.2-.35.225-.65.075-.3-.15-1.267-.467-2.413-1.49-1.054-.94-1.766-2.1-1.972-2.45-.205-.35-.022-.539.128-.689.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5s.05-.375-.025-.525C10.1 7.225 9.5 5.75 9.25 5.15c-.243-.59-.49-.51-.676-.52-.175-.01-.375-.01-.575-.01-.2 0-.525.075-.8 1.05-.275.975-1.05 3.075-1.05 3.175 0 .1.1.2.2.35.1.15.5.75 1.2 1.375.677.6 1.25.9 1.95 1.15.7.25 1.325.225 1.825.15.55-.083 1.772-.725 2.022-1.425.25-.7.25-1.3 1.75-1.425.075-.015.15-.025.225-.025.2 0 .325.1.375.175.25.4.25 1.05.25 1.05z"/>
+                </svg>
+                Compartir por WhatsApp
+              </button>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Copy QR Link */}
+                <button
+                  onClick={handleCopyQR}
+                  className="py-3 bg-white border border-[#E0D9D0] text-[#7A6F5E] hover:bg-white/70 font-semibold rounded-xl text-[12px] uppercase transition-colors"
+                >
+                  Copiar Link QR
+                </button>
+
+                {/* Close and Register Another */}
+                <button
+                  onClick={handleResetForm}
+                  className="py-3 bg-[#686A54] text-[#F4EFE9] hover:opacity-90 font-semibold rounded-xl text-[12px] uppercase transition-opacity"
+                >
+                  Registrar Otro
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
