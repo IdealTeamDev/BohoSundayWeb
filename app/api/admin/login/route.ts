@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Faltan credenciales' }, { status: 400 });
     }
 
-    const authResult = authenticateUser(username, password);
+    const authResult = await authenticateUser(username, password);
 
     if (!authResult) {
       return NextResponse.json({ error: 'Usuario o contraseña incorrectos' }, { status: 401 });
