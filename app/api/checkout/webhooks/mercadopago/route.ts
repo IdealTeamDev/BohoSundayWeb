@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Approve order in memory
-      approveOrder(orderId, paymentId);
+      await approveOrder(orderId, paymentId);
 
       // Permanently claim ticket lock
       markAsSold(order.ticketId, order.sessionToken, tickets);

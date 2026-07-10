@@ -120,7 +120,7 @@ export function getAllOrders(): OrderDetail[] {
 /**
  * Approves a pending order
  */
-export function approveOrder(orderId: string, paymentId: string): OrderDetail | null {
+export async function approveOrder(orderId: string, paymentId: string): Promise<OrderDetail | null> {
   const freshMap = readOrdersFromFile();
   const order = freshMap.get(orderId) || orderStore.get(orderId);
   if (!order) {
@@ -143,8 +143,8 @@ export function approveOrder(orderId: string, paymentId: string): OrderDetail | 
   writeOrdersToFile(orderStore);
   console.log(`[OrderStore] ✅ Order ${orderId} approved with paymentId ${paymentId}`);
 
-  // Decrease stock in WordPress asynchronously
-  decreaseWordPressStock(order.ticketId, order.quantity).catch((err) => {
+  // Decrease stock in WordPress
+  await decreaseWordPressStock(order.ticketId, order.quantity).catch((err) => {
     console.error('[OrderStore] Error calling decreaseWordPressStock:', err);
   });
 

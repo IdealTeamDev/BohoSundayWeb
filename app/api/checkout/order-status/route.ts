@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
             if (transactionStatus === 'APPROVED') {
               // Approve order
-              const updated = approveOrder(orderId, wompiTxId);
+              const updated = await approveOrder(orderId, wompiTxId);
               if (updated) order = updated;
 
               const tickets = await getDynamicTickets();

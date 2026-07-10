@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       const paymentId = `wompi-mock-${Date.now()}`;
       
       // Update order status
-      approveOrder(orderId, paymentId);
+      await approveOrder(orderId, paymentId);
 
       // Lock ticket permanently
       markAsSold(order.ticketId, order.sessionToken, tickets);

@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     // BYPASS MODE (To test local checkout without gateway redirects)
     if (process.env.BYPASS_PAYMENT === 'true') {
       console.log(`[Bypass Payment] ⚡ BYPASS_PAYMENT is enabled. Simulating instant approval...`);
-      approveOrder(orderId, `bypass-${Date.now()}`);
+      await approveOrder(orderId, `bypass-${Date.now()}`);
       markAsSold(ticketId, sessionToken, tickets);
       try {
         await addEmailToQueue({
