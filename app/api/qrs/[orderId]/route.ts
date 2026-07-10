@@ -49,6 +49,7 @@ export async function GET(
       buyer_name: order.buyerInfo.name,
       buyer_email: order.buyerInfo.email,
       buyer_phone: order.buyerInfo.phone,
+      buyer_locale: order.buyerInfo.locale === 'en' ? 'INGLES' : 'ESPAÑOL',
       total_accesos: totalCapacity,
       accesos_restantes: remainingAccesses,
       status: jsonStatus,

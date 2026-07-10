@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
           buyer_email: email,
           buyer_name: order.buyerInfo.name || '',
           buyer_phone: order.buyerInfo.phone || '',
+          buyer_locale: order.buyerInfo.locale === 'en' ? 'INGLES' : 'ESPAÑOL',
           ticket_purchased: ticketsMap.get(order.ticketId) || 'Boleto/Mesa',
           order_date: new Date(order.createdAt).toISOString()
         });
