@@ -152,8 +152,8 @@ img { background-color: transparent !important; }
 </style>
 <![endif]-->
 </head>
-<body lang="en" link="#676a52" vlink="#676a52" class="emailify" style="mso-line-height-rule: exactly; mso-hyphenate: none; word-wrap: normal; word-spacing: normal; background-color: #1e1e1e;">
-<div style="background-color:#1e1e1e;" lang="en" dir="auto">
+<body lang="en" link="#676a52" vlink="#676a52" class="emailify" style="mso-line-height-rule: exactly; mso-hyphenate: none; word-wrap: normal; word-spacing: normal; background-color: transparent;">
+<div style="background-color:transparent;" lang="en" dir="auto">
 <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
 <div class="r ey y" style="background:#676a52;background-color:#676a52;margin:0px auto;max-width:600px;">
 <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#676a52;background-color:#676a52;width:100%;">
