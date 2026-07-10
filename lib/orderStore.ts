@@ -1,8 +1,11 @@
 import type { BuyerInfo } from '@/types/checkout';
 import { decreaseWordPressStock } from './tickets';
 import { sendAdminNotificationEmail } from './emailService';
+import { getDynamicTickets } from './tickets';
+import { supabase } from './supabase';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 export interface OrderDetail {
   orderId: string;
@@ -142,6 +145,53 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
   orderStore.set(orderId, updatedOrder);
   writeOrdersToFile(orderStore);
   console.log(`[OrderStore] ✅ Order ${orderId} approved with paymentId ${paymentId}`);
+
+  // Save buyer/ticket details to Supabase database (purchased_tickets table)
+  try {
+    const tickets = await getDynamicTickets();
+    const ticket = tickets.find((t) => t.id === order.ticketId);
+
+    const ticketName = ticket?.name || 'Boleto/Cama';
+    const ticketNumber = ticket?.number || 0;
+    const zone = ticket?.zone || 'general';
+
+    const basePersons = ticket ? (ticket.stock !== undefined ? 1 : (ticket.persons || 1)) : 1;
+    const totalAccesos = basePersons * order.quantity;
+
+    const checksum = crypto
+      .createHash('sha256')
+      .update(`${order.orderId}-${order.buyerInfo.email}-${paymentId || ''}-approved`)
+      .digest('hex')
+      .substring(0, 16);
+
+    const languageStr = (order.buyerInfo.locale || 'es').toUpperCase() === 'EN' ? 'EN' : 'ES';
+
+    const { error } = await supabase.from('purchased_tickets').insert([{
+      order_id: order.orderId,
+      ticket_id: order.ticketId,
+      ticket_name: ticketName,
+      ticket_number: ticketNumber,
+      zone: zone,
+      buyer_name: order.buyerInfo.name,
+      buyer_email: order.buyerInfo.email,
+      buyer_phone: order.buyerInfo.phone,
+      total_accesos: totalAccesos,
+      accesos_restantes: totalAccesos,
+      status: 'paid',
+      checksum: checksum,
+      payment_ref: paymentId,
+      created_at: new Date(order.createdAt).toISOString(),
+      language: languageStr
+    }]);
+
+    if (error) {
+      console.error('[OrderStore] ❌ Error inserting approved ticket into purchased_tickets in Supabase:', error);
+    } else {
+      console.log(`[OrderStore] 🎉 Successfully saved approved ticket to purchased_tickets table for Order ${order.orderId}`);
+    }
+  } catch (dbErr) {
+    console.error('[OrderStore] 🚨 Exception saving to purchased_tickets in Supabase:', dbErr);
+  }
 
   // Decrease stock in WordPress
   await decreaseWordPressStock(order.ticketId, order.quantity).catch((err) => {
