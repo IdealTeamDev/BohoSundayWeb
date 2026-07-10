@@ -120,7 +120,7 @@ export default function EventMap({ onClose }: EventMapProps) {
       <div className="relative grid grid-cols-2 lg:grid-cols-2 lg:px-18 gap-2 justify-items-left px-4 pt-3 pb-2">
         
 
-        {Object.entries(zoneConfig).filter(([zone]) => zone !== 'general' && zone !== 'vip' && zone !== 'candela').map(([zone, cfg]) => {
+        {Object.entries(zoneConfig).filter(([zone]) => zone !== 'general').map(([zone, cfg]) => {
           const isSelected = selectedZone === zone;
           return (
             <button
@@ -188,7 +188,7 @@ export default function EventMap({ onClose }: EventMapProps) {
         })}
 
         {/* ── Puntos de tickets ── */}
-        {allTickets.filter(t => t.zone !== 'general' && t.zone !== 'vip' && t.zone !== 'candela').map((ticket) => {
+        {allTickets.filter(t => t.zone !== 'general').map((ticket) => {
           const cfg = zoneConfig[ticket.zone];
           const status = ticketStatuses[ticket.id] || 'available';
           const isAvailable = ticket.available && status === 'available';
