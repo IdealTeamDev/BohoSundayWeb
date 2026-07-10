@@ -52,6 +52,22 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
   const isEarlySoldOut = !earlyTicket || earlyRemaining <= 0 || ticketStatuses['early']?.status === 'sold';
   const isAnytimeSoldOut = !anytimeTicket || anytimeRemaining <= 0 || ticketStatuses['anytime']?.status === 'sold';
 
+  if (dynamicTickets.length === 0) {
+    return (
+      <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center min-h-[300px] justify-center">
+        <button
+          onClick={onClose}
+          className="absolute top-[-36px] right-2 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md cursor-pointer"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
+        <div className="w-8 h-8 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="font-sans text-[#231E1A] text-sm font-light">Cargando disponibilidad...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center">
       {/* Close button */}
