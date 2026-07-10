@@ -1,5 +1,6 @@
 import { tickets as staticTickets } from '@/data/tickets';
 import type { Ticket, ZoneType } from '@/types';
+import { supabase } from './supabase';
 
 /**
  * Helper to parse a raw WordPress item into a clean Ticket object
@@ -144,24 +145,44 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
     hasCamasError = true;
   }
 
-  // 2. Fetch Individual Tickets from WordPress
+  // 2. Fetch Individual Tickets from Supabase database
   try {
-    const res = await fetch(individualUrl, {
-      cache: 'no-store',
-    });
-    
-    if (!res.ok) {
-      throw new Error(`WordPress Individual Tickets API returned status ${res.status}`);
+    const { data: dbTickets, error: dbError } = await supabase
+      .from('boleteria_individual')
+      .select('*');
+
+    if (dbError) {
+      throw dbError;
     }
-    
-    const wpData = await res.json();
-    if (!Array.isArray(wpData)) {
-      throw new Error('WordPress Individual Tickets API response is not an array');
+
+    if (dbTickets) {
+      wordpressIndividual = dbTickets.map((row: any) => {
+        const staticInfo = staticTickets.find((s) => s.id === row.id) || {
+          zone: 'general',
+          iconCard: `images/icon/icon-${row.id}.png`,
+          img: `images/individual-ticket/card-${row.id}.png`,
+          includes: { licor: '', agua: 0, redBull: 0 }
+        };
+        return {
+          id: row.id,
+          zone: 'general' as const,
+          iconCard: staticInfo.iconCard,
+          img: staticInfo.img,
+          name: row.name,
+          number: row.id === 'early' ? 1 : 2,
+          persons: 1,
+          price: Number(row.price),
+          currency: 'COP',
+          includes: staticInfo.includes,
+          available: Number(row.stock) > 0,
+          position: { x: 0, y: 0 },
+          stock: Number(row.stock),
+          wpPostId: row.wp_post_id
+        };
+      });
     }
-    
-    wordpressIndividual = wpData.map((item: any) => parseWpTicket(item, 'individual'));
   } catch (error) {
-    console.error('[Tickets Service] Error fetching individual tickets from WordPress:', error);
+    console.error('[Tickets Service] Error fetching individual tickets from Supabase:', error);
     hasIndividualError = true;
   }
 

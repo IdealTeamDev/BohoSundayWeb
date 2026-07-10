@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       await approveOrder(orderId, paymentId);
 
       // Lock ticket permanently
-      markAsSold(order.ticketId, order.sessionToken, tickets);
+      await markAsSold(order.ticketId, order.sessionToken, tickets);
 
       // Queue and send confirmation email
       await addEmailToQueue({
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       rejectOrder(orderId, 'Pago rechazado en el simulador de Wompi.');
       
       // Release lock
-      releaseLock(order.ticketId, order.sessionToken, tickets);
+      await releaseLock(order.ticketId, order.sessionToken, tickets);
       console.log(`[Wompi Mock Webhook] ❌ Order ${orderId} rejected and ticket lock released.`);
     }
 

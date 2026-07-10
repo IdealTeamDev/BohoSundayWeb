@@ -17,9 +17,9 @@ export async function GET(req: NextRequest) {
   }
 
   const tickets = await getDynamicTickets();
-  const valid = verifyLock(ticketId, sessionToken, tickets);
-  const remainingSeconds = valid ? getRemainingSeconds(ticketId, sessionToken, tickets) : 0;
-  const quantity = valid ? getLockQuantity(ticketId, sessionToken, tickets) : 0;
+  const valid = await verifyLock(ticketId, sessionToken, tickets);
+  const remainingSeconds = valid ? await getRemainingSeconds(ticketId, sessionToken, tickets) : 0;
+  const quantity = valid ? await getLockQuantity(ticketId, sessionToken, tickets) : 0;
   const ticket = tickets.find((t) => t.id === ticketId);
 
   return NextResponse.json({ valid, remainingSeconds, sessionToken, quantity, ticket });

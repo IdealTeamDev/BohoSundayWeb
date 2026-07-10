@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
       await approveOrder(orderId, paymentId);
 
       // Permanently lock ticket
-      markAsSold(order.ticketId, order.sessionToken, tickets);
+      await markAsSold(order.ticketId, order.sessionToken, tickets);
 
       // Queue email confirmation
       await addEmailToQueue({
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
       console.warn(`[Checkout API] ❌ Payment not approved for Order ${orderId}: ${paymentStatus} (${detail})`);
       
       rejectOrder(orderId, `Mercado Pago payment status: ${paymentStatus}. Detail: ${detail}`);
-      releaseLock(order.ticketId, order.sessionToken, tickets);
+      await releaseLock(order.ticketId, order.sessionToken, tickets);
 
       return NextResponse.json({
         success: false,

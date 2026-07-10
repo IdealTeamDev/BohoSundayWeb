@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
       if (Math.abs(transactionAmount - expectedAmount) > 1) {
         console.error(`[Webhook Mercado Pago] 🚨 Payment amount mismatch! Paid: ${transactionAmount}, Expected: ${expectedAmount}`);
         rejectOrder(orderId, `Amount mismatch. Paid ${transactionAmount}, expected ${expectedAmount}`);
-        releaseLock(order.ticketId, order.sessionToken, tickets);
+        await releaseLock(order.ticketId, order.sessionToken, tickets);
         return new Response(JSON.stringify({ error: 'Amount mismatch' }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
       await approveOrder(orderId, paymentId);
 
       // Permanently claim ticket lock
-      markAsSold(order.ticketId, order.sessionToken, tickets);
+      await markAsSold(order.ticketId, order.sessionToken, tickets);
 
       // Queue and send confirmation email
       await addEmailToQueue({
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
       // 2. If payment was REJECTED / CANCELLED
       console.log(`[Webhook Mercado Pago] ❌ Payment for Order ${orderId} was ${paymentStatus}. Rejecting order & releasing lock.`);
       rejectOrder(orderId, `Payment ${paymentStatus} by provider.`);
-      releaseLock(order.ticketId, order.sessionToken, tickets);
+      await releaseLock(order.ticketId, order.sessionToken, tickets);
     }
 
     return new Response(JSON.stringify({ success: true }), {

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const sessionToken = uuidv4();
 
     const tickets = await getDynamicTickets();
-    const lock = acquireLock(ticketId, sessionToken, reqQuantity, tickets);
+    const lock = await acquireLock(ticketId, sessionToken, reqQuantity, tickets);
 
     if (!lock) {
       return NextResponse.json(

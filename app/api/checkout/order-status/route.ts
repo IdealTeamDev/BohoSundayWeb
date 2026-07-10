@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
               const tickets = await getDynamicTickets();
 
               // Confirm seat lock
-              markAsSold(order.ticketId, order.sessionToken, tickets);
+              await markAsSold(order.ticketId, order.sessionToken, tickets);
 
               // Send email
               await addEmailToQueue({
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
               const tickets = await getDynamicTickets();
 
               // Release seat lock
-              releaseLock(order.ticketId, order.sessionToken, tickets);
+              await releaseLock(order.ticketId, order.sessionToken, tickets);
 
               console.log(`[Wompi API Polling] ❌ Wompi transaction ${wompiTxId} ${transactionStatus}. Order updated.`);
             } else {
