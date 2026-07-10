@@ -11,44 +11,35 @@ export interface StaffUser {
   role: 'admin' | 'bouncer' | 'viewer1' | 'viewer2';
 }
 
-// In-memory token cache (in production this could be Redis or JWT, but memory is fine for a few admins)
-// key: token, value: userId
-const activeSessions = new Map<string, string>();
-
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
+const DEFAULT_USERS: StaffUser[] = [
+  {
+    id: '1',
+    username: 'admin',
+    passwordHash: hashPassword('password'),
+    role: 'admin'
+  },
+  {
+    id: '2',
+    username: 'portero1',
+    passwordHash: hashPassword('portero'),
+    role: 'bouncer'
+  }
+];
+
 function readStaffFromFile(): StaffUser[] {
   try {
     if (!fs.existsSync(STAFF_FILE)) {
-      const dir = path.dirname(STAFF_FILE);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      // Create a default admin user (username: admin, password: password)
-      const defaultUsers: StaffUser[] = [
-        {
-          id: '1',
-          username: 'admin',
-          passwordHash: hashPassword('password'),
-          role: 'admin'
-        },
-        {
-          id: '2',
-          username: 'portero1',
-          passwordHash: hashPassword('portero'),
-          role: 'bouncer'
-        }
-      ];
-      fs.writeFileSync(STAFF_FILE, JSON.stringify(defaultUsers, null, 2));
-      return defaultUsers;
+      return DEFAULT_USERS;
     }
     const content = fs.readFileSync(STAFF_FILE, 'utf8');
     return JSON.parse(content) as StaffUser[];
   } catch (error) {
-    console.error('[AuthStore] Error reading staff file:', error);
-    return [];
+    console.error('[AuthStore] Error reading staff file, falling back to defaults:', error);
+    return DEFAULT_USERS;
   }
 }
 
@@ -59,8 +50,8 @@ export function authenticateUser(username: string, password: string): { user: St
   if (!user) return null;
   
   if (user.passwordHash === hashPassword(password)) {
-    const token = crypto.randomBytes(32).toString('hex');
-    activeSessions.set(token, user.id);
+    // Stateless token for Vercel Serverless (Base64 of username:hash)
+    const token = Buffer.from(`${user.username}:${user.passwordHash}`).toString('base64');
     return { user, token };
   }
   
@@ -69,14 +60,27 @@ export function authenticateUser(username: string, password: string): { user: St
 
 export function validateSession(token: string | null): StaffUser | null {
   if (!token) return null;
-  const userId = activeSessions.get(token);
-  if (!userId) return null;
   
-  const users = readStaffFromFile();
-  const user = users.find(u => u.id === userId);
-  return user || null;
+  try {
+    const decoded = Buffer.from(token, 'base64').toString('utf8');
+    const [username, hash] = decoded.split(':');
+    
+    if (!username || !hash) return null;
+    
+    const users = readStaffFromFile();
+    const user = users.find(u => u.username === username);
+    
+    if (user && user.passwordHash === hash) {
+      return user;
+    }
+  } catch (e) {
+    return null;
+  }
+  
+  return null;
 }
 
 export function logout(token: string) {
-  activeSessions.delete(token);
+  // Stateless tokens can't be invalidated easily without a DB. 
+  // Client clears it locally.
 }
