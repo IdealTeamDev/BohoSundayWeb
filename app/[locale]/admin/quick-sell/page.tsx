@@ -137,7 +137,9 @@ export default function QuickSellPage() {
         orderId: data.orderId,
         buyerName: buyerInfo.name,
         buyerEmail: buyerInfo.email,
-        ticketName: selectedTicket?.name || 'Boleta/Mesa',
+        ticketName: selectedTicket?.stock === undefined
+          ? `${selectedTicket?.name || 'Cama'} #${selectedTicket?.number}`
+          : selectedTicket?.name || 'Boleta',
         qrUrl,
         qrImageUrl,
         isIndividual,
@@ -242,7 +244,7 @@ export default function QuickSellPage() {
                 >
                   {tickets.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name} - ${t.price.toLocaleString('es-CO')} {t.stock !== undefined ? `(Stock: ${(t as any).remaining ?? t.stock})` : '(Mesa)'}
+                      {t.name} - ${t.price.toLocaleString('es-CO')} {t.stock !== undefined ? `(Stock: ${(t as any).remaining ?? t.stock})` : `(Cama #${t.number})`}
                     </option>
                   ))}
                 </select>
