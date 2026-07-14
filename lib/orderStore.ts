@@ -166,6 +166,8 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
 
     const languageStr = (order.buyerInfo.locale || 'es').toUpperCase() === 'EN' ? 'EN' : 'ES';
 
+    const ticketPrice = ticket?.price || 0;
+
     const { error } = await supabase.from('purchased_tickets').insert([{
       order_id: order.orderId,
       ticket_id: order.ticketId,
@@ -181,7 +183,8 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
       checksum: checksum,
       payment_ref: paymentId,
       created_at: new Date(order.createdAt).toISOString(),
-      language: languageStr
+      language: languageStr,
+      ticket_price: ticketPrice
     }]);
 
     if (error) {

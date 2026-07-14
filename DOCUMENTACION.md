@@ -65,6 +65,7 @@ Almacena la información de las entradas vendidas con éxito.
 *   `checksum` (TEXT): Hash criptográfico SHA-256 (`16` caracteres) para validar la integridad del boleto en el ingreso.
 *   `payment_ref` (TEXT): ID de referencia del pago generado por la pasarela.
 *   `language` (TEXT): Idioma de la compra (`ES` o `EN`).
+*   `ticket_price` (NUMERIC): Precio unitario de la boleta comprada.
 *   `created_at` (TIMESTAMP WITH TIME ZONE): Fecha y hora del registro.
 
 #### C. `boleteria_individual` (Control de Stock de Boletas)

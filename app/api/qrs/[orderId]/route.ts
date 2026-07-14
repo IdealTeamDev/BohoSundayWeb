@@ -37,7 +37,8 @@ export async function GET(
         status: ticketRecord.status,
         checksum: ticketRecord.checksum,
         payment_ref: ticketRecord.payment_ref || 'N/A',
-        created_at: ticketRecord.created_at
+        created_at: ticketRecord.created_at,
+        ticket_price: ticketRecord.ticket_price
       });
     }
 
@@ -82,7 +83,8 @@ export async function GET(
       status: jsonStatus,
       checksum: checksum,
       payment_ref: order.paymentId || order.errorDetail || 'N/A',
-      created_at: new Date(order.createdAt).toISOString()
+      created_at: new Date(order.createdAt).toISOString(),
+      ticket_price: ticket?.price || 0
     });
   } catch (error) {
     console.error('Error generating dynamic QR JSON:', error);

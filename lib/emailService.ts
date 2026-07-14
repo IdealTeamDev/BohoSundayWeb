@@ -1652,7 +1652,8 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
       status: jsonStatus,
       checksum: checksum,
       payment_ref: order.paymentId || order.errorDetail || 'N/A',
-      created_at: new Date(order.createdAt).toISOString()
+      created_at: new Date(order.createdAt).toISOString(),
+      ticket_price: ticket?.price || 0
     };
 
     const transport = createTransport();
