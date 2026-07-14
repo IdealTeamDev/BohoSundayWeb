@@ -1616,9 +1616,6 @@ img { background-color: transparent !important; }
   });
 }
 
-/**
- * Send admin notification email containing transaction JSON (for successful and failed payments)
- */
 export async function sendAdminNotificationEmail(order: OrderDetail, status: 'approved' | 'rejected') {
   try {
     const tickets = await getDynamicTickets();
@@ -1660,7 +1657,8 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
 
     const transport = createTransport();
     const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday" <reservas@bohosunday.com>';
-    const adminEmails = 'alejandra@idealteamcolombia.com, coordinacionreservas@casacandela.co';
+    const emailAlejandra = 'alejandra@idealteamcolombia.com';
+    const emailCoordinacion = 'coordinacionreservas@casacandela.co';
 
     // Fetch client QR code buffer to attach to the email
     const qrBuffer = await fetchQrBuffer(order.orderId, order.ticketId, order.buyerInfo.email);
@@ -1676,7 +1674,7 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
       ? `🟢 Compra EXITOSA - Orden ${order.orderId}`
       : `🔴 Compra FALLIDA - Orden ${order.orderId}`;
 
-    const htmlContent = `
+    const baseHtmlContent = `
       <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
         <h2 style="color: ${status === 'approved' ? '#2e7d32' : '#c62828'}; border-bottom: 2px solid ${status === 'approved' ? '#2e7d32' : '#c62828'}; padding-bottom: 10px; margin-top: 0;">
           ${status === 'approved' ? '🟢 Nueva Compra Exitosa' : '🔴 Compra Fallida/Rechazada'}
@@ -1709,20 +1707,42 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
           </tr>
         </table>
         ${status === 'approved' ? '<p style="color: #2e7d32; font-weight: bold;">El código QR generado para el cliente ha sido adjuntado a este correo.</p>' : ''}
+    `;
+
+    // HTML for Alejandra (with JSON block)
+    const htmlWithJson = `
+      ${baseHtmlContent}
         <p><strong>JSON de la Compra (para tus registros):</strong></p>
         <pre style="background: #1e1e1e; color: #a9b7c6; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: monospace; font-size: 13px; line-height: 1.5;">${JSON.stringify(orderJson, null, 2)}</pre>
       </div>
     `;
 
+    // HTML for Coordinacion Reservas (without JSON block)
+    const htmlWithoutJson = `
+      ${baseHtmlContent}
+      </div>
+    `;
+
+    // Send to Alejandra (with JSON)
     await transport.sendMail({
       from: fromAddress,
-      to: adminEmails,
+      to: emailAlejandra,
       subject: subject,
-      html: htmlContent,
+      html: htmlWithJson,
       attachments,
     });
+    console.log(`[Admin Notification] Email with JSON sent successfully to ${emailAlejandra} for Order ${order.orderId} (Status: ${status})`);
 
-    console.log(`[Admin Notification] Email sent successfully to ${adminEmails} for Order ${order.orderId} (Status: ${status})`);
+    // Send to Coordinacion Reservas (without JSON)
+    await transport.sendMail({
+      from: fromAddress,
+      to: emailCoordinacion,
+      subject: subject,
+      html: htmlWithoutJson,
+      attachments,
+    });
+    console.log(`[Admin Notification] Email without JSON sent successfully to ${emailCoordinacion} for Order ${order.orderId} (Status: ${status})`);
+
   } catch (error) {
     console.error(`[Admin Notification] ❌ Error sending admin notification email:`, error);
   }
