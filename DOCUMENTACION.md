@@ -177,9 +177,10 @@ Cuando el cliente llega al evento, el personal de portería escanea el código Q
 
 Ubicado en [app/api/cron/send-scheduled-email/route.ts](file:///C:/Users/Usuario/Documents/IdealTeamGit/Repositorio%20Boho/BohoSundayWeb/app/api/cron/send-scheduled-email/route.ts), este módulo permite realizar campañas de correo automáticas (ej. un recordatorio masivo a los compradores 24 horas antes del evento).
 
-*   **Destinatario**: Configurado para `alejandra@idealteamcolombia.com`.
+*   **Destinatarios**: Dinámico. El script consulta todos los registros de la tabla `purchased_tickets` de Supabase, extrae los correos únicos de los compradores (`buyer_email`) y determina su idioma correspondiente (`language`).
 *   **Fecha de Disparo**: Programada de forma estricta para el `25 de Julio de 2026, 2:00 PM` (Hora Colombia, `UTC-5`).
+*   **Segmentación por Idioma**: Los correos se envían en Español (`ES` / `EMAIL_HTML_ES`) o Inglés (`EN` / `EMAIL_HTML_EN`) dependiendo del valor de la columna `language` asociado al comprador.
 *   **Protecciones**:
     *   Verificación estricta del año actual (`2026`).
-    *   Banderas booleanas en memoria (`hasBeenSentInContainerES` / `hasBeenSentInContainerEN`) para prevenir que el servicio cron dispare correos duplicados ante llamadas repetitivas.
-    *   Parámetro de anulación rápida `?force=true` para disparar el flujo manualmente en entornos de depuración.
+    *   Bandera booleana en memoria (`hasBeenSentInContainer`) para prevenir que llamadas repetitivas de un cron mal configurado disparen correos duplicados en el mismo contenedor.
+    *   Parámetro de anulación rápida `?force=true` para disparar el flujo manualmente y con fines de depuración.

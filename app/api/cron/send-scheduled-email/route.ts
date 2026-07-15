@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createTransport } from '@/lib/emailService';
+import { supabase } from '@/lib/supabase';
 
 // ==========================================
 // 1. CÓDIGO HTML EN ESPAÑOL (EMAILIFY FIGMA)
@@ -1783,33 +1784,23 @@ How to get there?
 // Hora programada: 25 de Julio de 2026, 2:00 PM (Hora Colombia: UTC-5)
 const TARGET_DATE_STRING = '2026-07-25T14:00:00-05:00';
 
-// Lista de destinatarios
-const RECIPIENTS = [
-
-  'alejandra@idealteamcolombia.com'
-  
-];
-
 // Asuntos del correo por idioma
 const SUBJECT_ES = '✨ ¡Boho Sunday es mañana!';
 const SUBJECT_EN = '✨ Boho Sunday is tomorrow!';
 
-// Banderas en memoria para evitar envíos duplicados en el mismo contenedor
-let hasBeenSentInContainerES = false;
-let hasBeenSentInContainerEN = false;
+// Bandera en memoria para evitar envíos duplicados en el mismo contenedor
+let hasBeenSentInContainer = false;
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const force = searchParams.get('force') === 'true';
-    const lang = searchParams.get('lang') || 'es'; // 'es' o 'en'
 
     const now = new Date();
     const targetTime = new Date(TARGET_DATE_STRING);
 
     console.log(`[Scheduled Email] 🕒 Current time (UTC): ${now.toISOString()}`);
     console.log(`[Scheduled Email] 🎯 Target time (UTC): ${targetTime.toISOString()}`);
-    console.log(`[Scheduled Email] 🌍 Selected Language: ${lang.toUpperCase()}`);
 
     // Evitar ejecuciones en años diferentes al 2026 (por ejemplo 2027+) para que sea un envío único
     if (now.getFullYear() !== 2026 && !force) {
@@ -1835,46 +1826,76 @@ export async function GET(req: NextRequest) {
     }
 
     // Evitar re-envíos duplicados si el cron sigue ejecutándose continuamente
-    const hasBeenSent = lang === 'en' ? hasBeenSentInContainerEN : hasBeenSentInContainerES;
-    if (hasBeenSent && !force) {
+    if (hasBeenSentInContainer && !force) {
       return NextResponse.json({
         success: false,
-        message: `El correo en ${lang.toUpperCase()} ya fue enviado en esta sesión del contenedor y no se volverá a enviar.`
+        message: `El correo programado ya fue enviado en esta sesión del contenedor y no se volverá a enviar.`
       }, { status: 200 });
     }
 
-    const emailHtml = lang === 'en' ? EMAIL_HTML_EN : EMAIL_HTML_ES;
-    const emailSubject = lang === 'en' ? SUBJECT_EN : SUBJECT_ES;
+    // Obtener todos los compradores de la base de datos purchased_tickets
+    console.log('[Scheduled Email] 🔍 Fetching buyers from purchased_tickets table...');
+    const { data: records, error: dbError } = await supabase
+      .from('purchased_tickets')
+      .select('buyer_email, language');
 
-    console.log(`[Scheduled Email] 🚀 Initiating scheduled email send (${lang.toUpperCase()}) to: ${RECIPIENTS.join(', ')}`);
+    if (dbError) {
+      throw new Error(`Database fetch error: ${dbError.message}`);
+    }
+
+    if (!records || records.length === 0) {
+      console.warn('[Scheduled Email] ⚠️ No records found in purchased_tickets table.');
+      return NextResponse.json({
+        success: true,
+        message: 'No se encontraron registros de compra. No se envió ningún correo.',
+        recipientsCount: 0
+      });
+    }
+
+    // Construir mapa único de emails y sus respectivos idiomas
+    const buyerMap = new Map<string, string>(); // buyer_email (lowercase) -> language (es/en)
+    records.forEach((row: any) => {
+      const email = (row.buyer_email || '').trim().toLowerCase();
+      if (email) {
+        const lang = (row.language || 'es').toLowerCase() === 'en' ? 'en' : 'es';
+        if (!buyerMap.has(email)) {
+          buyerMap.set(email, lang);
+        }
+      }
+    });
+
+    const totalRecipients = buyerMap.size;
+    console.log(`[Scheduled Email] 🚀 Initiating scheduled email send to ${totalRecipients} unique recipients...`);
 
     const transport = createTransport();
     const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday" <reservas@bohosunday.com>';
+    const sentList: string[] = [];
 
-    // Enviar el correo a cada destinatario
-    for (const recipient of RECIPIENTS) {
+    // Enviar correo a cada destinatario único en su respectivo idioma
+    for (const [email, lang] of buyerMap.entries()) {
+      const emailHtml = lang === 'en' ? EMAIL_HTML_EN : EMAIL_HTML_ES;
+      const emailSubject = lang === 'en' ? SUBJECT_EN : SUBJECT_ES;
+
       await transport.sendMail({
         from: fromAddress,
-        to: recipient,
+        to: email,
         subject: emailSubject,
         html: emailHtml,
       });
-      console.log(`[Scheduled Email] ✅ Email (${lang.toUpperCase()}) successfully sent to ${recipient}`);
+      sentList.push(`${email} (${lang.toUpperCase()})`);
+      console.log(`[Scheduled Email] ✅ Email (${lang.toUpperCase()}) successfully sent to ${email}`);
     }
 
     // Marcar como enviado en este contenedor solo si fue un envío programado real (sin forzar)
     if (!force) {
-      if (lang === 'en') {
-        hasBeenSentInContainerEN = true;
-      } else {
-        hasBeenSentInContainerES = true;
-      }
+      hasBeenSentInContainer = true;
     }
 
     return NextResponse.json({
       success: true,
-      message: `Correo(s) en ${lang.toUpperCase()} enviado(s) correctamente.`,
-      recipients: RECIPIENTS,
+      message: 'Correos programados enviados correctamente.',
+      recipientsCount: totalRecipients,
+      recipients: sentList,
       sentAt: new Date().toISOString()
     });
 
