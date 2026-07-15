@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import type { Ticket } from '@/types';
+import { jsPDF } from 'jspdf';
 
 export default function QuickSellPage() {
   const router = useRouter();
@@ -52,6 +53,182 @@ export default function QuickSellPage() {
   } | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState<boolean>(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  // Search Buyer and Resend QR State
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const [searching, setSearching] = useState<boolean>(false);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [resending, setResending] = useState<boolean>(false);
+  const [resendStatus, setResendStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Search logic
+  useEffect(() => {
+    if (searchTerm.trim().length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/admin/quick-sell/search?q=${encodeURIComponent(searchTerm)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.data) {
+            setSearchResults(data.data);
+            setShowDropdown(true);
+          }
+        }
+      } catch (err) {
+        console.error('Error searching buyers:', err);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  async function handleResendQR(orderId: string) {
+    setResending(true);
+    setResendStatus(null);
+    try {
+      const res = await fetch('/api/admin/quick-sell/resend-qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setResendStatus({ type: 'success', message: data.message || 'El código QR ha sido reenviado con éxito.' });
+      } else {
+        setResendStatus({ type: 'error', message: data.error || 'Error al reenviar el código QR.' });
+      }
+    } catch (err) {
+      console.error('Error resending QR:', err);
+      setResendStatus({ type: 'error', message: 'Error de red al reenviar el código QR.' });
+    } finally {
+      setResending(false);
+    }
+  }
+
+  function downloadMetricsPDF() {
+    if (!metricsData) return;
+
+    try {
+      const doc = new jsPDF();
+      const margin = 20;
+      let y = 20;
+
+      // Header Banner
+      doc.setFillColor(104, 106, 84); // #686A54
+      doc.rect(0, 0, 210, 35, 'F');
+
+      // Title inside header
+      doc.setTextColor(244, 239, 233); // #F4EFE9
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('REPORTE DE VENTAS - BOHO SUNDAY', margin, 23);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(`Generado el: ${new Date().toLocaleString('es-CO')}`, margin, 29);
+
+      // Reset text color to dark gray
+      doc.setTextColor(35, 30, 26); // #231E1A
+      y = 50;
+
+      // Summary totals
+      const totalMesasSold = metricsData.zones.reduce((sum, z) => sum + z.sold, 0);
+      const totalMesasRevenue = metricsData.zones.reduce((sum, z) => sum + z.revenue, 0);
+      const totalIndivSold = metricsData.individuals.reduce((sum, i) => sum + i.sold, 0);
+      const totalIndivRevenue = metricsData.individuals.reduce((sum, i) => sum + i.revenue, 0);
+      const totalRevenue = totalMesasRevenue + totalIndivRevenue;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('Resumen General de Ventas', margin, y);
+      y += 8;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.text(`Recaudacion Total: $${totalRevenue.toLocaleString('es-CO')} COP`, margin, y);
+      y += 6;
+      doc.text(`Total Mesas/Camas Vendidas: ${totalMesasSold}`, margin, y);
+      y += 6;
+      doc.text(`Total Boletas Individuales Vendidas: ${totalIndivSold}`, margin, y);
+      y += 12;
+
+      // Table 1: Mesas y Camas por Zona
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('Reservas de Mesas y Camas por Zona', margin, y);
+      y += 8;
+
+      // Table headers
+      doc.setFontSize(10);
+      doc.setFillColor(244, 239, 233); // #F4EFE9
+      doc.rect(margin, y - 5, 170, 7, 'F');
+      doc.text('Zona', margin + 2, y);
+      doc.text('Vendidas', margin + 60, y);
+      doc.text('Disponibles', margin + 90, y);
+      doc.text('Total', margin + 120, y);
+      doc.text('Recaudado (COP)', margin + 140, y);
+      y += 8;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      metricsData.zones.forEach((z) => {
+        doc.text(z.name || z.zone, margin + 2, y);
+        doc.text(String(z.sold), margin + 60, y);
+        doc.text(String(z.remaining), margin + 90, y);
+        doc.text(String(z.total), margin + 120, y);
+        doc.text(`$${z.revenue.toLocaleString('es-CO')}`, margin + 140, y);
+        
+        doc.setDrawColor(232, 226, 218); // #E8E2DA
+        doc.line(margin, y + 2, margin + 170, y + 2);
+        y += 8;
+      });
+      y += 10;
+
+      // Table 2: Boleteria Individual
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('Boleteria Individual', margin, y);
+      y += 8;
+
+      // Table headers
+      doc.setFontSize(10);
+      doc.setFillColor(244, 239, 233); // #F4EFE9
+      doc.rect(margin, y - 5, 170, 7, 'F');
+      doc.text('Tipo de Entrada', margin + 2, y);
+      doc.text('Vendidas', margin + 60, y);
+      doc.text('Stock Restante', margin + 90, y);
+      doc.text('Recaudado (COP)', margin + 130, y);
+      y += 8;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      metricsData.individuals.forEach((i) => {
+        doc.text(i.name, margin + 2, y);
+        doc.text(String(i.sold), margin + 60, y);
+        doc.text(String(i.remaining), margin + 90, y);
+        doc.text(`$${i.revenue.toLocaleString('es-CO')}`, margin + 130, y);
+        
+        doc.setDrawColor(232, 226, 218); // #E8E2DA
+        doc.line(margin, y + 2, margin + 170, y + 2);
+        y += 8;
+      });
+
+      doc.save(`reporte_ventas_${Date.now()}.pdf`);
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      alert('Error al generar el archivo PDF.');
+    }
+  }
 
   async function handleOpenMetrics() {
     setShowMetricsModal(true);
@@ -454,6 +631,144 @@ export default function QuickSellPage() {
         </form>
       </div>
 
+      {/* Search Buyer and Resend QR Section */}
+      <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden mt-8 p-8 space-y-6">
+        <div className="flex items-center gap-2 text-[#686A54] border-b border-[#FAF8F5] pb-3 mb-4">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <h2 className="font-sans font-bold text-base uppercase tracking-wide">Buscador y Reenvio de Codigos QR</h2>
+        </div>
+
+        <p className="text-xs text-[#7A6F5E] leading-relaxed font-sans">
+          Busca a un comprador por su **nombre** o **correo electronico** para consultar los detalles de su compra y reenviarle el correo de confirmacion con el codigo QR.
+        </p>
+
+        <div className="relative font-sans">
+          <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Buscar Comprador</label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Ej. Juan Perez o juan@correo.com"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#FAF8F5] border border-[#E0D9D0] rounded-xl pl-4 pr-10 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+            />
+            {searching && (
+              <div className="absolute right-3 top-3.5">
+                <div className="w-4 h-4 border-2 border-[#686A54] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+
+          {/* Autocomplete Dropdown */}
+          {showDropdown && searchResults.length > 0 && (
+            <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#E8E2DA] rounded-xl shadow-lg max-h-60 overflow-y-auto z-40 divide-y divide-[#FAF8F5]">
+              {searchResults.map((result) => (
+                <button
+                  key={result.orderId}
+                  type="button"
+                  onClick={() => {
+                    setSelectedUser(result);
+                    setShowDropdown(false);
+                    setSearchTerm('');
+                    setResendStatus(null);
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-[#FAF8F5] transition-colors flex flex-col gap-0.5 cursor-pointer"
+                >
+                  <span className="font-semibold text-sm text-[#231E1A]">{result.buyerName}</span>
+                  <span className="text-xs text-[#7A6F5E]">{result.buyerEmail} | {result.ticketName} {result.ticketNumber ? `#${result.ticketNumber}` : ''}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {showDropdown && searchResults.length === 0 && searchTerm.trim().length >= 2 && !searching && (
+            <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#E8E2DA] rounded-xl shadow-lg p-4 text-center text-xs text-[#7A6F5E] z-40">
+              No se encontraron compradores con esos terminos.
+            </div>
+          )}
+        </div>
+
+        {/* Selected User Details Card */}
+        {selectedUser && (
+          <div className="bg-[#FAF8F5] border border-[#E8E2DA] rounded-2xl p-5 space-y-4 font-sans">
+            <div className="flex justify-between items-start">
+              <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider">Detalles del Comprador Seleccionado</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedUser(null);
+                  setResendStatus(null);
+                }}
+                className="text-xs text-red-500 hover:underline cursor-pointer"
+              >
+                Limpiar
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Nombre</span>
+                <span className="font-semibold text-[#231E1A]">{selectedUser.buyerName}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Correo Electronico</span>
+                <span className="font-semibold text-[#231E1A] break-all">{selectedUser.buyerEmail}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Telefono</span>
+                <span className="font-semibold text-[#231E1A]">{selectedUser.buyerPhone}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Producto Adquirido</span>
+                <span className="font-semibold text-[#231E1A]">
+                  {selectedUser.ticketName} {selectedUser.ticketNumber ? `#${selectedUser.ticketNumber}` : ''}
+                </span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Codigo de Orden</span>
+                <span className="font-mono text-[#231E1A] font-bold text-[11px]">{selectedUser.orderId}</span>
+              </div>
+              <div>
+                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Total Entradas</span>
+                <span className="font-semibold text-[#231E1A]">{selectedUser.totalAccesos}</span>
+              </div>
+            </div>
+
+            {resendStatus && (
+              <div className={`px-4 py-2.5 rounded-xl text-xs ${resendStatus.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                {resendStatus.message}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => handleResendQR(selectedUser.orderId)}
+              disabled={resending}
+              className="w-full py-3 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity flex justify-center items-center gap-2 cursor-pointer font-sans"
+            >
+              {resending ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  REENVIANDO QR...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  REENVIAR CODIGO QR POR EMAIL
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+
+
       {/* Success Modal */}
       {showModal && modalData && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -669,11 +984,25 @@ export default function QuickSellPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="pt-4 border-t border-[#E8E2DA] mt-4 flex justify-end">
+            <div className="pt-4 border-t border-[#E8E2DA] mt-4 flex justify-between items-center">
+              {metricsData && (
+                <button
+                  type="button"
+                  onClick={downloadMetricsPDF}
+                  className="px-5 py-2.5 bg-white border border-[#686A54] text-[#686A54] hover:bg-[#686A54]/10 transition-colors font-bold text-xs tracking-wider uppercase rounded-xl flex items-center gap-2 cursor-pointer font-sans"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  DESCARGAR REPORTE PDF
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setShowMetricsModal(false)}
-                className="px-6 py-2.5 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+                className="px-6 py-2.5 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer font-sans"
               >
                 Cerrar
               </button>
