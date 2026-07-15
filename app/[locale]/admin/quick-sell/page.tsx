@@ -115,6 +115,33 @@ export default function QuickSellPage() {
     }
   }
 
+  async function downloadQRImage(orderId: string, buyerName: string) {
+    try {
+      const siteUrl = window.location.origin;
+      const qrUrl = `${siteUrl}/api/qrs/${orderId}`;
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+
+      const response = await fetch(qrImageUrl);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const blob = await response.blob();
+      
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `QR_${buyerName.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${orderId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Error downloading QR image:', err);
+      const siteUrl = window.location.origin;
+      const qrUrl = `${siteUrl}/api/qrs/${orderId}`;
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrUrl)}`;
+      window.open(qrImageUrl, '_blank');
+    }
+  }
+
   function downloadMetricsPDF() {
     if (!metricsData) return;
 
@@ -743,27 +770,42 @@ export default function QuickSellPage() {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => handleResendQR(selectedUser.orderId)}
-              disabled={resending}
-              className="w-full py-3 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity flex justify-center items-center gap-2 cursor-pointer font-sans"
-            >
-              {resending ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  REENVIANDO QR...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  REENVIAR CODIGO QR POR EMAIL
-                </>
-              )}
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleResendQR(selectedUser.orderId)}
+                disabled={resending}
+                className="w-full py-3 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity flex justify-center items-center gap-2 cursor-pointer font-sans"
+              >
+                {resending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    REENVIANDO...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                      <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    REENVIAR POR EMAIL
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => downloadQRImage(selectedUser.orderId, selectedUser.buyerName)}
+                className="w-full py-3 bg-white border border-[#686A54] text-[#686A54] hover:bg-[#686A54]/10 transition-colors font-bold text-xs tracking-wider uppercase rounded-xl flex justify-center items-center gap-2 cursor-pointer font-sans"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                DESCARGAR QR IMAGEN
+              </button>
+            </div>
           </div>
         )}
       </div>
