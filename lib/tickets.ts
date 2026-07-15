@@ -124,25 +124,66 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
   let hasCamasError = false;
   let hasIndividualError = false;
 
-  // 1. Fetch Camas from WordPress
+  // 1. Fetch Camas from Supabase database
   try {
-    const res = await fetch(camasUrl, {
-      cache: 'no-store',
-    });
-    
-    if (!res.ok) {
-      throw new Error(`WordPress Camas API returned status ${res.status}`);
+    const { data: dbCamas, error: dbError } = await supabase
+      .from('boleteria_mesas')
+      .select('*');
+
+    if (dbError) {
+      throw dbError;
     }
-    
-    const wpData = await res.json();
-    if (!Array.isArray(wpData)) {
-      throw new Error('WordPress Camas API response is not an array');
+
+    if (dbCamas) {
+      wordpressCamas = dbCamas.map((row: any) => ({
+        id: row.id,
+        zone: row.zone as ZoneType,
+        iconCard: row.icon_card || undefined,
+        img: row.img || '',
+        name: row.name,
+        description: row.description || undefined,
+        number: Number(row.number),
+        persons: Number(row.persons),
+        price: Number(row.price),
+        currency: row.currency || 'COP',
+        includes: {
+          licor: row.licor || '',
+          agua: Number(row.agua) || 0,
+          redBull: Number(row.redbull) || 0,
+        },
+        available: row.available === true || row.available === '1' || row.available === 1,
+        position: {
+          x: Number(row.x) || 0,
+          y: Number(row.y) || 0,
+        },
+        wpPostId: row.wp_post_id || undefined
+      }));
     }
-    
-    wordpressCamas = wpData.map((item: any) => parseWpTicket(item, 'cama'));
   } catch (error) {
-    console.error('[Tickets Service] Error fetching camas from WordPress:', error);
+    console.error('[Tickets Service] Error fetching camas from Supabase:', error);
     hasCamasError = true;
+  }
+
+  // Graceful Fallback for Camas: if database query fails, fetch from WordPress API
+  if (hasCamasError) {
+    try {
+      console.log('[Tickets Service] Database fetch failed. Falling back to WordPress Camas API...');
+      const res = await fetch(camasUrl, {
+        cache: 'no-store',
+      });
+      
+      if (!res.ok) {
+        throw new Error(`WordPress Camas API returned status ${res.status}`);
+      }
+      
+      const wpData = await res.json();
+      if (Array.isArray(wpData)) {
+        wordpressCamas = wpData.map((item: any) => parseWpTicket(item, 'cama'));
+        hasCamasError = false; // Resolved fallback successfully
+      }
+    } catch (wpError) {
+      console.error('[Tickets Service] Fallback WordPress Camas API failed:', wpError);
+    }
   }
 
   // 2. Fetch Individual Tickets from Supabase database
@@ -186,7 +227,7 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
     hasIndividualError = true;
   }
 
-  // Graceful Fallbacks to static data ONLY if the WordPress request fails
+  // Graceful Fallbacks to static data ONLY if the request fails completely
   const finalCamas = hasCamasError
     ? staticTickets.filter(t => t.zone !== 'general')
     : wordpressCamas;
@@ -284,5 +325,25 @@ export async function decreaseWordPressStock(ticketId: string, quantity: number)
     }
   } catch (error) {
     console.error(`[WordPress Sync] ❌ Error updating WordPress status for ticket ${ticketId}:`, error);
+  }
+}
+
+/**
+ * Mark a cama/mesa as unavailable in Supabase in real time.
+ */
+export async function decreaseDatabaseStock(ticketId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('boleteria_mesas')
+      .update({ available: false })
+      .eq('id', ticketId);
+
+    if (error) {
+      console.error(`[Database Sync] ❌ Error marking mesa/cama ${ticketId} as unavailable in Supabase:`, error);
+    } else {
+      console.log(`[Database Sync] ✅ Mesa/Cama ${ticketId} marked as unavailable in Supabase.`);
+    }
+  } catch (error) {
+    console.error(`[Database Sync] 🚨 Exception marking mesa/cama ${ticketId} as unavailable:`, error);
   }
 }

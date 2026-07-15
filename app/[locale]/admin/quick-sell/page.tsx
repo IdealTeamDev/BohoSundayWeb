@@ -44,6 +44,36 @@ export default function QuickSellPage() {
     locale: string;
   } | null>(null);
 
+  // Metrics Modal State
+  const [showMetricsModal, setShowMetricsModal] = useState<boolean>(false);
+  const [metricsData, setMetricsData] = useState<{
+    zones: Array<{ zone: string; name: string; total: number; sold: number; remaining: number; revenue: number }>;
+    individuals: Array<{ id: string; name: string; totalStock: number; sold: number; remaining: number; revenue: number }>;
+  } | null>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState<boolean>(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  async function handleOpenMetrics() {
+    setShowMetricsModal(true);
+    setLoadingMetrics(true);
+    setMetricsError(null);
+    try {
+      const res = await fetch('/api/admin/quick-sell/stats');
+      if (!res.ok) throw new Error('Error al obtener las métricas');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setMetricsData(data.data);
+      } else {
+        throw new Error(data.error || 'Error al obtener las métricas');
+      }
+    } catch (err: any) {
+      console.error('Error fetching metrics:', err);
+      setMetricsError(err.message || 'Error al conectar con el servidor.');
+    } finally {
+      setLoadingMetrics(false);
+    }
+  }
+
   // Load tickets on mount
   useEffect(() => {
     async function fetchTickets() {
@@ -207,6 +237,23 @@ export default function QuickSellPage() {
 
   return (
     <div className="min-h-screen bg-[#F4EFE9] py-12 px-4 sm:px-6 lg:px-8 relative">
+      
+      {/* Metrics Button at the top of the container */}
+      <div className="max-w-2xl mx-auto flex justify-end mb-4">
+        <button
+          type="button"
+          onClick={handleOpenMetrics}
+          className="px-4 py-2.5 bg-[#686A54] text-[#F4EFE9] rounded-xl hover:opacity-90 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          VER MÉTRICAS DE VENTAS
+        </button>
+      </div>
+
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden">
         
         {/* Header decoration */}
@@ -483,6 +530,153 @@ export default function QuickSellPage() {
                   Registrar Otro
                 </button>
               </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Metrics Modal */}
+      {showMetricsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#F4EFE9] max-w-2xl w-full rounded-3xl p-6 shadow-xl border border-[#E8E2DA] flex flex-col max-h-[90vh] overflow-hidden">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center pb-4 border-b border-[#E8E2DA] mb-4">
+              <div className="flex items-center gap-2 text-[#686A54]">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <line x1="18" y1="20" x2="18" y2="10"></line>
+                  <line x1="12" y1="20" x2="12" y2="4"></line>
+                  <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <h2 className="font-sans font-bold text-lg uppercase tracking-wider">Métricas de Ventas en Tiempo Real</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMetricsModal(false)}
+                className="w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-6 text-sm">
+              {loadingMetrics && (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-3" />
+                  <p className="font-light text-[#7A6F5E]">Cargando estadísticas...</p>
+                </div>
+              )}
+
+              {metricsError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                  {metricsError}
+                </div>
+              )}
+
+              {!loadingMetrics && !metricsError && metricsData && (
+                <>
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4">
+                      <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Total Recaudado</span>
+                      <span className="text-xl font-bold text-[#231E1A]">
+                        ${(
+                          metricsData.zones.reduce((sum, z) => sum + z.revenue, 0) +
+                          metricsData.individuals.reduce((sum, i) => sum + i.revenue, 0)
+                        ).toLocaleString('es-CO')} COP
+                      </span>
+                    </div>
+                    <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4">
+                      <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Total Entradas Vendidas</span>
+                      <span className="text-xl font-bold text-[#231E1A]">
+                        {(
+                          metricsData.zones.reduce((sum, z) => sum + z.sold, 0) +
+                          metricsData.individuals.reduce((sum, i) => sum + i.sold, 0)
+                        ).toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Section 1: Mesas y Camas */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider border-l-2 border-[#686A54] pl-2">
+                      Reservas de Mesas y Camas por Zona
+                    </h3>
+                    <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden shadow-inner">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wider">
+                              <th className="px-4 py-3">Zona</th>
+                              <th className="px-4 py-3 text-center">Vendidas</th>
+                              <th className="px-4 py-3 text-center">Disponibles</th>
+                              <th className="px-4 py-3 text-right">Recaudado</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#FAF8F5]">
+                            {metricsData.zones.map((zone) => (
+                              <tr key={zone.zone} className="hover:bg-[#FAF8F5]/50 transition-colors">
+                                <td className="px-4 py-3 font-semibold text-[#231E1A]">{zone.name}</td>
+                                <td className="px-4 py-3 text-center font-bold text-[#686A54]">{zone.sold}</td>
+                                <td className="px-4 py-3 text-center text-[#7A6F5E]">{zone.remaining}</td>
+                                <td className="px-4 py-3 text-right font-mono font-semibold text-[#231E1A]">
+                                  ${zone.revenue.toLocaleString('es-CO')}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 2: Boleteria Individual */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider border-l-2 border-[#686A54] pl-2">
+                      Boletería Individual
+                    </h3>
+                    <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden shadow-inner">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wider">
+                              <th className="px-4 py-3">Tipo de Entrada</th>
+                              <th className="px-4 py-3 text-center">Vendidas</th>
+                              <th className="px-4 py-3 text-center">Stock Disponible</th>
+                              <th className="px-4 py-3 text-right">Recaudado</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#FAF8F5]">
+                            {metricsData.individuals.map((ind) => (
+                              <tr key={ind.id} className="hover:bg-[#FAF8F5]/50 transition-colors">
+                                <td className="px-4 py-3 font-semibold text-[#231E1A]">{ind.name}</td>
+                                <td className="px-4 py-3 text-center font-bold text-[#686A54]">{ind.sold}</td>
+                                <td className="px-4 py-3 text-center text-[#7A6F5E]">{ind.remaining}</td>
+                                <td className="px-4 py-3 text-right font-mono font-semibold text-[#231E1A]">
+                                  ${ind.revenue.toLocaleString('es-CO')}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-4 border-t border-[#E8E2DA] mt-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowMetricsModal(false)}
+                className="px-6 py-2.5 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+              >
+                Cerrar
+              </button>
             </div>
 
           </div>

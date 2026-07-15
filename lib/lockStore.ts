@@ -133,7 +133,7 @@ export async function acquireLock(
         return null;
       }
 
-      // Check if already sold
+      // Check if already sold in ticket_locks
       const { data: soldLock, error: soldLockError } = await supabase
         .from('ticket_locks')
         .select('*')
@@ -143,7 +143,21 @@ export async function acquireLock(
 
       if (soldLockError) throw soldLockError;
       if (soldLock) {
-        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold`);
+        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold (found in ticket_locks)`);
+        return null;
+      }
+
+      // Check if already sold in purchased_tickets
+      const { data: purchase, error: purchaseError } = await supabase
+        .from('purchased_tickets')
+        .select('order_id')
+        .eq('ticket_id', ticketId)
+        .eq('status', 'paid')
+        .maybeSingle();
+
+      if (purchaseError) throw purchaseError;
+      if (purchase) {
+        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold (found in purchased_tickets)`);
         return null;
       }
 
@@ -188,6 +202,22 @@ export async function verifyLock(ticketId: string, sessionToken: string, tickets
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
 
   try {
+    // If it's a table/bed (stock is undefined), verify if it has already been sold
+    if (!ticket || ticket.stock === undefined) {
+      const { data: purchase, error: purchaseError } = await supabase
+        .from('purchased_tickets')
+        .select('order_id')
+        .eq('ticket_id', ticketId)
+        .eq('status', 'paid')
+        .maybeSingle();
+
+      if (purchaseError) throw purchaseError;
+      if (purchase) {
+        console.warn(`[LockStore] ❌ verifyLock: Bed/Table ${ticketId} is already sold (found in purchased_tickets)`);
+        return false;
+      }
+    }
+
     const { data: lock, error } = await supabase
       .from('ticket_locks')
       .select('*')
@@ -345,6 +375,18 @@ export async function getTicketStatus(ticketId: string, ticketsList?: Ticket[]):
   } else {
     // Table/Cama ticket status
     try {
+      // 1. Check if there's an approved purchase in purchased_tickets
+      const { data: purchase, error: purchaseError } = await supabase
+        .from('purchased_tickets')
+        .select('order_id')
+        .eq('ticket_id', ticketId)
+        .eq('status', 'paid')
+        .maybeSingle();
+
+      if (purchaseError) throw purchaseError;
+      if (purchase) return 'sold';
+
+      // 2. Check locks
       const { data: lock } = await supabase
         .from('ticket_locks')
         .select('*')
