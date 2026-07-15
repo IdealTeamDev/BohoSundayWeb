@@ -15,14 +15,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Verificar si la URL empieza con /en o /en/
-  const isEnglish = pathname.startsWith('/en/') || pathname === '/en';
+  // Verificar si la URL ya cuenta con un prefijo de locale válido (/en o /es)
+  const hasLocale = 
+    pathname.startsWith('/en/') || 
+    pathname === '/en' || 
+    pathname.startsWith('/es/') || 
+    pathname === '/es';
 
-  if (isEnglish) {
+  if (hasLocale) {
     return NextResponse.next();
   }
 
-  // Si no empieza con /en, asumimos español (es) por defecto.
+  // Si no empieza con locale, asumimos español (es) por defecto.
   // Reescribimos internamente la ruta agregando /es al inicio
   const newUrl = new URL(`/es${pathname}`, request.url);
   return NextResponse.rewrite(newUrl);
