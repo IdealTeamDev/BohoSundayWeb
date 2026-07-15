@@ -63,6 +63,25 @@ export default function QuickSellPage() {
   const [resending, setResending] = useState<boolean>(false);
   const [resendStatus, setResendStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Authentication State
+  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      router.push(`/${currentLocale}/admin/login`);
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [currentLocale, router]);
+
+  function handleLogout() {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_username');
+    router.push(`/${currentLocale}/admin/login`);
+  }
+
+
   // Search logic
   useEffect(() => {
     if (searchTerm.trim().length < 2) {
@@ -74,7 +93,10 @@ export default function QuickSellPage() {
     const delayDebounceFn = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await fetch(`/api/admin/quick-sell/search?q=${encodeURIComponent(searchTerm)}`);
+        const token = localStorage.getItem('admin_token') || '';
+        const res = await fetch(`/api/admin/quick-sell/search?q=${encodeURIComponent(searchTerm)}`, {
+          headers: { 'x-admin-token': token }
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.data) {
@@ -96,9 +118,13 @@ export default function QuickSellPage() {
     setResending(true);
     setResendStatus(null);
     try {
+      const token = localStorage.getItem('admin_token') || '';
       const res = await fetch('/api/admin/quick-sell/resend-qr', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        },
         body: JSON.stringify({ orderId }),
       });
       const data = await res.json();
@@ -262,7 +288,10 @@ export default function QuickSellPage() {
     setLoadingMetrics(true);
     setMetricsError(null);
     try {
-      const res = await fetch('/api/admin/quick-sell/stats');
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/quick-sell/stats', {
+        headers: { 'x-admin-token': token }
+      });
       if (!res.ok) throw new Error('Error al obtener las métricas');
       const data = await res.json();
       if (data.success && data.data) {
@@ -343,9 +372,13 @@ export default function QuickSellPage() {
     const finalQty = isIndividual ? quantity : 1;
 
     try {
+      const token = localStorage.getItem('admin_token') || '';
       const res = await fetch('/api/admin/quick-sell', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        },
         body: JSON.stringify({
           ticketId: selectedTicketId,
           quantity: finalQty,
@@ -430,9 +463,18 @@ export default function QuickSellPage() {
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   }
 
-  if (fetchingTickets) {
+  if (checkingAuth) {
     return (
       <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="font-sans text-[#231E1A] font-light text-center">Verificando sesión...</p>
+      </div>
+    );
+  }
+
+  if (fetchingTickets) {
+    return (
+      <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center justify-center p-4 font-sans">
         <div className="w-10 h-10 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="font-sans text-[#231E1A] font-light text-center">Cargando tipos de boleta...</p>
       </div>
@@ -442,12 +484,19 @@ export default function QuickSellPage() {
   return (
     <div className="min-h-screen bg-[#F4EFE9] py-12 px-4 sm:px-6 lg:px-8 relative">
       
-      {/* Metrics Button at the top of the container */}
-      <div className="max-w-2xl mx-auto flex justify-end mb-4">
+      {/* Metrics & Logout Buttons at the top of the container */}
+      <div className="max-w-2xl mx-auto flex justify-between items-center mb-4">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="px-4 py-2.5 bg-white border border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer font-sans"
+        >
+          Cerrar Sesión
+        </button>
         <button
           type="button"
           onClick={handleOpenMetrics}
-          className="px-4 py-2.5 bg-[#686A54] text-[#F4EFE9] rounded-xl hover:opacity-90 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer"
+          className="px-4 py-2.5 bg-[#686A54] text-[#F4EFE9] rounded-xl hover:opacity-90 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer font-sans"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
             <line x1="18" y1="20" x2="18" y2="10"></line>

@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { validateSession } from '@/lib/authStore';
 
 export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
+    const token = req.headers.get('x-admin-token');
+    const secret = process.env.ADMIN_SECRET_TOKEN;
+    const isValidLegacy = secret && token === secret;
+    const sessionUser = await validateSession(token);
+
+    if (!isValidLegacy && !sessionUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const q = req.nextUrl.searchParams.get('q') || '';
     
     let queryBuilder = supabase
