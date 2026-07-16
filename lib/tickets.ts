@@ -110,10 +110,36 @@ function parseWpTicket(item: any, type: 'cama' | 'individual'): Ticket {
 }
 
 /**
+ * Fetch the currently active event stage based on start_date
+ */
+export async function getActiveStage(): Promise<any> {
+  try {
+    const { data, error } = await supabase
+      .from('event_stages')
+      .select('*')
+      .lte('start_date', new Date().toISOString())
+      .order('start_date', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('[Tickets Service] Error fetching active stage:', error);
+      return null;
+    }
+
+    if (data && data.length > 0) {
+      return data[0];
+    }
+  } catch (err) {
+    console.error('[Tickets Service] Exception fetching active stage:', err);
+  }
+  return null;
+}
+
+/**
  * Fetch tickets dynamically from WordPress REST API (ACF Camas and ACF Boleteria Individual)
  * and merge them together. Fallback to static tickets if API fails.
  */
-export async function getDynamicTickets(): Promise<Ticket[]> {
+export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
   const baseUrl = process.env.WORDPRESS_API_URL || 'https://bohosundayapp.wpenginepowered.com';
   
   const camasUrl = `${baseUrl.replace(/\/$/, '')}/?rest_route=/wp/v2/camas&per_page=100&lang=es&nocache=${Date.now()}`;
@@ -236,7 +262,50 @@ export async function getDynamicTickets(): Promise<Ticket[]> {
     ? staticTickets.filter(t => t.zone === 'general')
     : wordpressIndividual;
 
-  return [...finalCamas, ...finalIndividual];
+  let combined = [...finalCamas, ...finalIndividual];
+
+  // 3. Fetch stage override if applicable
+  let activeStage: any = null;
+  try {
+    if (stageId) {
+      const { data, error } = await supabase
+        .from('event_stages')
+        .select('*')
+        .eq('id', stageId)
+        .maybeSingle();
+      if (!error && data) {
+        activeStage = data;
+      }
+    } else {
+      activeStage = await getActiveStage();
+    }
+  } catch (err) {
+    console.error('[Tickets Service] Error fetching event stage overrides:', err);
+  }
+
+  // 4. Apply stage price overrides
+  if (activeStage && activeStage.prices && typeof activeStage.prices === 'object') {
+    const overrides = activeStage.prices as Record<string, any>;
+    combined = combined.map((t) => {
+      // Check specific ID override first (e.g., 'early' or 'oasis-1')
+      if (overrides[t.id] !== undefined) {
+        return {
+          ...t,
+          price: Number(overrides[t.id])
+        };
+      }
+      // Check zone name override (e.g., 'oasis' or 'bohemian')
+      if (t.zone && overrides[t.zone] !== undefined) {
+        return {
+          ...t,
+          price: Number(overrides[t.zone])
+        };
+      }
+      return t;
+    });
+  }
+
+  return combined;
 }
 
 /**

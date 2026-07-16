@@ -1,12 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getDynamicTickets } from '@/lib/tickets';
 import { getTicketStatus, getRemainingStock } from '@/lib/lockStore';
 
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const tickets = await getDynamicTickets();
+    const { searchParams } = new URL(req.url);
+    const stageId = searchParams.get('stageId') || undefined;
+
+    const tickets = await getDynamicTickets(stageId);
     const data = await Promise.all(tickets.map(async (t) => ({
       ...t,
       status: await getTicketStatus(t.id, tickets),

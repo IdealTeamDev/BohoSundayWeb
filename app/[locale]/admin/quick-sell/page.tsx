@@ -16,6 +16,10 @@ export default function QuickSellPage() {
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [fetchingTickets, setFetchingTickets] = useState<boolean>(true);
+  const [stages, setStages] = useState<any[]>([]);
+  const [selectedStageId, setSelectedStageId] = useState<string>('');
+  const [activeStageId, setActiveStageId] = useState<string | null>(null);
+  const [fetchingStages, setFetchingStages] = useState<boolean>(true);
   const [submitError, setSubmitError] = useState<string | null>(null);
   
   const [form, setForm] = useState({
@@ -307,16 +311,52 @@ export default function QuickSellPage() {
     }
   }
 
-  // Load tickets on mount
+  // Load stages on mount
+  useEffect(() => {
+    async function fetchStages() {
+      try {
+        const token = localStorage.getItem('admin_token') || '';
+        const res = await fetch('/api/admin/stages', {
+          headers: { 'x-admin-token': token }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setStages(data.stages);
+            if (data.activeStageId) {
+              setActiveStageId(data.activeStageId);
+              setSelectedStageId(data.activeStageId);
+            } else if (data.stages.length > 0) {
+              setSelectedStageId(data.stages[0].id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching stages:', err);
+      } finally {
+        setFetchingStages(false);
+      }
+    }
+    fetchStages();
+  }, []);
+
+  // Load tickets when selectedStageId or fetchingStages changes
   useEffect(() => {
     async function fetchTickets() {
+      setFetchingTickets(true);
       try {
-        const res = await fetch('/api/tickets');
+        const url = selectedStageId ? `/api/tickets?stageId=${selectedStageId}` : '/api/tickets';
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           setTickets(data);
           if (data.length > 0) {
-            setSelectedTicketId(data[0].id);
+            const stillValid = data.some((t: any) => t.id === selectedTicketId);
+            if (!stillValid) {
+              setSelectedTicketId(data[0].id);
+            }
+          } else {
+            setSelectedTicketId('');
           }
         }
       } catch (err) {
@@ -325,8 +365,11 @@ export default function QuickSellPage() {
         setFetchingTickets(false);
       }
     }
-    fetchTickets();
-  }, []);
+
+    if (!fetchingStages) {
+      fetchTickets();
+    }
+  }, [selectedStageId, fetchingStages]);
 
   const selectedTicket = tickets.find(t => t.id === selectedTicketId);
   const isIndividual = selectedTicket?.stock !== undefined;
@@ -383,6 +426,7 @@ export default function QuickSellPage() {
           ticketId: selectedTicketId,
           quantity: finalQty,
           buyerInfo,
+          stageId: selectedStageId,
         }),
       });
 
@@ -532,6 +576,23 @@ export default function QuickSellPage() {
             <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">Información del Producto</h2>
             
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Selector de Etapa del Evento */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Etapa del Evento (Cambio de Precios)</label>
+                <select
+                  value={selectedStageId}
+                  onChange={(e) => setSelectedStageId(e.target.value)}
+                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                >
+                  <option value="">-- Precios Base (Sin Etapa) --</option>
+                  {stages.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}{s.id === activeStageId ? ' ★ (Etapa Actual)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Boleta / Mesa</label>
                 <select

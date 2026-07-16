@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrder, approveOrder, rejectOrder, createOrder } from '@/lib/orderStore';
 import { markAsSold, releaseLock } from '@/lib/lockStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
-import { getDynamicTickets } from '@/lib/tickets';
+import { getDynamicTickets, getActiveStage } from '@/lib/tickets';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
     // If order is not found in memory (due to stateless serverless reset), recreate it using the details passed from sessionStorage
     if (!order && buyerInfo && ticketId && quantity) {
       console.log(`[OrderStore] 🔄 Recreating missing order ${orderId} in memory for verification.`);
-      order = createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi');
+      const activeStage = await getActiveStage();
+      order = createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi', activeStage?.id);
       
       // If it is a quick sale, approve it immediately
       if (orderId.startsWith('ORD-QUICK-')) {

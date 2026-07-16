@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyLock, getRemainingSeconds, markAsSold } from '@/lib/lockStore';
 import { createOrder, approveOrder } from '@/lib/orderStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
-import { getDynamicTickets } from '@/lib/tickets';
+import { getDynamicTickets, getActiveStage } from '@/lib/tickets';
 import crypto from 'crypto';
 
 export async function POST(req: NextRequest) {
@@ -42,8 +42,11 @@ export async function POST(req: NextRequest) {
     // Generate unique order ID
     const orderId = `ORD-${ticketId.toUpperCase()}-${Date.now()}`;
 
+    // Get active stage
+    const activeStage = await getActiveStage();
+
     // Create pending order
-    createOrder(orderId, ticketId, sessionToken, buyerInfo, finalQty, paymentMethod);
+    createOrder(orderId, ticketId, sessionToken, buyerInfo, finalQty, paymentMethod, activeStage?.id);
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 

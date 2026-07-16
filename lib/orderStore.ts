@@ -19,6 +19,7 @@ export interface OrderDetail {
   paymentId?: string;
   errorDetail?: string;
   accessesUsed?: number;
+  stageId?: string;
 }
 
 const ORDERS_FILE = path.join(process.cwd(), 'data', 'orders.json');
@@ -78,7 +79,8 @@ export function createOrder(
   sessionToken: string,
   buyerInfo: BuyerInfo,
   quantity: number,
-  paymentMethod: 'mercadopago' | 'wompi'
+  paymentMethod: 'mercadopago' | 'wompi',
+  stageId?: string
 ): OrderDetail {
   const order: OrderDetail = {
     orderId,
@@ -90,6 +92,7 @@ export function createOrder(
     status: 'pending',
     createdAt: Date.now(),
     accessesUsed: 0,
+    stageId,
   };
   
   orderStore.set(orderId, order);
@@ -148,7 +151,7 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
 
   // Save buyer/ticket details to Supabase database (purchased_tickets table)
   try {
-    const tickets = await getDynamicTickets();
+    const tickets = await getDynamicTickets(order.stageId);
     const ticket = tickets.find((t) => t.id === order.ticketId);
 
     const ticketName = ticket?.name || 'Boleto/Cama';
