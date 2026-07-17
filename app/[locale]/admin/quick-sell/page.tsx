@@ -1231,7 +1231,7 @@ function AdminPrefixDropdown({
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               onClick={(e) => e.stopPropagation()}
-              className="w-full px-3 py-2 rounded-lg border border-[#E0D9D0] text-xs focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54] bg-white placeholder:text-[#231E1A]"
+              className="w-full px-3 py-2 rounded-lg border border-[#E0D9D0] text-xs focus:outline-none focus:ring-1 text-[#231E1A]  focus:ring-[#686A54] focus:border-[#686A54] bg-white placeholder:text-[#231E1A]"
               autoFocus
             />
           </div>
