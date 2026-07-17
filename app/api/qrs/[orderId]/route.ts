@@ -13,12 +13,6 @@ export async function GET(
   try {
     const { orderId } = await context.params;
 
-    // Time verification logic (Colombia time zone)
-    const bogotaTime = new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' });
-    const bogotaDate = new Date(bogotaTime);
-    const hour = bogotaDate.getHours();
-    const isPast2PM = hour >= 14;
-
     // 1. Query Supabase purchased_tickets table first
     const { data: ticketRecord, error: dbError } = await supabase
       .from('purchased_tickets')
@@ -28,10 +22,9 @@ export async function GET(
 
     if (ticketRecord) {
       const isEnglish = (ticketRecord.language || '').toUpperCase() === 'EN';
-      const isEarly = ticketRecord.ticket_id === 'early';
       
-      const status = (isEarly && isPast2PM) ? 'expired' : ticketRecord.status;
-      const errorMsg = (isEarly && isPast2PM) ? 'Boleto Early no es válido después de las 2:00 PM' : undefined;
+      const status = ticketRecord.status;
+      const errorMsg = undefined;
 
       return NextResponse.json({
         order_id: ticketRecord.order_id,
@@ -76,9 +69,8 @@ export async function GET(
       .digest('hex')
       .substring(0, 16);
 
-    const isEarly = order.ticketId === 'early';
-    const jsonStatus = (isEarly && isPast2PM) ? 'expired' : (order.status === 'approved' ? 'paid' : 'failed');
-    const errorMsg = (isEarly && isPast2PM) ? 'Boleto Early no es válido después de las 2:00 PM' : undefined;
+    const jsonStatus = order.status === 'approved' ? 'paid' : 'failed';
+    const errorMsg = undefined;
 
     const accessesUsed = order.accessesUsed || 0;
     const remainingAccesses = Math.max(0, totalCapacity - accessesUsed);
@@ -128,11 +120,7 @@ export async function POST(
     const body = await req.json();
     const count = Number(body.count) || 1;
 
-    // Time verification logic (Colombia time zone)
-    const bogotaTime = new Date().toLocaleString('en-US', { timeZone: 'America/Bogota' });
-    const bogotaDate = new Date(bogotaTime);
-    const hour = bogotaDate.getHours();
-    const isPast2PM = hour >= 14;
+
 
     // 1. Query Supabase purchased_tickets table first
     const { data: ticketRecord, error: dbError } = await supabase
@@ -142,9 +130,7 @@ export async function POST(
       .maybeSingle();
 
     if (ticketRecord) {
-      if (ticketRecord.ticket_id === 'early' && isPast2PM) {
-        return NextResponse.json({ success: false, error: 'Boleto Early no es válido después de las 2:00 PM' }, { status: 400 });
-      }
+
 
       if (ticketRecord.status !== 'paid') {
         return NextResponse.json({ success: false, error: 'La orden no está en estado aprobado/pagado' }, { status: 400 });
@@ -186,9 +172,7 @@ export async function POST(
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
 
-    if (order.ticketId === 'early' && isPast2PM) {
-      return NextResponse.json({ success: false, error: 'Boleto Early no es válido después de las 2:00 PM' }, { status: 400 });
-    }
+
 
     const tickets = await getDynamicTickets();
     const ticket = tickets.find((t) => t.id === order.ticketId);
