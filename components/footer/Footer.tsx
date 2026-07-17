@@ -30,6 +30,7 @@ export const Footer = () => {
           <div className="text-[#D9D1C0] py-4 font-nunito border-b lg:border-b-0 lg:px-6 lg:py-5">
             <p className="uppercase text-sm lg:text-lg font-extralight mb-3">{t.footer.legal}</p>
             <a href={locale === 'en' ? "/en/policy" : "/policy"}><p className=" mb-2 text-sm lg:text-lg font-extralight underline">{t.footer.policy}</p></a>
+            <a href={locale === 'en' ? "/en/privacy-policy-app" : "/privacy-policy-app"}><p className=" mb-2 text-sm lg:text-lg font-extralight underline">{t.footer.privacyPolicyApp}</p></a>
           </div>
         </div>
         {/* Redes sociales */}

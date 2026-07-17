@@ -56,6 +56,7 @@ export const translations = {
       contact: 'Contacto',
       legal: 'Legal',
       policy: 'Política de reservas',
+      privacyPolicyApp: 'Políticas de privacidad staff',
       rights: '2026 Casa Candela. Todos los derechos reservados.'
     },
     checkout: {
@@ -239,6 +240,7 @@ export const translations = {
       contact: 'Contact',
       legal: 'Legal',
       policy: 'Reservation Policy',
+      privacyPolicyApp: 'Staff Privacy Policy',
       rights: '2026 Casa Candela. All rights reserved.'
     },
     checkout: {
