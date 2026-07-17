@@ -1231,7 +1231,7 @@ function AdminPrefixDropdown({
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               onClick={(e) => e.stopPropagation()}
-              className="w-full px-3 py-2 rounded-lg border border-[#E0D9D0] text-xs focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54] bg-white placeholder:text-gray-400"
+              className="w-full px-3 py-2 rounded-lg border border-[#E0D9D0] text-xs focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54] bg-white placeholder:text-[#231E1A]"
               autoFocus
             />
           </div>
@@ -1256,7 +1256,7 @@ function AdminPrefixDropdown({
                 );
               })
             ) : (
-              <div className="px-4 py-3 text-center text-xs text-gray-500">
+              <div className="px-4 py-3 text-center text-xs text-[#231E1A]">
                 No se encontraron resultados
               </div>
             )}
