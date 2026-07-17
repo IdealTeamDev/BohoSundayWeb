@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import type { Ticket } from '@/types';
 import { jsPDF } from 'jspdf';
+import { sortedCountries, getFlagEmoji } from '@/data/countries';
 
 export default function QuickSellPage() {
   const router = useRouter();
@@ -708,14 +709,15 @@ export default function QuickSellPage() {
                   onChange={(e) => setForm({ ...form, phonePrefix: e.target.value })}
                   className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
                 >
-                  <option value="+57">🇨🇴 Colombia (+57)</option>
-                  <option value="+1">🇺🇸 EE.UU. (+1)</option>
-                  <option value="+34">🇪🇸 España (+34)</option>
-                  <option value="+52">🇲🇽 México (+52)</option>
-                  <option value="+58">🇻🇪 Venezuela (+58)</option>
-                  <option value="+507">🇵🇦 Panamá (+507)</option>
-                  <option value="+51">🇵🇪 Perú (+51)</option>
-                  <option value="+593">🇪🇨 Ecuador (+593)</option>
+                  {sortedCountries.map((c) => {
+                    const emoji = getFlagEmoji(c.iso2);
+                    const code = c.phoneCode.replace(/\s+/g, '');
+                    return (
+                      <option key={c.iso2} value={`+${code}`}>
+                        {emoji} {currentLocale === 'en' ? c.nameEN : c.nameES} (+{c.phoneCode})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 

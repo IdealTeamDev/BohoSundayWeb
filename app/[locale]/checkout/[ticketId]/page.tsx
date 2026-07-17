@@ -6,6 +6,7 @@ import { zoneConfig } from '@/data/zoneConfig';
 import type { BuyerInfo } from '@/types/checkout';
 import type { Ticket } from '@/types';
 import { translations } from '@/data/translations';
+import { sortedCountries, getFlagEmoji } from '@/data/countries';
 import CountdownTimer from '@/components/checkout/CountdownTimer';
 import PaymentMethodSelector from '@/components/checkout/PaymentMethodSelector';
 import MPCardBrick from '@/components/checkout/MPCardBrick';
@@ -281,16 +282,15 @@ export default function CheckoutPage() {
               placeholder={t.checkout.whatsappPlaceholder}
               dropdownValue={form.phonePrefix}
               onDropdownChange={(v) => setForm({ ...form, phonePrefix: v })}
-              dropdownOptions={[
-                { display: '🇨🇴', label: '🇨🇴 (+57)', value: '+57' },
-                { display: '🇺🇸', label: '🇺🇸 (+1)', value: '+1' },
-                { display: '🇪🇸', label: '🇪🇸 (+34)', value: '+34' },
-                { display: '🇲🇽', label: '🇲🇽 (+52)', value: '+52' },
-                { display: '🇵🇦', label: '🇵🇦 (+507)', value: '+507' },
-                { display: '🇻🇪', label: '🇻🇪 (+58)', value: '+58' },
-                { display: '🇪🇨', label: '🇪🇨 (+593)', value: '+593' },
-                { display: '🇵🇪', label: '🇵🇪 (+51)', value: '+51' },
-              ]}
+              dropdownOptions={sortedCountries.map((c) => {
+                const emoji = getFlagEmoji(c.iso2);
+                const code = c.phoneCode.replace(/\s+/g, '');
+                return {
+                  display: emoji,
+                  label: `${emoji} ${locale === 'en' ? c.nameEN : c.nameES} (+${c.phoneCode})`,
+                  value: `+${code}`,
+                };
+              })}
               type="tel"
             />
             <Field
@@ -503,7 +503,7 @@ function DropdownField({
 
           {/* Dropdown Options Menu */}
           {open && (
-            <div className="absolute top-full left-0 mt-1 bg-[#F4EFE9] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-hidden min-w-[150px]">
+            <div className="absolute top-full left-0 mt-1 bg-[#F4EFE9] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-y-auto max-h-60 min-w-[220px]">
               {dropdownOptions.map((opt) => (
                 <button
                   key={opt.value}
