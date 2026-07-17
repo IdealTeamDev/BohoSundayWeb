@@ -704,21 +704,11 @@ export default function QuickSellPage() {
               {/* Phone Prefix */}
               <div>
                 <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Indicativo Teléfono</label>
-                <select
+                <AdminPrefixDropdown
                   value={form.phonePrefix}
-                  onChange={(e) => setForm({ ...form, phonePrefix: e.target.value })}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                >
-                  {sortedCountries.map((c) => {
-                    const emoji = getFlagEmoji(c.iso2);
-                    const code = c.phoneCode.replace(/\s+/g, '');
-                    return (
-                      <option key={c.iso2} value={`+${code}`}>
-                        {emoji} {currentLocale === 'en' ? c.nameEN : c.nameES} (+{c.phoneCode})
-                      </option>
-                    );
-                  })}
-                </select>
+                  onChange={(val) => setForm({ ...form, phonePrefix: val })}
+                  currentLocale={currentLocale}
+                />
               </div>
 
               {/* Phone Number */}
@@ -1166,6 +1156,113 @@ export default function QuickSellPage() {
         </div>
       )}
 
+    </div>
+  );
+}
+
+// ── AdminPrefixDropdown component ─────────────────────────────────────────────
+function AdminPrefixDropdown({
+  value,
+  onChange,
+  currentLocale,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  currentLocale: 'es' | 'en';
+}) {
+  const [open, setOpen] = useState(false);
+  const [filterText, setFilterText] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    const clickHandler = () => setOpen(false);
+    document.addEventListener('click', clickHandler);
+    return () => document.removeEventListener('click', clickHandler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      setFilterText('');
+    }
+  }, [open]);
+
+  const selectedCountry = sortedCountries.find((c) => `+${c.phoneCode.replace(/\s+/g, '')}` === value) || sortedCountries[0];
+  const selectedEmoji = getFlagEmoji(selectedCountry.iso2);
+
+  const filteredCountries = sortedCountries.filter((c) => {
+    const term = filterText.toLowerCase();
+    const name = currentLocale === 'en' ? c.nameEN : c.nameES;
+    return (
+      name.toLowerCase().includes(term) ||
+      c.phoneCode.toLowerCase().includes(term)
+    );
+  });
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+        className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54] flex justify-between items-center cursor-pointer text-left"
+      >
+        <span>
+          {selectedEmoji} {currentLocale === 'en' ? selectedCountry.nameEN : selectedCountry.nameES} ({value})
+        </span>
+        <svg
+          className={`w-2.5 h-2 text-[#7A6F5E] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 10 6"
+        >
+          <path d="M1 1L5 5L9 1" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1 w-full bg-white border border-[#E0D9D0] rounded-xl shadow-lg z-50 overflow-hidden flex flex-col max-h-64">
+          <div className="p-2 border-b border-[#E0D9D0] bg-[#F9F7F5] sticky top-0 z-10">
+            <input
+              type="text"
+              placeholder="Buscar país o indicativo..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-3 py-2 rounded-lg border border-[#E0D9D0] text-xs focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54] bg-white placeholder:text-gray-400"
+              autoFocus
+            />
+          </div>
+          <div className="overflow-y-auto flex-1">
+            {filteredCountries.length > 0 ? (
+              filteredCountries.map((c) => {
+                const emoji = getFlagEmoji(c.iso2);
+                const code = `+${c.phoneCode.replace(/\s+/g, '')}`;
+                const name = currentLocale === 'en' ? c.nameEN : c.nameES;
+                return (
+                  <button
+                    key={c.iso2}
+                    type="button"
+                    onClick={() => {
+                      onChange(code);
+                      setOpen(false);
+                    }}
+                    className="w-full px-4 py-2.5 hover:bg-[#F9F7F5] text-left text-xs text-[#231E1A] transition-colors cursor-pointer block"
+                  >
+                    {emoji} {name} ({code})
+                  </button>
+                );
+              })
+            ) : (
+              <div className="px-4 py-3 text-center text-xs text-gray-500">
+                No se encontraron resultados
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
