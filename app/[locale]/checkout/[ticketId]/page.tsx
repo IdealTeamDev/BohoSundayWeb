@@ -455,6 +455,7 @@ function DropdownField({
 }: DropdownFieldProps) {
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [filterText, setFilterText] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -463,7 +464,22 @@ function DropdownField({
     return () => document.removeEventListener('click', clickHandler);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) {
+      setFilterText('');
+    }
+  }, [open]);
+
   const selectedOption = dropdownOptions.find((opt) => opt.value === dropdownValue) || dropdownOptions[0];
+
+  const showSearch = dropdownOptions.length > 5;
+  const filteredOptions = dropdownOptions.filter((opt) => {
+    const term = filterText.toLowerCase();
+    return (
+      opt.label.toLowerCase().includes(term) ||
+      opt.value.toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="flex flex-col gap-1 relative">
@@ -503,20 +519,41 @@ function DropdownField({
 
           {/* Dropdown Options Menu */}
           {open && (
-            <div className="absolute top-full left-0 mt-1 bg-[#F4EFE9] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-y-auto max-h-60 min-w-[220px]">
-              {dropdownOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    onDropdownChange(opt.value);
-                    setOpen(false);
-                  }}
-                  className="w-full px-4 py-2 hover:bg-[#D9D1C0]/60 text-left font-nunito text-[14px] text-[#231E1A] transition-colors cursor-pointer block"
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div className="absolute top-full left-0 mt-1 bg-[#F4EFE9] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-hidden min-w-[240px] flex flex-col max-h-64">
+              {showSearch && (
+                <div className="p-2 border-b border-[#BDB39B]/40 bg-[#F4EFE9] sticky top-0 z-10">
+                  <input
+                    type="text"
+                    placeholder="Buscar país o indicativo..."
+                    value={filterText}
+                    onChange={(e) => setFilterText(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full px-3 py-1.5 rounded-lg border border-[#BDB39B] text-xs font-nunito text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#5C9D41] bg-white placeholder:text-gray-400"
+                    autoFocus
+                  />
+                </div>
+              )}
+              <div className="overflow-y-auto flex-1">
+                {filteredOptions.length > 0 ? (
+                  filteredOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        onDropdownChange(opt.value);
+                        setOpen(false);
+                      }}
+                      className="w-full px-4 py-2 hover:bg-[#D9D1C0]/60 text-left font-nunito text-[14px] text-[#231E1A] transition-colors cursor-pointer block"
+                    >
+                      {opt.label}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-center text-xs font-nunito text-gray-500">
+                    No se encontraron resultados
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
