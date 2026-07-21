@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import type { Ticket } from '@/types';
 import { jsPDF } from 'jspdf';
 import { sortedCountries, getFlagEmoji } from '@/data/countries';
+import AdminEventMap from '@/components/eventmap/AdminEventMap';
 
 export default function QuickSellPage() {
   const router = useRouter();
@@ -72,7 +73,7 @@ export default function QuickSellPage() {
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
 
   // Navigation Tabs State
-  const [activeTab, setActiveTab] = useState<'register' | 'list'>('register');
+  const [activeTab, setActiveTab] = useState<'register' | 'map' | 'list'>('register');
 
   // Purchased Tickets Module State
   const [purchasedList, setPurchasedList] = useState<any[]>([]);
@@ -612,7 +613,7 @@ export default function QuickSellPage() {
     <div className="min-h-screen bg-[#F4EFE9] py-12 px-4 sm:px-6 lg:px-8 relative">
       
       {/* Metrics & Logout Buttons at the top of the container */}
-      <div className={`mx-auto flex justify-between items-center mb-4 transition-all duration-300 ${activeTab === 'list' ? 'max-w-7xl' : 'max-w-2xl'}`}>
+      <div className={`mx-auto flex justify-between items-center mb-4 transition-all duration-300 ${activeTab === 'register' ? 'max-w-2xl' : 'max-w-7xl'}`}>
         <button
           type="button"
           onClick={handleLogout}
@@ -634,7 +635,7 @@ export default function QuickSellPage() {
         </button>
       </div>
 
-      <div className={`mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden transition-all duration-300 ${activeTab === 'list' ? 'max-w-7xl' : 'max-w-2xl'}`}>
+      <div className={`mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden transition-all duration-300 ${activeTab === 'register' ? 'max-w-2xl' : 'max-w-7xl'}`}>
         
         {/* Header decoration */}
         <div className="bg-[#686A54] px-8 py-6 text-center text-[#F4EFE9]">
@@ -650,7 +651,7 @@ export default function QuickSellPage() {
           <button
             type="button"
             onClick={() => setActiveTab('register')}
-            className={`flex-1 py-4 px-6 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
+            className={`flex-1 py-4 px-4 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
               activeTab === 'register'
                 ? 'border-[#686A54] text-[#686A54] bg-white shadow-sm'
                 : 'border-transparent text-[#7A6F5E] hover:text-[#231E1A] hover:bg-white/50'
@@ -659,15 +660,31 @@ export default function QuickSellPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            REGISTRAR VENTA MANUAL
+            REGISTRAR VENTA
           </button>
+          
+          <button
+            type="button"
+            onClick={() => setActiveTab('map')}
+            className={`flex-1 py-4 px-4 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
+              activeTab === 'map'
+                ? 'border-[#686A54] text-[#686A54] bg-white shadow-sm'
+                : 'border-transparent text-[#7A6F5E] hover:text-[#231E1A] hover:bg-white/50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.818V8.052a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            MAPA & BLOQUEOS
+          </button>
+
           <button
             type="button"
             onClick={() => {
               setActiveTab('list');
               setPurchasedPage(1);
             }}
-            className={`flex-1 py-4 px-6 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
+            className={`flex-1 py-4 px-4 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
               activeTab === 'list'
                 ? 'border-[#686A54] text-[#686A54] bg-white shadow-sm'
                 : 'border-transparent text-[#7A6F5E] hover:text-[#231E1A] hover:bg-white/50'
@@ -676,7 +693,7 @@ export default function QuickSellPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M4 6h16M4 10h16M4 14h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            VER COMPRAS / LISTA {purchasedTotal > 0 ? `(${purchasedTotal})` : ''}
+            VER COMPRAS {purchasedTotal > 0 ? `(${purchasedTotal})` : ''}
           </button>
         </div>
 
@@ -1030,6 +1047,22 @@ export default function QuickSellPage() {
               )}
             </div>
           </>
+        )}
+
+        {/* TAB 2: MAPA DE MESAS & BLOQUEOS */}
+        {activeTab === 'map' && (
+          <div className="p-6 space-y-6">
+            <AdminEventMap
+              onSelectTicketForSale={(ticketId) => {
+                setSelectedTicketId(ticketId);
+                setActiveTab('register');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onRefreshStats={() => {
+                fetchPurchasedTickets();
+              }}
+            />
+          </div>
         )}
 
         {/* TAB 2: LISTA DE COMPRAS (PURCHASED TICKETS TABLE) */}
