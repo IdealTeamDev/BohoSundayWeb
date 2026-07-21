@@ -122,9 +122,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Calculate expiration time (default 24h for admin manual locks, or specified duration)
-      const durationMs = (Number(durationHours) || 24) * 60 * 60 * 1000;
-      const expiresAt = new Date(Date.now() + durationMs).toISOString();
+      // Expiration time for admin manual locks defaults to July 27, 2026 (23:59:59 -05:00)
+      const defaultJuly27Exp = new Date('2026-07-27T23:59:59-05:00').toISOString();
+      const expiresAt = body.expiresAtISO || defaultJuly27Exp;
 
       const { error: upsertError } = await supabase
         .from('ticket_locks')

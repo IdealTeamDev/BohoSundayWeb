@@ -386,7 +386,7 @@ export default function AdminEventMap({ onSelectTicketForSale, onRefreshStats }:
                   <span className="text-lg">🔒</span>
                   <div>
                     <div className="font-bold uppercase">BLOQUEADA / EN NEGOCIACIÓN (STAFF)</div>
-                    <div className="text-[11px] font-normal text-[#B45309]">Esta cama NO está disponible para venta en la página web pública.</div>
+                    <div className="text-[11px] font-normal text-[#B45309]">Esta cama NO está disponible para venta pública en la web (Bloqueada hasta el 27 de Julio de 2026).</div>
                   </div>
                 </div>
               )}
