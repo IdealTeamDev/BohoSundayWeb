@@ -71,6 +71,70 @@ export default function QuickSellPage() {
   // Authentication State
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
 
+  // Navigation Tabs State
+  const [activeTab, setActiveTab] = useState<'register' | 'list'>('register');
+
+  // Purchased Tickets Module State
+  const [purchasedList, setPurchasedList] = useState<any[]>([]);
+  const [purchasedLoading, setPurchasedLoading] = useState<boolean>(false);
+  const [purchasedError, setPurchasedError] = useState<string | null>(null);
+  const [purchasedZones, setPurchasedZones] = useState<string[]>([]);
+  const [selectedZone, setSelectedZone] = useState<string>('all');
+  const [purchasedSearch, setPurchasedSearch] = useState<string>('');
+  const [purchasedPage, setPurchasedPage] = useState<number>(1);
+  const [purchasedLimit, setPurchasedLimit] = useState<number>(10);
+  const [purchasedTotal, setPurchasedTotal] = useState<number>(0);
+  const [purchasedTotalPages, setPurchasedTotalPages] = useState<number>(1);
+
+  const fetchPurchasedTickets = async (
+    page = purchasedPage,
+    zone = selectedZone,
+    search = purchasedSearch,
+    limit = purchasedLimit
+  ) => {
+    setPurchasedLoading(true);
+    setPurchasedError(null);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+        zone: zone,
+        search: search,
+      });
+
+      const res = await fetch(`/api/admin/quick-sell/purchased-tickets?${params.toString()}`, {
+        headers: { 'x-admin-token': token },
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPurchasedList(data.data || []);
+        setPurchasedTotal(data.pagination?.total || 0);
+        setPurchasedTotalPages(data.pagination?.totalPages || 1);
+        if (data.zones) {
+          setPurchasedZones(data.zones);
+        }
+      } else {
+        setPurchasedError(data.error || 'Error al cargar las compras');
+      }
+    } catch (err) {
+      console.error('Error fetching purchased tickets:', err);
+      setPurchasedError('Error de red al consultar la lista de compras');
+    } finally {
+      setPurchasedLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'list') {
+      const delayDebounceFn = setTimeout(() => {
+        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit);
+      }, 300);
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [activeTab, purchasedPage, selectedZone, purchasedSearch, purchasedLimit]);
+
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
     if (!token) {
@@ -350,11 +414,29 @@ export default function QuickSellPage() {
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          setTickets(data);
-          if (data.length > 0) {
-            const stillValid = data.some((t: any) => t.id === selectedTicketId);
+          // Group and sort tickets:
+          // 1. Individual tickets (with stock) first, sorted alphabetically.
+          // 2. Tables/beds (without stock/with number) next, grouped by name and sorted numerically by number.
+          const sorted = [...data].sort((a: any, b: any) => {
+            const isIndivA = a.stock !== undefined;
+            const isIndivB = b.stock !== undefined;
+
+            if (isIndivA && !isIndivB) return -1;
+            if (!isIndivA && isIndivB) return 1;
+
+            if (isIndivA && isIndivB) {
+              return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+            }
+
+            const nameCompare = a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+            if (nameCompare !== 0) return nameCompare;
+            return (a.number || 0) - (b.number || 0);
+          });
+          setTickets(sorted);
+          if (sorted.length > 0) {
+            const stillValid = sorted.some((t: any) => t.id === selectedTicketId);
             if (!stillValid) {
-              setSelectedTicketId(data[0].id);
+              setSelectedTicketId(sorted[0].id);
             }
           } else {
             setSelectedTicketId('');
@@ -530,7 +612,7 @@ export default function QuickSellPage() {
     <div className="min-h-screen bg-[#F4EFE9] py-12 px-4 sm:px-6 lg:px-8 relative">
       
       {/* Metrics & Logout Buttons at the top of the container */}
-      <div className="max-w-2xl mx-auto flex justify-between items-center mb-4">
+      <div className={`mx-auto flex justify-between items-center mb-4 transition-all duration-300 ${activeTab === 'list' ? 'max-w-7xl' : 'max-w-2xl'}`}>
         <button
           type="button"
           onClick={handleLogout}
@@ -552,364 +634,690 @@ export default function QuickSellPage() {
         </button>
       </div>
 
-      <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden">
+      <div className={`mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden transition-all duration-300 ${activeTab === 'list' ? 'max-w-7xl' : 'max-w-2xl'}`}>
         
         {/* Header decoration */}
         <div className="bg-[#686A54] px-8 py-6 text-center text-[#F4EFE9]">
           <div className="flex justify-center mb-2">
             <img src="/images/icon/Íconos WEB 1.png" alt="Boho Sunday" className="h-12 w-auto invert opacity-90" />
           </div>
-          <h1 className="text-2xl font-bold tracking-wide">REGISTRO DE VENTA MANUAL</h1>
-          <p className="text-xs text-[#d9d1c0] mt-1 uppercase tracking-widest font-semibold">Exclusivo para Staff y Servicio al Cliente</p>
+          <h1 className="text-2xl font-bold tracking-wide">PANEL DE ADMINISTRACIÓN</h1>
+          <p className="text-xs text-[#d9d1c0] mt-1 uppercase tracking-widest font-semibold">Boho Sunday • Venta y Gestión de Tickets</p>
         </div>
 
-        <form onSubmit={handleRegisterSale} className="px-8 py-8 space-y-6">
-          
-          {/* General Error Message */}
-          {submitError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-              {submitError}
-            </div>
-          )}
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-[#E8E2DA] bg-[#FAF8F5]">
+          <button
+            type="button"
+            onClick={() => setActiveTab('register')}
+            className={`flex-1 py-4 px-6 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
+              activeTab === 'register'
+                ? 'border-[#686A54] text-[#686A54] bg-white shadow-sm'
+                : 'border-transparent text-[#7A6F5E] hover:text-[#231E1A] hover:bg-white/50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            REGISTRAR VENTA MANUAL
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('list');
+              setPurchasedPage(1);
+            }}
+            className={`flex-1 py-4 px-6 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
+              activeTab === 'list'
+                ? 'border-[#686A54] text-[#686A54] bg-white shadow-sm'
+                : 'border-transparent text-[#7A6F5E] hover:text-[#231E1A] hover:bg-white/50'
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M4 6h16M4 10h16M4 14h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            VER COMPRAS / LISTA {purchasedTotal > 0 ? `(${purchasedTotal})` : ''}
+          </button>
+        </div>
 
-          {/* Ticket Type & Quantity Selection */}
-          <div className="bg-[#FAF8F5] border border-[#E8E2DA] p-5 rounded-2xl space-y-4">
-            <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">Información del Producto</h2>
-            
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Selector de Etapa del Evento */}
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Etapa del Evento (Cambio de Precios)</label>
-                <select
-                  value={selectedStageId}
-                  onChange={(e) => setSelectedStageId(e.target.value)}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                >
-                  <option value="">-- Precios Base (Sin Etapa) --</option>
-                  {stages.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}{s.id === activeStageId ? ' ★ (Etapa Actual)' : ''}
-                    </option>
-                  ))}
-                </select>
+        {/* TAB 1: REGISTRAR VENTA MANUAL */}
+        {activeTab === 'register' && (
+          <>
+            <form onSubmit={handleRegisterSale} className="px-8 py-8 space-y-6">
+              
+              {/* General Error Message */}
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                  {submitError}
+                </div>
+              )}
+
+              {/* Ticket Type & Quantity Selection */}
+              <div className="bg-[#FAF8F5] border border-[#E8E2DA] p-5 rounded-2xl space-y-4">
+                <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">Información del Producto</h2>
+                
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {/* Selector de Etapa del Evento */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Etapa del Evento (Cambio de Precios)</label>
+                    <select
+                      value={selectedStageId}
+                      onChange={(e) => setSelectedStageId(e.target.value)}
+                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                    >
+                      <option value="">-- Precios Base (Sin Etapa) --</option>
+                      {stages.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}{s.id === activeStageId ? ' ★ (Etapa Actual)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Boleta / Mesa</label>
+                    <select
+                      value={selectedTicketId}
+                      onChange={(e) => {
+                        setSelectedTicketId(e.target.value);
+                        setQuantity(1);
+                      }}
+                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                    >
+                      {tickets.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} - ${t.price.toLocaleString('es-CO')} {t.stock !== undefined ? `(Stock: ${(t as any).remaining ?? t.stock})` : `(Cama #${t.number})`}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.ticket && <p className="text-red-500 text-xs mt-1">{errors.ticket}</p>}
+                  </div>
+
+                  {isIndividual && (
+                    <div>
+                      <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Cantidad</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={quantity}
+                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
+              {/* Buyer Information Form */}
+              <div className="bg-[#FAF8F5] border border-[#E8E2DA] p-5 rounded-2xl space-y-4">
+                <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">Datos del Comprador</h2>
+                
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Nombre Completo *</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. Juan Pérez"
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                    />
+                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Tipo de Documento *</label>
+                    <select
+                      value={form.docType}
+                      onChange={(e) => setForm({ ...form, docType: e.target.value })}
+                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                    >
+                      <option value="C.C">Cédula de Ciudadanía (C.C)</option>
+                      <option value="C.E">Cédula de Extranjería (C.E)</option>
+                      <option value="Pasaporte">Pasaporte</option>
+                      <option value="DNI">DNI Documento Nacional</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Número de Documento *</label>
+                    <input
+                      type="text"
+                      placeholder="Ej. 1020304050"
+                      value={form.docNumber}
+                      onChange={(e) => setForm({ ...form, docNumber: e.target.value })}
+                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                    />
+                    {errors.docNumber && <p className="text-red-500 text-xs mt-1">{errors.docNumber}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Indicativo de País *</label>
+                    <AdminPrefixDropdown
+                      value={form.phonePrefix}
+                      onChange={(prefix) => setForm({ ...form, phonePrefix: prefix })}
+                      currentLocale={currentLocale}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Teléfono *</label>
+                    <input
+                      type="tel"
+                      placeholder="3001234567"
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                    />
+                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Correo Electrónico *</label>
+                    <input
+                      type="email"
+                      placeholder="correo@ejemplo.com"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                    />
+                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Confirmar Correo Electrónico *</label>
+                    <input
+                      type="email"
+                      placeholder="correo@ejemplo.com"
+                      value={form.confirmEmail}
+                      onChange={(e) => setForm({ ...form, confirmEmail: e.target.value })}
+                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                    />
+                    {errors.confirmEmail && <p className="text-red-500 text-xs mt-1">{errors.confirmEmail}</p>}
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Idioma Preferido para Notificaciones / Correos *</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, locale: 'es' })}
+                        className={`py-3 px-4 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 cursor-pointer border ${
+                          form.locale === 'es'
+                            ? 'bg-[#686A54] text-[#F4EFE9] border-[#686A54] shadow-sm'
+                            : 'bg-white text-[#7A6F5E] border-[#E0D9D0] hover:bg-[#FAF8F5]'
+                        }`}
+                      >
+                        🇪🇸 ESPAÑOL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, locale: 'en' })}
+                        className={`py-3 px-4 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 cursor-pointer border ${
+                          form.locale === 'en'
+                            ? 'bg-[#686A54] text-[#F4EFE9] border-[#686A54] shadow-sm'
+                            : 'bg-white text-[#7A6F5E] border-[#E0D9D0] hover:bg-[#FAF8F5]'
+                        }`}
+                      >
+                        🇺🇸 ENGLISH
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 bg-[#686A54] text-[#F4EFE9] font-bold text-sm tracking-widest rounded-xl hover:opacity-90 transition-opacity uppercase flex justify-center items-center cursor-pointer shadow-md"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      REGISTRANDO VENTA...
+                    </>
+                  ) : (
+                    'CONFIRMAR Y GENERAR QR'
+                  )}
+                </button>
+              </div>
+
+            </form>
+
+            {/* Quick Search & QR Resend Card */}
+            <div className="border-t border-[#E8E2DA] px-8 py-8 space-y-6 bg-[#FCFAF7]">
               <div>
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Boleta / Mesa</label>
-                <select
-                  value={selectedTicketId}
-                  onChange={(e) => {
-                    setSelectedTicketId(e.target.value);
-                    setQuantity(1);
-                  }}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                >
-                  {tickets.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} - ${t.price.toLocaleString('es-CO')} {t.stock !== undefined ? `(Stock: ${(t as any).remaining ?? t.stock})` : `(Cama #${t.number})`}
-                    </option>
-                  ))}
-                </select>
-                {errors.ticket && <p className="text-red-500 text-xs mt-1">{errors.ticket}</p>}
+                <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">BUSCAR COMPRADOR Y REENVIAR QR</h2>
+                <p className="text-xs text-[#7A6F5E] mt-0.5">Encuentra un usuario por su nombre o correo para reenviar sus entradas.</p>
               </div>
 
-              {isIndividual && (
-                <div>
-                  <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Cantidad</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                  />
+              <div className="relative font-sans">
+                <input
+                  type="text"
+                  placeholder="Ej. Juan Perez o juan@correo.com"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-[#FAF8F5] border border-[#E0D9D0] rounded-xl pl-4 pr-10 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
+                />
+                {searching && (
+                  <div className="absolute right-3 top-3.5">
+                    <div className="w-4 h-4 border-2 border-[#686A54] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* Autocomplete Dropdown */}
+              {showDropdown && searchResults.length > 0 && (
+                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#E8E2DA] rounded-xl shadow-lg max-h-60 overflow-y-auto z-40 divide-y divide-[#FAF8F5]">
+                  {searchResults.map((result) => (
+                    <button
+                      key={result.orderId}
+                      type="button"
+                      onClick={() => {
+                        setSelectedUser(result);
+                        setShowDropdown(false);
+                        setSearchTerm('');
+                        setResendStatus(null);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-[#FAF8F5] transition-colors flex flex-col gap-0.5 cursor-pointer"
+                    >
+                      <span className="font-semibold text-sm text-[#231E1A]">{result.buyerName}</span>
+                      <span className="text-xs text-[#7A6F5E]">{result.buyerEmail} | {result.ticketName} {result.ticketNumber ? `#${result.ticketNumber}` : ''}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showDropdown && searchResults.length === 0 && searchTerm.trim().length >= 2 && !searching && (
+                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#E8E2DA] rounded-xl shadow-lg p-4 text-center text-xs text-[#7A6F5E] z-40">
+                  No se encontraron compradores con esos términos.
+                </div>
+              )}
+
+              {/* Selected User Details Card */}
+              {selectedUser && (
+                <div className="bg-[#FAF8F5] border border-[#E8E2DA] rounded-2xl p-5 space-y-4 font-sans">
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider">Detalles del Comprador Seleccionado</h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedUser(null);
+                        setResendStatus(null);
+                      }}
+                      className="text-xs text-red-500 hover:underline cursor-pointer"
+                    >
+                      Limpiar
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Nombre</span>
+                      <span className="font-semibold text-[#231E1A]">{selectedUser.buyerName}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Correo Electrónico</span>
+                      <span className="font-semibold text-[#231E1A] break-all">{selectedUser.buyerEmail}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Teléfono</span>
+                      <span className="font-semibold text-[#231E1A]">{selectedUser.buyerPhone}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Producto Adquirido</span>
+                      <span className="font-semibold text-[#231E1A]">
+                        {selectedUser.ticketName} {selectedUser.ticketNumber ? `#${selectedUser.ticketNumber}` : ''}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Código de Orden</span>
+                      <span className="font-mono text-[#231E1A] font-bold text-[11px]">{selectedUser.orderId}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Total Entradas</span>
+                      <span className="font-semibold text-[#231E1A]">{selectedUser.totalAccesos}</span>
+                    </div>
+                  </div>
+
+                  {resendStatus && (
+                    <div className={`px-4 py-2.5 rounded-xl text-xs ${resendStatus.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                      {resendStatus.message}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleResendQR(selectedUser.orderId)}
+                      disabled={resending}
+                      className="w-full py-3 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity flex justify-center items-center gap-2 cursor-pointer font-sans"
+                    >
+                      {resending ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          REENVIANDO...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                          </svg>
+                          REENVIAR POR EMAIL
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => downloadQRImage(selectedUser.orderId, selectedUser.buyerName)}
+                      className="w-full py-3 bg-white border border-[#686A54] text-[#686A54] hover:bg-[#686A54]/10 transition-colors font-bold text-xs tracking-wider uppercase rounded-xl flex justify-center items-center gap-2 cursor-pointer font-sans"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      DESCARGAR QR IMAGEN
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
-          </div>
+          </>
+        )}
 
-          {/* Buyer Information Form */}
-          <div className="space-y-4">
-            <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">Datos del Comprador</h2>
+        {/* TAB 2: LISTA DE COMPRAS (PURCHASED TICKETS TABLE) */}
+        {activeTab === 'list' && (
+          <div className="p-6 space-y-6 font-sans">
             
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Name */}
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Nombre Completo</label>
+            {/* Filter and Search Header Controls */}
+            <div className="bg-[#FAF8F5] border border-[#E8E2DA] p-4 rounded-2xl flex flex-col md:flex-row gap-3 justify-between items-center">
+              
+              {/* Search Input */}
+              <div className="relative w-full md:w-96">
                 <input
                   type="text"
-                  placeholder="Ej. Juan Pérez"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                />
-                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-              </div>
-
-              {/* Document Type */}
-              <div>
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Tipo de Documento</label>
-                <select
-                  value={form.docType}
-                  onChange={(e) => setForm({ ...form, docType: e.target.value })}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                >
-                  <option value="C.C">C.C. (Cédula de Ciudadanía)</option>
-                  <option value="C.E">C.E. (Cédula de Extranjería)</option>
-                  <option value="Pasaporte">Pasaporte</option>
-                  <option value="NIT">NIT</option>
-                </select>
-              </div>
-
-              {/* Document Number */}
-              <div>
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Número de Documento</label>
-                <input
-                  type="text"
-                  placeholder="Ej. 12345678"
-                  value={form.docNumber}
-                  onChange={(e) => setForm({ ...form, docNumber: e.target.value })}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                />
-                {errors.docNumber && <p className="text-red-500 text-xs mt-1">{errors.docNumber}</p>}
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Correo Electrónico</label>
-                <input
-                  type="email"
-                  placeholder="cliente@correo.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-              </div>
-
-              {/* Confirm Email */}
-              <div>
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Confirmar Correo Electrónico</label>
-                <input
-                  type="email"
-                  placeholder="cliente@correo.com"
-                  value={form.confirmEmail}
-                  onChange={(e) => setForm({ ...form, confirmEmail: e.target.value })}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                />
-                {errors.confirmEmail && <p className="text-red-500 text-xs mt-1">{errors.confirmEmail}</p>}
-              </div>
-
-              {/* Phone Prefix */}
-              <div>
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Indicativo Teléfono</label>
-                <AdminPrefixDropdown
-                  value={form.phonePrefix}
-                  onChange={(val) => setForm({ ...form, phonePrefix: val })}
-                  currentLocale={currentLocale}
-                />
-              </div>
-
-              {/* Phone Number */}
-              <div>
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Celular</label>
-                <input
-                  type="text"
-                  placeholder="300 123 4567"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                />
-                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-              </div>
-
-              {/* Language Preference */}
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Idioma para el envío del QR</label>
-                <select
-                  value={form.locale}
-                  onChange={(e) => setForm({ ...form, locale: e.target.value })}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                >
-                  <option value="es">Español (Enviará plantilla en Español)</option>
-                  <option value="en">English (Enviará plantilla en Inglés)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 bg-[#686A54] text-[#F4EFE9] font-bold text-sm tracking-widest rounded-xl hover:opacity-90 transition-opacity uppercase focus:outline-none flex justify-center items-center"
-            >
-              {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  PROCESANDO Y GENERANDO QR...
-                </>
-              ) : (
-                'GENERAR QR Y REGISTRAR VENTA'
-              )}
-            </button>
-          </div>
-
-        </form>
-      </div>
-
-      {/* Search Buyer and Resend QR Section */}
-      <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden mt-8 p-8 space-y-6">
-        <div className="flex items-center gap-2 text-[#686A54] border-b border-[#FAF8F5] pb-3 mb-4">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <h2 className="font-sans font-bold text-base uppercase tracking-wide">Buscador y Reenvio de Codigos QR</h2>
-        </div>
-
-        <p className="text-xs text-[#7A6F5E] leading-relaxed font-sans">
-          Busca a un comprador por su **nombre** o **correo electronico** para consultar los detalles de su compra y reenviarle el correo de confirmacion con el codigo QR.
-        </p>
-
-        <div className="relative font-sans">
-          <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Buscar Comprador</label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Ej. Juan Perez o juan@correo.com"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#FAF8F5] border border-[#E0D9D0] rounded-xl pl-4 pr-10 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-            />
-            {searching && (
-              <div className="absolute right-3 top-3.5">
-                <div className="w-4 h-4 border-2 border-[#686A54] border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-          </div>
-
-          {/* Autocomplete Dropdown */}
-          {showDropdown && searchResults.length > 0 && (
-            <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#E8E2DA] rounded-xl shadow-lg max-h-60 overflow-y-auto z-40 divide-y divide-[#FAF8F5]">
-              {searchResults.map((result) => (
-                <button
-                  key={result.orderId}
-                  type="button"
-                  onClick={() => {
-                    setSelectedUser(result);
-                    setShowDropdown(false);
-                    setSearchTerm('');
-                    setResendStatus(null);
+                  placeholder="Buscar por comprador, correo, teléfono, orden o ticket..."
+                  value={purchasedSearch}
+                  onChange={(e) => {
+                    setPurchasedSearch(e.target.value);
+                    setPurchasedPage(1);
                   }}
-                  className="w-full px-4 py-3 text-left hover:bg-[#FAF8F5] transition-colors flex flex-col gap-0.5 cursor-pointer"
+                  className="w-full bg-white border border-[#E0D9D0] rounded-xl pl-9 pr-4 py-2.5 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54] placeholder:text-[#9A9080]"
+                />
+                <svg className="w-4 h-4 absolute left-3 top-3 text-[#7A6F5E]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+
+              {/* Filter Controls Group */}
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                
+                {/* Zone Selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-[#7A6F5E]">Zona:</span>
+                  <select
+                    value={selectedZone}
+                    onChange={(e) => {
+                      setSelectedZone(e.target.value);
+                      setPurchasedPage(1);
+                    }}
+                    className="bg-white border border-[#E0D9D0] rounded-xl px-3 py-2 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54]"
+                  >
+                    <option value="all">Todas las Zonas</option>
+                    {purchasedZones.map((z) => (
+                      <option key={z} value={z}>
+                        {z.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Limit Selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-[#7A6F5E]">Mostrar:</span>
+                  <select
+                    value={purchasedLimit}
+                    onChange={(e) => {
+                      setPurchasedLimit(Number(e.target.value));
+                      setPurchasedPage(1);
+                    }}
+                    className="bg-white border border-[#E0D9D0] rounded-xl px-3 py-2 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54]"
+                  >
+                    <option value={10}>10 por pág.</option>
+                    <option value={25}>25 por pág.</option>
+                    <option value={50}>50 por pág.</option>
+                    <option value={100}>100 por pág.</option>
+                  </select>
+                </div>
+
+                {/* Refresh Button */}
+                <button
+                  type="button"
+                  onClick={() => fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit)}
+                  className="p-2 bg-white border border-[#E0D9D0] text-[#686A54] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer"
+                  title="Recargar tabla"
                 >
-                  <span className="font-semibold text-sm text-[#231E1A]">{result.buyerName}</span>
-                  <span className="text-xs text-[#7A6F5E]">{result.buyerEmail} | {result.ticketName} {result.ticketNumber ? `#${result.ticketNumber}` : ''}</span>
+                  <svg className={`w-4 h-4 ${purchasedLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M23 4v6h-6M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
                 </button>
-              ))}
-            </div>
-          )}
 
-          {showDropdown && searchResults.length === 0 && searchTerm.trim().length >= 2 && !searching && (
-            <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#E8E2DA] rounded-xl shadow-lg p-4 text-center text-xs text-[#7A6F5E] z-40">
-              No se encontraron compradores con esos terminos.
-            </div>
-          )}
-        </div>
+              </div>
 
-        {/* Selected User Details Card */}
-        {selectedUser && (
-          <div className="bg-[#FAF8F5] border border-[#E8E2DA] rounded-2xl p-5 space-y-4 font-sans">
-            <div className="flex justify-between items-start">
-              <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider">Detalles del Comprador Seleccionado</h3>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedUser(null);
-                  setResendStatus(null);
-                }}
-                className="text-xs text-red-500 hover:underline cursor-pointer"
-              >
-                Limpiar
-              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div>
-                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Nombre</span>
-                <span className="font-semibold text-[#231E1A]">{selectedUser.buyerName}</span>
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Correo Electronico</span>
-                <span className="font-semibold text-[#231E1A] break-all">{selectedUser.buyerEmail}</span>
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Telefono</span>
-                <span className="font-semibold text-[#231E1A]">{selectedUser.buyerPhone}</span>
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Producto Adquirido</span>
-                <span className="font-semibold text-[#231E1A]">
-                  {selectedUser.ticketName} {selectedUser.ticketNumber ? `#${selectedUser.ticketNumber}` : ''}
-                </span>
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Codigo de Orden</span>
-                <span className="font-mono text-[#231E1A] font-bold text-[11px]">{selectedUser.orderId}</span>
-              </div>
-              <div>
-                <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Total Entradas</span>
-                <span className="font-semibold text-[#231E1A]">{selectedUser.totalAccesos}</span>
-              </div>
-            </div>
-
-            {resendStatus && (
-              <div className={`px-4 py-2.5 rounded-xl text-xs ${resendStatus.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
-                {resendStatus.message}
+            {/* Error message */}
+            {purchasedError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs">
+                {purchasedError}
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => handleResendQR(selectedUser.orderId)}
-                disabled={resending}
-                className="w-full py-3 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity flex justify-center items-center gap-2 cursor-pointer font-sans"
-              >
-                {resending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    REENVIANDO...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                      <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
-                    REENVIAR POR EMAIL
-                  </>
-                )}
-              </button>
+            {/* Table Container */}
+            <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden shadow-inner">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] font-bold text-[#7A6F5E] uppercase tracking-wider">
+                      <th className="px-4 py-3">Orden de Compra</th>
+                      <th className="px-4 py-3">Ticket ID</th>
+                      <th className="px-4 py-3">Nombre Ticket</th>
+                      <th className="px-4 py-3">Zona</th>
+                      <th className="px-4 py-3">Nombre</th>
+                      <th className="px-4 py-3">Correo</th>
+                      <th className="px-4 py-3">Teléfono</th>
+                      <th className="px-4 py-3 text-center">Total Accesos</th>
+                      <th className="px-4 py-3 text-center">Restantes</th>
+                      <th className="px-4 py-3 text-center">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#FAF8F5]">
+                    {purchasedLoading ? (
+                      <tr>
+                        <td colSpan={10} className="px-4 py-12 text-center text-[#7A6F5E]">
+                          <div className="flex flex-col items-center justify-center space-y-2">
+                            <div className="w-7 h-7 border-3 border-[#686A54] border-t-transparent rounded-full animate-spin" />
+                            <span>Cargando registros de compras...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : purchasedList.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} className="px-4 py-12 text-center text-[#7A6F5E]">
+                          No se encontraron ventas registradas que coincidan con los filtros.
+                        </td>
+                      </tr>
+                    ) : (
+                      purchasedList.map((item) => (
+                        <tr key={item.orderId + item.ticketId} className="hover:bg-[#FAF8F5]/60 transition-colors">
+                          
+                          {/* 1. Orden de Compra */}
+                          <td className="px-4 py-3 font-mono font-bold text-[#231E1A] whitespace-nowrap">
+                            <span className="bg-[#F4EFE9] text-[#686A54] px-2 py-1 rounded-md text-[11px] border border-[#E8E2DA]">
+                              {item.orderId}
+                            </span>
+                          </td>
 
-              <button
-                type="button"
-                onClick={() => downloadQRImage(selectedUser.orderId, selectedUser.buyerName)}
-                className="w-full py-3 bg-white border border-[#686A54] text-[#686A54] hover:bg-[#686A54]/10 transition-colors font-bold text-xs tracking-wider uppercase rounded-xl flex justify-center items-center gap-2 cursor-pointer font-sans"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                DESCARGAR QR IMAGEN
-              </button>
+                          {/* 2. Ticket ID */}
+                          <td className="px-4 py-3 font-mono text-[#7A6F5E] text-[11px] whitespace-nowrap">
+                            {item.ticketId}
+                          </td>
+
+                          {/* 3. Ticket Name */}
+                          <td className="px-4 py-3 font-semibold text-[#231E1A] whitespace-nowrap">
+                            {item.ticketName} {item.ticketNumber ? `#${item.ticketNumber}` : ''}
+                          </td>
+
+                          {/* 4. Zona */}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="bg-[#686A54]/10 text-[#686A54] font-bold px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider">
+                              {item.zone}
+                            </span>
+                          </td>
+
+                          {/* 5. Nombre */}
+                          <td className="px-4 py-3 font-medium text-[#231E1A] whitespace-nowrap">
+                            {item.buyerName}
+                          </td>
+
+                          {/* 6. Correo */}
+                          <td className="px-4 py-3 text-[#7A6F5E] whitespace-nowrap">
+                            {item.buyerEmail}
+                          </td>
+
+                          {/* 7. Teléfono */}
+                          <td className="px-4 py-3 text-[#7A6F5E] whitespace-nowrap">
+                            {item.buyerPhone}
+                          </td>
+
+                          {/* 8. Total Accesos */}
+                          <td className="px-4 py-3 text-center font-bold text-[#231E1A]">
+                            {item.totalAccesos}
+                          </td>
+
+                          {/* 9. Restantes */}
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
+                              item.accesosRestantes > 0 
+                                ? 'bg-green-100 text-green-800 border border-green-200' 
+                                : 'bg-gray-100 text-gray-600 border border-gray-200'
+                            }`}>
+                              {item.accesosRestantes}
+                            </span>
+                          </td>
+
+                          {/* 10. Acciones */}
+                          <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <div className="flex justify-center items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleResendQR(item.orderId)}
+                                disabled={resending}
+                                className="p-1.5 bg-[#FAF8F5] border border-[#E0D9D0] text-[#686A54] hover:bg-[#686A54] hover:text-white rounded-lg transition-colors cursor-pointer"
+                                title="Reenviar QR por email"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                  <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => downloadQRImage(item.orderId, item.buyerName)}
+                                className="p-1.5 bg-[#FAF8F5] border border-[#E0D9D0] text-[#686A54] hover:bg-[#686A54] hover:text-white rounded-lg transition-colors cursor-pointer"
+                                title="Descargar QR en PNG"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                  <polyline points="7 10 12 15 17 10"></polyline>
+                                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
+            {/* Pagination Bar */}
+            {purchasedTotalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                <span className="text-xs text-[#7A6F5E]">
+                  Mostrando{' '}
+                  <span className="font-bold text-[#231E1A]">
+                    {Math.min((purchasedPage - 1) * purchasedLimit + 1, purchasedTotal)}
+                  </span>{' '}
+                  a{' '}
+                  <span className="font-bold text-[#231E1A]">
+                    {Math.min(purchasedPage * purchasedLimit, purchasedTotal)}
+                  </span>{' '}
+                  de <span className="font-bold text-[#231E1A]">{purchasedTotal}</span> ventas registradas
+                </span>
+
+                <div className="flex items-center gap-1.5">
+                  {/* Previous Page */}
+                  <button
+                    type="button"
+                    disabled={purchasedPage <= 1 || purchasedLoading}
+                    onClick={() => setPurchasedPage((prev) => Math.max(1, prev - 1))}
+                    className="px-3 py-1.5 border border-[#E0D9D0] bg-white rounded-lg text-xs font-semibold text-[#231E1A] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                  >
+                    ← Anterior
+                  </button>
+
+                  {/* Page numbers */}
+                  {Array.from({ length: purchasedTotalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === purchasedTotalPages || Math.abs(p - purchasedPage) <= 1)
+                    .map((p, idx, arr) => {
+                      const showEllipsisBefore = idx > 0 && p - arr[idx - 1] > 1;
+                      return (
+                        <div key={p} className="flex items-center gap-1">
+                          {showEllipsisBefore && <span className="px-1 text-xs text-[#7A6F5E]">...</span>}
+                          <button
+                            type="button"
+                            onClick={() => setPurchasedPage(p)}
+                            className={`px-3 py-1.5 border rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                              p === purchasedPage
+                                ? 'bg-[#686A54] text-[#F4EFE9] border-[#686A54]'
+                                : 'bg-white text-[#231E1A] border-[#E0D9D0] hover:bg-[#FAF8F5]'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                  {/* Next Page */}
+                  <button
+                    type="button"
+                    disabled={purchasedPage >= purchasedTotalPages || purchasedLoading}
+                    onClick={() => setPurchasedPage((prev) => Math.min(purchasedTotalPages, prev + 1))}
+                    className="px-3 py-1.5 border border-[#E0D9D0] bg-white rounded-lg text-xs font-semibold text-[#231E1A] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF8F5] transition-colors cursor-pointer"
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
+
       </div>
 
 
