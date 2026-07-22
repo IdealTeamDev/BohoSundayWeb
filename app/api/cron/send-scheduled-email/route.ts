@@ -1782,7 +1782,7 @@ How to get there?
 // 3. CONFIGURACIÓN DE ENVÍO
 // ==========================================
 // Hora programada: 25 de Julio de 2026, 2:00 PM (Hora Colombia: UTC-5)
-const TARGET_DATE_STRING = '2026-07-25T14:00:00-05:00';
+const TARGET_DATE_STRING = '2026-07-25T10:00:00-05:00';
 
 // Asuntos del correo por idioma
 const SUBJECT_ES = '✨ ¡Boho Sunday es mañana!';
