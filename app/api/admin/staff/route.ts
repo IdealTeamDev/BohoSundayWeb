@@ -80,8 +80,12 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
     }
 
-    const { error } = await supabase.from('staff_users').delete().eq('id', id);
+    const { data, error } = await supabase.from('staff_users').delete().eq('id', id).select();
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'No se eliminó ningún usuario. Verifica si existe el usuario o si hay un problema con las credenciales de base de datos.' }, { status: 400 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
