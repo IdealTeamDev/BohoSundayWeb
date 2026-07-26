@@ -200,12 +200,15 @@ export default function QuickSellPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setResendStatus({ type: 'success', message: data.message || 'El código QR ha sido reenviado con éxito.' });
+        alert(data.message || 'El código QR ha sido reenviado con éxito.');
       } else {
         setResendStatus({ type: 'error', message: data.error || 'Error al reenviar el código QR.' });
+        alert(data.error || 'Error al reenviar el código QR.');
       }
     } catch (err) {
       console.error('Error resending QR:', err);
       setResendStatus({ type: 'error', message: 'Error de red al reenviar el código QR.' });
+      alert('Error de red al reenviar el código QR.');
     } finally {
       setResending(false);
     }
