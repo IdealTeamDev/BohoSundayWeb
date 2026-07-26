@@ -15,7 +15,7 @@ export default function QuickSellPage() {
   // State variables
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string>('');
-  const [quantity, setQuantity] = useState<number>(1);
+  const [quantity, setQuantity] = useState<number | string>(1);
   const [loading, setLoading] = useState<boolean>(false);
   const [fetchingTickets, setFetchingTickets] = useState<boolean>(true);
   const [stages, setStages] = useState<any[]>([]);
@@ -35,7 +35,7 @@ export default function QuickSellPage() {
     locale: 'es', // Language of preference for the buyer
   });
 
-  const [errors, setErrors] = useState<Partial<typeof form & { ticket: string }>>({});
+  const [errors, setErrors] = useState<Partial<typeof form & { ticket: string; quantity?: string }>>({});
 
   // Modal State
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -459,7 +459,7 @@ export default function QuickSellPage() {
   const isIndividual = selectedTicket?.stock !== undefined;
 
   function validate() {
-    const newErrors: Partial<typeof form & { ticket: string }> = {};
+    const newErrors: Partial<typeof form & { ticket: string; quantity?: string }> = {};
     
     if (!selectedTicketId) newErrors.ticket = 'Debes seleccionar una boleta o mesa.';
     if (!form.name.trim()) newErrors.name = 'El nombre es obligatorio.';
@@ -475,6 +475,16 @@ export default function QuickSellPage() {
     
     if (form.email.toLowerCase().trim() !== form.confirmEmail.toLowerCase().trim()) {
       newErrors.confirmEmail = 'Los correos electrónicos no coinciden.';
+    }
+
+    // Validación de cantidad para boletas individuales
+    if (isIndividual) {
+      const qtyNum = Number(quantity);
+      if (quantity === '' || isNaN(qtyNum) || qtyNum < 1) {
+        newErrors.quantity = 'La cantidad no puede estar vacía o ser menor a 1.';
+      } else if (qtyNum > 50) {
+        newErrors.quantity = 'La cantidad máxima permitida es 50.';
+      }
     }
 
     setErrors(newErrors);
@@ -496,7 +506,7 @@ export default function QuickSellPage() {
       locale: form.locale,
     };
 
-    const finalQty = isIndividual ? quantity : 1;
+    const finalQty = isIndividual ? (Number(quantity) || 1) : 1;
 
     try {
       const token = localStorage.getItem('admin_token') || '';
@@ -758,9 +768,18 @@ export default function QuickSellPage() {
                         min="1"
                         max="50"
                         value={quantity}
-                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            setQuantity('');
+                          } else {
+                            const parsed = parseInt(val, 10);
+                            setQuantity(isNaN(parsed) ? '' : parsed);
+                          }
+                        }}
                         className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
                       />
+                      {errors.quantity && <p className="text-red-500 text-xs font-semibold mt-1.5">{errors.quantity}</p>}
                     </div>
                   )}
                 </div>
