@@ -10,6 +10,7 @@ import LineUp from "@/components/lineup/LineUp";
 import { Navbar } from "@/components";
 import { Marquee } from "@/components/marquee/Marquee";
 import {Footer} from "@/components/footer/Footer";
+import BannerVideo from "@/components/bannervideo/BannerVideo";
 
 export default function Home() {
   const [openMap, setOpenMap] = useState(false)
@@ -21,9 +22,12 @@ export default function Home() {
     <div className="flex flex-col flex-1 items-center justify-center bg-[#F4EFE9] font-sans pb-28">
       <Marquee />
       <Navbar />
-
-      <div className="bg-[url(/images/background/background-home.png)] lg:bg-[url(/images/background/background-desktop-home.png)] bg-cover bg-no-repeat flex flex-1 w-full flex-col mb-5 items-center justify-between pt-32 pb-16 px-16 dark:bg-red">
-        {/* Mobile / Tablet Hero Layout */}
+      <div className="w-full">
+        <BannerVideo/>
+      </div>
+     
+      {/* <div className="bg-[url(/images/background/background-home.png)] lg:bg-[url(/images/background/background-desktop-home.png)] bg-cover bg-no-repeat flex flex-1 w-full flex-col mb-5 items-center justify-between pt-32 pb-16 px-16 dark:bg-red">
+        
         <div className="flex flex-col items-center justify-center lg:hidden w-full">
           <img
             src={t.home.logoBoho}
@@ -63,18 +67,18 @@ export default function Home() {
               height={20}
             />
           </div>
-        </div>
+        </div> 
 
-        {/* Desktop Hero Layout */}
+        
         <div className="hidden lg:flex flex-col items-center justify-center w-full max-w-6xl">
           <div className="flex flex-row items-center justify-center gap-12 xl:gap-20 w-full mb-10">
-            {/* Left: Date Block */}
+            
             <div className="flex flex-col items-center text-center text-[#F4EFE9] select-none">
               <span className="font-agilera text-4xl xl:text-5xl leading-none">JUL</span>
               <span className="font-agilera text-8xl xl:text-8xl leading-none mt-2">26</span>
             </div>
 
-            {/* Center: Logo */}
+           
             <div className="flex justify-center mx-4">
               <img
                 src={t.home.logoBohoDesk}
@@ -83,14 +87,14 @@ export default function Home() {
               />
             </div>
 
-            {/* Right: Time Block */}
+           
             <div className="flex flex-col items-center text-center text-[#F4EFE9] select-none">
               <span className="font-agilera text-8xl xl:text-8xl leading-none">10</span>
               <span className="font-agilera text-4xl xl:text-5xl leading-none mt-2">AM</span>
             </div>
           </div>
 
-          {/* Casa Candela Centered Below */}
+          
           <div>
             <img
               src="images/logo/logo-casa-candela.png"
@@ -101,7 +105,7 @@ export default function Home() {
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="px-10 mb-10 lg:mb-15 mt-5 text-center"> 
         <img

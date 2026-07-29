@@ -15,6 +15,7 @@
     "jspdf": "^4.2.1",
     "mercadopago": "^3.2.0",
     "next": "16.2.7",
+    "next-video": "^2.8.1",
     "nodemailer": "^9.0.1",
     "pg": "^8.22.0",
     "react": "19.2.4",
