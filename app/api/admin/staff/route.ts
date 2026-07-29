@@ -80,8 +80,12 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
     }
 
-    const { error } = await supabase.from('staff_users').delete().eq('id', id);
+    const { data, error } = await supabase.from('staff_users').delete().eq('id', id).select();
     if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'No se eliminó ningún usuario. Verifica si existe el usuario o si hay un problema con las credenciales de base de datos.' }, { status: 400 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -96,19 +100,29 @@ export async function PUT(req: NextRequest) {
     if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
 
     const body = await req.json();
-    const { id, pin } = body;
+    const { id, pin, is_active } = body;
 
-    if (!id || !pin) {
+    if (!id) {
       return NextResponse.json({ error: 'Faltan campos' }, { status: 400 });
     }
 
-    const { error } = await supabase.from('staff_users').update({
-      pin_hash: hashPassword(pin)
-    }).eq('id', id);
+    const updateData: any = {};
+    if (pin !== undefined) {
+      updateData.pin_hash = hashPassword(pin);
+    }
+    if (is_active !== undefined) {
+      updateData.is_active = is_active;
+    }
+
+    const { data, error } = await supabase
+      .from('staff_users')
+      .update(updateData)
+      .eq('id', id)
+      .select('id, name, username, role, is_active');
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data: data?.[0] });
   } catch (error) {
     console.error('Error updating staff:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

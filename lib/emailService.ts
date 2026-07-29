@@ -1658,7 +1658,7 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
 
     const transport = createTransport();
     const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday" <reservas@bohosunday.com>';
-    const emailAlejandra = 'alejandra@idealteamcolombia.com';
+    const emailAlejandra = 'alejandra@idealteamcolombia.com, elizabeth@idealteamcolombia.com';
     const emailCoordinacion = 'coordinacionreservas@casacandela.co';
 
     // Fetch client QR code buffer to attach to the email
