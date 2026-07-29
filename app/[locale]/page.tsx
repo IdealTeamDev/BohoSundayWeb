@@ -138,10 +138,11 @@ export default function Home() {
       <AlliesCarousel />
 
       {/* BottomBar contiene el mapa internamente */}
+      {/* Activar para el proximo Boho 
       <BottomBar
         openMap={openMap}
         onToggleMap={() => setOpenMap(!openMap)}
-      />
+      />*/}
       <Footer/>
     </div>
   );
