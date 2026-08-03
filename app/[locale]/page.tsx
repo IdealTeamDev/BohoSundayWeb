@@ -17,9 +17,10 @@ export default function Home() {
   const params = useParams();
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
-
+{/*Se eleimino un pb-28 para eliminar el espacio adicional que se crea cauando se activa el mapa de ventas */}
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-[#F4EFE9] font-sans pb-28">
+    
+    <div className="flex flex-col flex-1 items-center justify-center bg-[#F4EFE9] font-sans">
       <Marquee />
       <Navbar />
       <div className="w-full">
