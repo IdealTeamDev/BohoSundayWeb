@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 interface EditionData {
   id: string;
@@ -123,6 +122,53 @@ const EDITIONS_LIST: EditionData[] = [
   },
 ];
 
+const getEditionImagePaths = (edition: EditionData) =>
+  edition.images.map((img) => {
+    const imageName = img.replace(/\.[^.]+$/, '.webp');
+    return `/images/editions-optimized/${edition.folder}/${imageName}`;
+  });
+
+const preloadImages = (srcList: string[]) => {
+  srcList.forEach((src) => {
+    const image = new window.Image();
+    image.src = src;
+  });
+};
+
+const CarouselImage = ({ src, alt, className }: { src: string; alt: string; className?: string }) => {
+  const [displaySrc, setDisplaySrc] = useState(src);
+
+  useEffect(() => {
+    if (src === displaySrc) {
+      return;
+    }
+
+    const image = new window.Image();
+    image.src = src;
+
+    const showImage = () => setDisplaySrc(src);
+
+    if (image.decode) {
+      image.decode().then(showImage).catch(showImage);
+    } else {
+      image.onload = showImage;
+      image.onerror = showImage;
+    }
+  }, [displaySrc, src]);
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={displaySrc}
+      alt={alt}
+      className={className}
+      loading="eager"
+      decoding="async"
+      draggable={false}
+    />
+  );
+};
+
 const SmartImage = ({ srcOptions, alt, className }: { srcOptions: string[]; alt: string; className?: string }) => {
   const [srcIndex, setSrcIndex] = useState(0);
 
@@ -133,6 +179,7 @@ const SmartImage = ({ srcOptions, alt, className }: { srcOptions: string[]; alt:
   };
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={srcOptions[srcIndex]}
       alt={alt}
@@ -145,6 +192,30 @@ const SmartImage = ({ srcOptions, alt, className }: { srcOptions: string[]; alt:
 export const Editions = () => {
   const [activeEditionId, setActiveEditionId] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState<{ [key: string]: number }>({});
+
+  useEffect(() => {
+    const firstVisibleImages = EDITIONS_LIST.flatMap((edition) =>
+      getEditionImagePaths(edition).slice(0, 3)
+    );
+
+    const preloadInitialImages = () => preloadImages(firstVisibleImages);
+
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(preloadInitialImages);
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(preloadInitialImages, 300);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
+    const activeEdition = EDITIONS_LIST.find((edition) => edition.id === activeEditionId);
+
+    if (activeEdition) {
+      preloadImages(getEditionImagePaths(activeEdition));
+    }
+  }, [activeEditionId]);
 
   const toggleEdition = (id: string) => {
     setActiveEditionId(activeEditionId === id ? null : id);
@@ -182,7 +253,7 @@ export const Editions = () => {
           const isActive = activeEditionId === edition.id;
           
           // Mapear los nombres de archivo estáticos a rutas relativas del proyecto
-          const images = edition.images.map(img => `/images/editions/${edition.folder}/${img}`);
+          const images = getEditionImagePaths(edition);
           const totalCount = images.length;
 
           const currentIdx = carouselIndex[edition.id] || 0;
@@ -251,15 +322,9 @@ export const Editions = () => {
                       <div className="w-full flex justify-center items-center gap-4 overflow-hidden relative">
                         {/* Imagen 1 - Izquierda (Completa en Desktop - 40% de ancho) */}
                         <div className="hidden md:block w-[40%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative group">
-                          <Image
-                            key={`left-${images[currentIdx]}`}
+                          <CarouselImage
                             src={images[currentIdx]}
                             alt="Foto activa 1"
-                            width={600}
-                            height={450}
-                            quality={75}
-                            loading="lazy"
-                            sizes="(min-width: 768px) 40vw, 100vw"
                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
                           
@@ -274,15 +339,9 @@ export const Editions = () => {
 
                         {/* Imagen 2 - Central (Completa en Desktop, Única en Móvil - 40% de ancho) */}
                         <div className="w-full md:w-[40%] h-[320px] md:h-[350px] lg:h-[450px] rounded-2xl overflow-hidden shadow-xl relative group">
-                          <Image
-                            key={`center-${images[nextIdx]}`}
+                          <CarouselImage
                             src={images[nextIdx]}
                             alt="Foto activa 2"
-                            width={600}
-                            height={450}
-                            quality={75}
-                            loading="lazy"
-                            sizes="(min-width: 768px) 40vw, 100vw"
                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
                           
@@ -305,15 +364,9 @@ export const Editions = () => {
 
                         {/* Imagen 3 - Derecha (Cortada a la mitad en Desktop - 20% de ancho) */}
                         <div className="hidden md:block w-[20%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative group opacity-60 hover:opacity-85 transition-opacity duration-300">
-                          <Image
-                            key={`right-${images[nextNextIdx]}`}
+                          <CarouselImage
                             src={images[nextNextIdx]}
                             alt="Preview siguiente"
-                            width={300}
-                            height={450}
-                            quality={75}
-                            loading="lazy"
-                            sizes="(min-width: 768px) 20vw, 100vw"
                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
 
@@ -325,13 +378,6 @@ export const Editions = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                           </button>
                         </div>
-                      </div>
-
-                      {/* Pre-carga silenciosa de todas las imágenes de la edición en segundo plano */}
-                      <div className="hidden">
-                        {images.map((src, i) => (
-                          <img key={i} src={src} alt="preload" />
-                        ))}
                       </div>
 
                     </div>

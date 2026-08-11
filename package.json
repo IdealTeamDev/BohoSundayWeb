@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "optimize:editions": "node scripts/optimize_edition_images.js",
     "lint": "eslint"
   },
   "dependencies": {
