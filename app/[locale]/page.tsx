@@ -7,9 +7,9 @@ import AlliesCarousel from '@/components/alliesaarousel/AlliesCarousel';
 import Parallaxsection from "@/components/parallax/Parallaxsection";
 import BottomBar from '@/components/bottombar/BottomBar';
 import LineUp from "@/components/lineup/LineUp";
-import { Navbar } from "@/components";
+import { Navbar, Editions } from "@/components";
 import { Marquee } from "@/components/marquee/Marquee";
-import {Footer} from "@/components/footer/Footer";
+import { Footer } from "@/components/footer/Footer";
 import BannerVideo from "@/components/bannervideo/BannerVideo";
 
 export default function Home() {
@@ -17,16 +17,17 @@ export default function Home() {
   const params = useParams();
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
-{/*Se eleimino un pb-28 para eliminar el espacio adicional que se crea cauando se activa el mapa de ventas */}
+  {/*Se eleimino un pb-28 para eliminar el espacio adicional que se crea cauando se activa el mapa de ventas */ }
   return (
-    
+
     <div className="flex flex-col flex-1 items-center justify-center bg-[#F4EFE9] font-sans">
-      <Marquee />
+      {/* Se oculta el Top Bar (Marquee) por el post Boho */}
+      {/* <Marquee /> */}
       <Navbar />
       <div className="w-full">
-        <BannerVideo/>
+        <BannerVideo />
       </div>
-     
+
       {/* <div className="bg-[url(/images/background/background-home.png)] lg:bg-[url(/images/background/background-desktop-home.png)] bg-cover bg-no-repeat flex flex-1 w-full flex-col mb-5 items-center justify-between pt-32 pb-16 px-16 dark:bg-red">
         
         <div className="flex flex-col items-center justify-center lg:hidden w-full">
@@ -108,20 +109,26 @@ export default function Home() {
         </div>
       </div> */}
 
-      <div className="px-10 mb-10 lg:mb-15 mt-5 text-center"> 
+      <div className="px-6 md:px-10 mb-10 lg:mb-15 mt-5 text-center max-w-3xl">
         <img
-            className="inline-block"
-            src="images/icon/icon-palm.png"
-            alt="Boho Sunday Colombia Moda Edition"
-            width={30}
-            height={20}
+          className="inline-block"
+          src="images/icon/icon-palm.png"
+          alt="Boho Sunday Colombia Moda Edition"
+          width={30}
+          height={20}
         />
-        <p className="text-black lg:text-[18px] text-[17px]/5 font-semibold text-center lg:pt-4 lg:py-0 py-2 font-nunito">{t.home.plan}</p>
-        <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-1 font-nunito">{t.home.experience}</p>
-        <p className="text-black lg:text-[18px] text-[17px]/5 text-center lg:py-0 py-2 font-nunito">{t.home.opportunity}</p>
+        <h2 className="text-[#231E1A] text-[28px] md:text-[34px] font-bold font-averia text-center pt-4 pb-6 uppercase tracking-wide">
+          {t.home.title}
+        </h2>
+        <p className="text-black lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light">{t.home.desc1}</p>
+        <p className="text-black lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light">{t.home.desc2}</p>
+        <p className="text-black lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light">{t.home.desc3}</p>
       </div>
-      <LineUp/>
-      <Parallaxsection />
+      <Editions />
+      {/* Se oculta la sección del Line Up por montaje de Boho Sunday */}
+      {/* <LineUp /> */}
+      {/* Se oculta la sección de Parallax (cuenta regresiva) por montaje de Boho Sunday */}
+      {/* <Parallaxsection /> */}
       <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center items-center gap-6 lg:py-10 lg:min-h-[450px] w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 lg:px-0 mb-5">
         <div className="flex lg:col-span-2 justify-center w-full h-full">
           <iframe
@@ -148,7 +155,7 @@ export default function Home() {
         openMap={openMap}
         onToggleMap={() => setOpenMap(!openMap)}
       />*/}
-      <Footer/>
+      <Footer />
     </div>
   );
 }

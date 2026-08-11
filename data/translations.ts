@@ -10,9 +10,10 @@ export const translations = {
       place: 'Casa Candela'
     },
     home: {
-      plan: 'Plan de domingo: Boho Sunday Colombiamoda Edition.',
-      experience: 'Una experiencia llena de moda, música, diversión y los pequeños detalles crean buena energía.',
-      opportunity: 'No te pierdas la oportunidad de formar parte de la mejor fiesta de Sopetrán.',
+      title: 'BOHO SUNDAY',
+      desc1: 'Es un ritual, un punto de encuentro y una escapada de lo cotidiano. Es el lugar donde el sol, la música, el baile y la energía bohemia se fusionan para crear el mejor día de la semana.',
+      desc2: 'Cada edición es completamente diferente, combinando una cuidada selección de DJs internacionales, shows en vivo y performances impactantes.',
+      desc3: 'Siente el ritmo, vive el ritual y reserva tu lugar para la próxima edición.',
       location: 'LUGAR:',
       address: 'Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia',
       // Imágenes (si cambian en inglés, se pueden definir aquí)
@@ -194,9 +195,10 @@ export const translations = {
       place: 'Casa Candela'
     },
     home: {
-      plan: 'Sunday Plan: Boho Sunday Colombiamoda Edition.',
-      experience: 'An experience full of fashion, music, fun and small details that create good energy.',
-      opportunity: "Don't miss the opportunity to be part of the best party in Sopetrán.",
+      title: 'BOHO SUNDAY',
+      desc1: 'It is a ritual, a meeting point, and an escape from the everyday. It is the place where the sun, music, dance, and bohemian energy merge to create the best day of the week.',
+      desc2: 'Each edition is completely different, combining a carefully curated selection of international DJs, live shows, and impact performances.',
+      desc3: 'Siente el ritmo, vive el ritual y reserva tu lugar para la próxima edición.',
       location: 'LOCATION:',
       address: 'Vereda Tafetanes Route 429180 Old Way to Sopetrán, Antioquia',
       // English logos (placeholder if you want to use the same or different files)

@@ -1,4 +1,4 @@
-import { displayFlyer, nunito, agilera } from "../fonts";
+import { displayFlyer, nunito, agilera, averia } from "../fonts";
 import SplashScreen from '@/components/splash/SplashScreen';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 
@@ -51,11 +51,12 @@ export default async function RootLayout({
   return (
     <html
       lang={locale || "es"}
-      className={`${displayFlyer.variable} ${nunito.variable} ${agilera.variable}`}
+      className={`${displayFlyer.variable} ${nunito.variable} ${agilera.variable} ${averia.variable}`}
       suppressHydrationWarning
     >
       <body>
-        <SplashScreen />
+        {/* Se oculta la animación de precarga (SplashScreen) al iniciar la web */}
+        {/* <SplashScreen /> */}
         <main>{children}</main>
         <WhatsAppButton />
       </body>

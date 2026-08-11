@@ -1,5 +1,4 @@
 import localFont from "next/font/local";
-import { Nunito_Sans } from "next/font/google";
 
 export const displayFlyer = localFont({
   src: "./fonts/BrownCasalova.ttf",
@@ -7,14 +6,20 @@ export const displayFlyer = localFont({
   display: "swap",
 });
 
-export const nunito = Nunito_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+export const nunito = localFont({
+  src: "./fonts/NunitoSans-VariableFont_YTLC_opsz_wdth_wght.ttf",
   variable: "--font-nunito",
+  display: "swap",
 });
 
 export const agilera = localFont({
   src: "./fonts/Agilera.otf",
   variable: "--font-agilera",
+  display: "swap",
+});
+
+export const averia = localFont({
+  src: "./fonts/AveriaSerifLibre-Regular.ttf",
+  variable: "--font-averia",
   display: "swap",
 });
