@@ -78,8 +78,8 @@ export const PreRegister = ({ t }: PreRegisterProps) => {
   };
 
   return (
-    <div className="w-full flex justify-center py-12 px-4 md:px-10 bg-[#F4EFE9]">
-      <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 items-center justify-between">
+    <div className="w-full flex justify-center py-14 px-4 md:px-10 bg-[#FDFCF8] border-y border-[#EDEBE5]">
+      <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl flex flex-col md:flex-row gap-8 items-center justify-between">
         
         {/* Lado Izquierdo (Textos) */}
         <div className="w-full md:w-1/2 flex flex-col justify-center text-center md:text-left select-none">
