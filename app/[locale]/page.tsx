@@ -132,22 +132,24 @@ export default function Home() {
       
       <PreRegister t={t.preregister} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center items-center gap-6 lg:py-10 lg:min-h-[450px] w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 lg:px-0 mb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center items-center gap-10 py-10 lg:min-h-[450px] w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 lg:px-0 mb-5">
         <div className="flex lg:col-span-2 justify-center w-full h-full">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.3199079475135!2d-75.75312807442276!3d6.481107206882632!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e45cb91916f8017%3A0x5ee4e4528ea7467b!2sHotel%20Casa%20Candela!5e0!3m2!1sen!2sco!4v1782406438536!5m2!1sen!2sco"
-            className="w-full h-[350px] lg:h-[450px] rounded-xl"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3964.3199079475135!2d-75.75312807442276!3d6.481107206882632!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e45cb91916f8017%3A0x5ee4e4528ea7467b!2sHotel%20Casa%20Candela!5e0!3m2!1sen!2sco!4v1782406438536!5m2!1sen!2sco&maptype=satellite"
+            className="w-full h-[350px] lg:h-[400px] rounded-2xl shadow-sm"
             style={{ border: 0 }}
             allowFullScreen
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
-
-        <div className="flex flex-col lg:col-span-1 items-center lg:items-center justify-center px-7 py-4 lg:py-0 text-center lg:text-left h-full">
-          <h1 className="text-black text-[17px] font-light font-nunito">{t.home.location}</h1>
-          <p className="text-black text-[17px] font-semibold font-nunito mt-1">{t.hero.place}</p>
-          <p className="text-black text-[17px] font-nunito text-center mt-2 leading-relaxed">{t.home.address}</p>
+ 
+        <div className="flex flex-col lg:col-span-1 items-center lg:items-end justify-center px-7 py-4 lg:py-0 text-center lg:text-right h-full select-none">
+          <span className="text-[#8E8A83] text-sm font-light font-nunito">{t.home.location}</span>
+          <h2 className="text-[#231E1A] text-[28px] lg:text-[34px] font-bold font-averia uppercase tracking-wider mt-1 mb-3">
+            {t.hero.place}
+          </h2>
+          <p className="text-black text-[16px]/6 font-nunito font-light max-w-xs">{t.home.address}</p>
         </div>
       </div>
       <AlliesCarousel />
