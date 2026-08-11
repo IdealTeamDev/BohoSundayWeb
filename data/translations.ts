@@ -182,6 +182,17 @@ export const translations = {
     },
     map: {
       runway: 'PASARELA'
+    },
+    preregister: {
+      title: 'NO TE PIERDAS LA PRÓXIMA EDICIÓN',
+      subtitle: 'Acceso prioritario para nuestra comunidad',
+      placeholderName: 'Nombre completo',
+      placeholderEmail: 'Correo electrónico',
+      placeholderPhone: 'Teléfono',
+      buttonText: 'Quiero acceso prioritario',
+      successMessage: '¡Registro exitoso! Ya tienes tu acceso prioritario.',
+      errorMessage: 'Hubo un error al registrarte, inténtalo de nuevo.',
+      loadingMessage: 'Registrando...'
     }
   },
   en: {
@@ -367,6 +378,17 @@ export const translations = {
     },
     map: {
       runway: 'RUNWAY'
+    },
+    preregister: {
+      title: 'DON\'T MISS THE NEXT EDITION',
+      subtitle: 'Priority access for our community',
+      placeholderName: 'Full name',
+      placeholderEmail: 'Email address',
+      placeholderPhone: 'Phone number',
+      buttonText: 'I want priority access',
+      successMessage: 'Registration successful! You now have priority access.',
+      errorMessage: 'An error occurred during registration, please try again.',
+      loadingMessage: 'Registering...'
     }
   }
 };

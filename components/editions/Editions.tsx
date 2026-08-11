@@ -155,7 +155,8 @@ export const Editions = () => {
   const nextImage = (editionId: string, totalCount: number) => {
     setCarouselIndex((prev) => {
       const current = prev[editionId] || 0;
-      const nextIndex = current + 1 >= totalCount ? 0 : current + 1;
+      // Saltamos 2 fotos para avanzar el lote completo visible
+      const nextIndex = (current + 2) % totalCount;
       return { ...prev, [editionId]: nextIndex };
     });
   };
@@ -163,7 +164,8 @@ export const Editions = () => {
   const prevImage = (editionId: string, totalCount: number) => {
     setCarouselIndex((prev) => {
       const current = prev[editionId] || 0;
-      const prevIndex = current - 1 < 0 ? totalCount - 1 : current - 1;
+      // Retrocedemos 2 fotos para retroceder el lote completo visible
+      const prevIndex = (current - 2 + totalCount) % totalCount;
       return { ...prev, [editionId]: prevIndex };
     });
   };
@@ -174,7 +176,7 @@ export const Editions = () => {
         EDICIONES
       </h2>
 
-      <div className="w-full max-w-4xl flex flex-col gap-5">
+      <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl flex flex-col gap-5">
         {EDITIONS_LIST.map((edition) => {
           const isActive = activeEditionId === edition.id;
           const currentIdx = carouselIndex[edition.id] || 0;
@@ -182,8 +184,8 @@ export const Editions = () => {
           // Mapear los nombres de archivo estáticos a rutas relativas del proyecto
           const images = edition.images.map(img => `/images/editions/${edition.folder}/${img}`);
 
-          const prevIdx = (currentIdx - 1 + images.length) % images.length;
           const nextIdx = (currentIdx + 1) % images.length;
+          const nextNextIdx = (currentIdx + 2) % images.length;
 
           const webBannerOptions = [
             `/images/editions/${edition.folder}/banner-web.png.png`,
@@ -222,7 +224,7 @@ export const Editions = () => {
               {isActive && (
                 <div className="w-full bg-[#F4EFE9] flex flex-col items-center py-6 mt-2 rounded-xl">
                   {/* Encabezado del Desplegable */}
-                  <div className="w-full max-w-4xl relative flex items-center justify-center mb-2 px-4">
+                  <div className="w-full relative flex items-center justify-center mb-2 px-4">
                     <h3 className="text-[#231E1A] text-[22px] md:text-[26px] font-bold font-averia uppercase tracking-wide">
                       ASÍ SE VIVIÓ
                     </h3>
@@ -239,7 +241,7 @@ export const Editions = () => {
 
                   {/* Carrusel de Imágenes */}
                   {images.length > 0 ? (
-                    <div className="relative w-full max-w-4xl flex items-center justify-center">
+                    <div className="relative w-full flex items-center justify-center">
                       
                       {/* Contenedor Flex de Imágenes */}
                       <div className="w-full flex justify-center items-center gap-4 overflow-hidden relative">
@@ -289,7 +291,7 @@ export const Editions = () => {
                         {/* Imagen 3 - Derecha (Cortada a la mitad en Desktop - 20% de ancho) */}
                         <div className="hidden md:block w-[20%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative">
                           <img
-                            src={images[(nextIdx + 1) % images.length]}
+                            src={images[nextNextIdx]}
                             alt="Preview siguiente"
                             className="w-full h-full object-cover"
                           />
