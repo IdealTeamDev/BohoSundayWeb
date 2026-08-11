@@ -125,9 +125,18 @@ const EDITIONS_LIST: EditionData[] = [
 const SmartImage = ({ srcOptions, alt, className }: { srcOptions: string[]; alt: string; className?: string }) => {
   const [srcIndex, setSrcIndex] = useState(0);
 
+  // Si las opciones cambian, resetear el index a 0
+  const optionsKey = srcOptions.join(',');
+  const [prevOptionsKey, setPrevOptionsKey] = useState(optionsKey);
+
+  if (optionsKey !== prevOptionsKey) {
+    setSrcIndex(0);
+    setPrevOptionsKey(optionsKey);
+  }
+
   const handleError = () => {
     if (srcIndex < srcOptions.length - 1) {
-      setSrcIndex(srcIndex + 1);
+      setSrcIndex((prev) => prev + 1);
     }
   };
 
