@@ -12,6 +12,24 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar si el email ya existe en la base de datos
+    const { data: existingUser, error: checkError } = await supabase
+      .from('pre_register')
+      .select('id')
+      .eq('email', email.trim())
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error verificando email en Supabase:', checkError);
+    }
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Este correo electrónico ya se encuentra registrado' },
+        { status: 400 }
+      );
+    }
+
     // Insertar el registro en la tabla de Supabase creada (pre_register)
     // Usamos el nombre de columna exacto de la base de datos (nombre_completo, email, telefono)
     const { data, error } = await supabase
