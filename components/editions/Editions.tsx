@@ -126,15 +126,6 @@ const EDITIONS_LIST: EditionData[] = [
 const SmartImage = ({ srcOptions, alt, className }: { srcOptions: string[]; alt: string; className?: string }) => {
   const [srcIndex, setSrcIndex] = useState(0);
 
-  // Si las opciones cambian, resetear el index a 0
-  const optionsKey = srcOptions.join(',');
-  const [prevOptionsKey, setPrevOptionsKey] = useState(optionsKey);
-
-  if (optionsKey !== prevOptionsKey) {
-    setSrcIndex(0);
-    setPrevOptionsKey(optionsKey);
-  }
-
   const handleError = () => {
     if (srcIndex < srcOptions.length - 1) {
       setSrcIndex((prev) => prev + 1);
@@ -189,13 +180,14 @@ export const Editions = () => {
       <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl flex flex-col gap-5">
         {EDITIONS_LIST.map((edition) => {
           const isActive = activeEditionId === edition.id;
-          const currentIdx = carouselIndex[edition.id] || 0;
           
           // Mapear los nombres de archivo estáticos a rutas relativas del proyecto
           const images = edition.images.map(img => `/images/editions/${edition.folder}/${img}`);
+          const totalCount = images.length;
 
-          const nextIdx = (currentIdx + 1) % images.length;
-          const nextNextIdx = (currentIdx + 2) % images.length;
+          const currentIdx = carouselIndex[edition.id] || 0;
+          const nextIdx = totalCount > 0 ? (currentIdx + 1) % totalCount : 0;
+          const nextNextIdx = totalCount > 0 ? (currentIdx + 2) % totalCount : 0;
 
           const webBannerOptions = [
             `/images/editions/${edition.folder}/banner-web.svg`,
@@ -260,11 +252,14 @@ export const Editions = () => {
                         {/* Imagen 1 - Izquierda (Completa en Desktop - 40% de ancho) */}
                         <div className="hidden md:block w-[40%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative group">
                           <Image
+                            key={`left-${images[currentIdx]}`}
                             src={images[currentIdx]}
                             alt="Foto activa 1"
                             width={600}
                             height={450}
                             quality={75}
+                            loading="lazy"
+                            sizes="(min-width: 768px) 40vw, 100vw"
                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
                           
@@ -280,11 +275,14 @@ export const Editions = () => {
                         {/* Imagen 2 - Central (Completa en Desktop, Única en Móvil - 40% de ancho) */}
                         <div className="w-full md:w-[40%] h-[320px] md:h-[350px] lg:h-[450px] rounded-2xl overflow-hidden shadow-xl relative group">
                           <Image
+                            key={`center-${images[nextIdx]}`}
                             src={images[nextIdx]}
                             alt="Foto activa 2"
                             width={600}
                             height={450}
                             quality={75}
+                            loading="lazy"
+                            sizes="(min-width: 768px) 40vw, 100vw"
                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
                           
@@ -308,11 +306,14 @@ export const Editions = () => {
                         {/* Imagen 3 - Derecha (Cortada a la mitad en Desktop - 20% de ancho) */}
                         <div className="hidden md:block w-[20%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative group opacity-60 hover:opacity-85 transition-opacity duration-300">
                           <Image
+                            key={`right-${images[nextNextIdx]}`}
                             src={images[nextNextIdx]}
                             alt="Preview siguiente"
                             width={300}
                             height={450}
                             quality={75}
+                            loading="lazy"
+                            sizes="(min-width: 768px) 20vw, 100vw"
                             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
 

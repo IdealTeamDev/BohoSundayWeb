@@ -13,12 +13,12 @@ export async function POST(request: Request) {
     }
 
     // Insertar el registro en la tabla de Supabase creada (pre_register)
-    // Usamos el nombre de columna exacto de la base de datos (Nombre_completo, email, telefono)
+    // Usamos el nombre de columna exacto de la base de datos (nombre_completo, email, telefono)
     const { data, error } = await supabase
       .from('pre_register')
       .insert([
         {
-          Nombre_completo: nombreCompleto,
+          nombre_completo: nombreCompleto,
           email: email,
           telefono: telefono,
         },
