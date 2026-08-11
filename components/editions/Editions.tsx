@@ -326,8 +326,6 @@ export const Editions = () => {
                         </div>
                       </div>
 
-                      </div>
-
                       {/* Pre-carga silenciosa de todas las imágenes de la edición en segundo plano */}
                       <div className="hidden">
                         {images.map((src, i) => (
