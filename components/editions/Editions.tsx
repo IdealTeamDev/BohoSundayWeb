@@ -188,6 +188,7 @@ export const Editions = () => {
           const nextNextIdx = (currentIdx + 2) % images.length;
 
           const webBannerOptions = [
+            `/images/editions/${edition.folder}/banner-web.svg`,
             `/images/editions/${edition.folder}/banner-web.png.png`,
             `/images/editions/${edition.folder}/banner-web.png.jpg`,
             `/images/editions/${edition.folder}/banner-web.jpg`,
@@ -195,6 +196,7 @@ export const Editions = () => {
           ];
 
           const mobileBannerOptions = [
+            `/images/editions/${edition.folder}/banner-movil.svg`,
             `/images/editions/${edition.folder}/banner-movil.png.png`,
             `/images/editions/${edition.folder}/banner-movil.png.jpg`,
             `/images/editions/${edition.folder}/banner-movil.jpg`,
@@ -211,12 +213,12 @@ export const Editions = () => {
                 <SmartImage
                   srcOptions={webBannerOptions}
                   alt={edition.title}
-                  className="hidden md:block w-full object-cover h-[100px] lg:h-[120px]"
+                  className="hidden md:block w-full h-auto object-contain"
                 />
                 <SmartImage
                   srcOptions={mobileBannerOptions}
                   alt={edition.title}
-                  className="block md:hidden w-full object-cover h-[80px]"
+                  className="block md:hidden w-full h-auto object-contain"
                 />
               </button>
 
