@@ -133,10 +133,10 @@ export default function Home() {
       <PreRegister t={t.preregister} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center items-center gap-10 py-10 lg:min-h-[450px] w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 lg:px-0 mb-5">
-        <div className="flex lg:col-span-2 justify-center w-full h-full">
+        <div className="flex lg:col-span-2 justify-center w-full h-[350px] lg:h-[400px] rounded-2xl shadow-sm overflow-hidden relative">
           <iframe
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1268.373964937057!2d-75.74896495177441!3d6.481067132007407!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e45cb91916f8017%3A0x5ee4e4528ea7467b!2sHotel%20Casa%20Candela!5e1!3m2!1ses-419!2sco!4v1786471304660!5m2!1ses-419!2sco"
-            className="w-full h-[350px] lg:h-[400px] rounded-2xl shadow-sm"
+            className="w-full h-[395px] lg:h-[445px] -mb-[45px] pointer-events-auto"
             style={{ border: 0 }}
             allowFullScreen
             loading="lazy"
