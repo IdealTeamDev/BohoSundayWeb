@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface EditionData {
   id: string;
@@ -164,8 +165,8 @@ export const Editions = () => {
   const nextImage = (editionId: string, totalCount: number) => {
     setCarouselIndex((prev) => {
       const current = prev[editionId] || 0;
-      // Saltamos 2 fotos para avanzar el lote completo visible
-      const nextIndex = (current + 2) % totalCount;
+      // Avanzamos de 1 en 1 foto para un desplazamiento continuo natural
+      const nextIndex = (current + 1) % totalCount;
       return { ...prev, [editionId]: nextIndex };
     });
   };
@@ -173,8 +174,8 @@ export const Editions = () => {
   const prevImage = (editionId: string, totalCount: number) => {
     setCarouselIndex((prev) => {
       const current = prev[editionId] || 0;
-      // Retrocedemos 2 fotos para retroceder el lote completo visible
-      const prevIndex = (current - 2 + totalCount) % totalCount;
+      // Retrocedemos de 1 en 1 foto para un desplazamiento continuo natural
+      const prevIndex = (current - 1 + totalCount) % totalCount;
       return { ...prev, [editionId]: prevIndex };
     });
   };
@@ -256,30 +257,35 @@ export const Editions = () => {
                       
                       {/* Contenedor Flex de Imágenes */}
                       <div className="w-full flex justify-center items-center gap-4 overflow-hidden relative">
-                        
                         {/* Imagen 1 - Izquierda (Completa en Desktop - 40% de ancho) */}
-                        <div className="hidden md:block w-[40%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative">
-                          <img
+                        <div className="hidden md:block w-[40%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative group">
+                          <Image
                             src={images[currentIdx]}
                             alt="Foto activa 1"
-                            className="w-full h-full object-cover"
+                            width={600}
+                            height={450}
+                            quality={75}
+                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
                           
                           {/* Botón Izquierda sobrepuesto en el extremo izquierdo de la primera foto */}
                           <button
                             onClick={() => prevImage(edition.id, images.length)}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-100 text-black p-2.5 rounded-full shadow-lg transition duration-200 flex items-center justify-center"
+                            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-100 text-black p-2.5 rounded-full shadow-lg transition duration-200 flex items-center justify-center hover:scale-110"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                           </button>
                         </div>
 
                         {/* Imagen 2 - Central (Completa en Desktop, Única en Móvil - 40% de ancho) */}
-                        <div className="w-full md:w-[40%] h-[320px] md:h-[350px] lg:h-[450px] rounded-2xl overflow-hidden shadow-xl relative">
-                          <img
+                        <div className="w-full md:w-[40%] h-[320px] md:h-[350px] lg:h-[450px] rounded-2xl overflow-hidden shadow-xl relative group">
+                          <Image
                             src={images[nextIdx]}
                             alt="Foto activa 2"
-                            className="w-full h-full object-cover"
+                            width={600}
+                            height={450}
+                            quality={75}
+                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
                           
                           {/* Botón Izquierda en móvil (solo se muestra en pantallas pequeñas) */}
@@ -300,21 +306,25 @@ export const Editions = () => {
                         </div>
 
                         {/* Imagen 3 - Derecha (Cortada a la mitad en Desktop - 20% de ancho) */}
-                        <div className="hidden md:block w-[20%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative">
-                          <img
+                        <div className="hidden md:block w-[20%] h-[350px] lg:h-[450px] rounded-2xl overflow-hidden relative group opacity-60 hover:opacity-85 transition-opacity duration-300">
+                          <Image
                             src={images[nextNextIdx]}
                             alt="Preview siguiente"
-                            className="w-full h-full object-cover"
+                            width={300}
+                            height={450}
+                            quality={75}
+                            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           />
 
                           {/* Botón Derecha sobrepuesto en el extremo derecho (sobre la foto cortada) */}
                           <button
                             onClick={() => nextImage(edition.id, images.length)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-100 text-black p-2.5 rounded-full shadow-lg transition duration-200 flex items-center justify-center"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-gray-100 text-black p-2.5 rounded-full shadow-lg transition duration-200 flex items-center justify-center hover:scale-110"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                           </button>
                         </div>
+                      </div>
 
                       </div>
 
