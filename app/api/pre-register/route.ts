@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       .from('pre_register')
       .insert([
         {
-          Nombre_completo: nombreCompleto,
+          nombre_completo: nombreCompleto,
           email: email,
           telefono: telefono,
         },
