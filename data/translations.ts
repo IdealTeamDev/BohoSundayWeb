@@ -190,7 +190,7 @@ export const translations = {
       placeholderEmail: 'Correo electrónico',
       placeholderPhone: 'Teléfono',
       buttonText: 'Quiero acceso prioritario',
-      successMessage: '¡Registro exitoso! Ya tienes tu acceso prioritario.',
+      successMessage: '¡Registro exitoso!',
       errorMessage: 'Hubo un error al registrarte, inténtalo de nuevo.',
       loadingMessage: 'Registrando...'
     }
@@ -386,7 +386,7 @@ export const translations = {
       placeholderEmail: 'Email address',
       placeholderPhone: 'Phone number',
       buttonText: 'I want priority access',
-      successMessage: 'Registration successful! You now have priority access.',
+      successMessage: 'Registration successful!',
       errorMessage: 'An error occurred during registration, please try again.',
       loadingMessage: 'Registering...'
     }
