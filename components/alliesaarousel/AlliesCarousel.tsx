@@ -85,7 +85,7 @@ export default function AlliesCarousel() {
 
         {/* Logos */}
         <div
-          className="flex items-center justify-center py-6 px-16 min-h-[140px]"
+          className="flex items-center justify-center py-6 px-16 min-h-[120px]"
           style={{
             opacity: animating ? 0 : 1,
             transform: animating
@@ -99,7 +99,7 @@ export default function AlliesCarousel() {
           <img
             src={ally.logo}
             alt={ally.name}
-            className="max-h-16 max-w-[200px] w-auto h-auto object-contain"
+            className="max-h-11 max-w-[150px] w-auto h-auto object-contain"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = 'none';
               const fallback = e.currentTarget.nextSibling as HTMLElement;
@@ -146,11 +146,11 @@ export default function AlliesCarousel() {
         {/* Logos Row */}
         <div className="flex flex-row items-center justify-around gap-10">
           {allies.map((a) => (
-            <div key={a.id} className="flex items-center justify-center h-20 w-1/4">
+            <div key={a.id} className="flex items-center justify-center h-16 w-1/4">
               <img
                 src={a.logo}
                 alt={a.name}
-                className="max-h-14 max-w-full w-auto h-auto object-contain opacity-95 hover:opacity-100 transition-opacity duration-300"
+                className="max-h-10 max-w-full w-auto h-auto object-contain opacity-95 hover:opacity-100 transition-opacity duration-300"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = 'none';
                   const fallback = e.currentTarget.nextSibling as HTMLElement;
