@@ -12,21 +12,36 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar si el email ya existe en la base de datos
+    // Verificar si el email o el teléfono ya existen en la base de datos
     const { data: existingUsers, error: checkError } = await supabase
       .from('pre_register')
-      .select('id')
-      .eq('email', email.trim());
+      .select('email, telefono')
+      .or(`email.eq.${email.trim()},telefono.eq.${telefono.trim()}`);
 
     if (checkError) {
-      console.error('Error verificando email en Supabase:', checkError);
+      console.error('Error verificando duplicados en Supabase:', checkError);
     }
 
     if (existingUsers && existingUsers.length > 0) {
-      return NextResponse.json(
-        { error: 'Este correo electrónico ya se encuentra registrado' },
-        { status: 400 }
-      );
+      const hasEmail = existingUsers.some(u => u.email === email.trim());
+      const hasPhone = existingUsers.some(u => u.telefono === telefono.trim());
+
+      if (hasEmail && hasPhone) {
+        return NextResponse.json(
+          { error: 'Este correo electrónico y número de teléfono ya se encuentran registrados' },
+          { status: 400 }
+        );
+      } else if (hasEmail) {
+        return NextResponse.json(
+          { error: 'Este correo electrónico ya se encuentra registrado' },
+          { status: 400 }
+        );
+      } else {
+        return NextResponse.json(
+          { error: 'Este número de teléfono ya se encuentra registrado' },
+          { status: 400 }
+        );
+      }
     }
 
     // Insertar el registro en la tabla de Supabase creada (pre_register)
