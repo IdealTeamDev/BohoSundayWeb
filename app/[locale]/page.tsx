@@ -145,11 +145,14 @@ export default function Home() {
         </div>
  
         <div className="flex flex-col lg:col-span-1 items-center lg:items-end justify-center px-7 py-4 lg:py-0 text-center lg:text-right h-full select-none">
-          <span className="text-[#8E8A83] text-sm font-light font-nunito">{t.home.location}</span>
-          <h2 className="text-[#231E1A] text-[28px] lg:text-[34px] font-bold font-averia uppercase tracking-wider mt-1 mb-3">
+          <span className="text-[#231E1A] text-sm font-nunito font-light">{t.home.location}</span>
+          <h2 className="text-[#231E1A] text-[26px] lg:text-[30px] font-bold font-averia uppercase tracking-wide mt-1 mb-3">
             {t.hero.place}
           </h2>
-          <p className="text-black text-[16px]/6 font-nunito font-light max-w-xs">{t.home.address}</p>
+          <div className="text-[#231E1A] text-[15px]/6 font-nunito font-light max-w-xs flex flex-col items-center lg:items-end">
+            <span>Vereda Tafetanes Ruta 429180</span>
+            <span>Vía Antigua a Sopetrán, Antioquia</span>
+          </div>
         </div>
       </div>
       <AlliesCarousel />
