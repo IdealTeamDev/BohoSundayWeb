@@ -198,18 +198,18 @@ export const Editions = () => {
 
           const webBannerOptions = [
             `/images/editions/${edition.folder}/banner-web.svg`,
+            `/images/editions/${edition.folder}/banner-web.png`,
             `/images/editions/${edition.folder}/banner-web.png.png`,
             `/images/editions/${edition.folder}/banner-web.png.jpg`,
-            `/images/editions/${edition.folder}/banner-web.jpg`,
-            `/images/editions/${edition.folder}/banner-web.png`
+            `/images/editions/${edition.folder}/banner-web.jpg`
           ];
 
           const mobileBannerOptions = [
-            `/images/editions/${edition.folder}/banner-movil.svg`,
             `/images/editions/${edition.folder}/banner-movil.png.png`,
+            `/images/editions/${edition.folder}/banner-movil.png`,
+            `/images/editions/${edition.folder}/banner-movil.svg`,
             `/images/editions/${edition.folder}/banner-movil.png.jpg`,
-            `/images/editions/${edition.folder}/banner-movil.jpg`,
-            `/images/editions/${edition.folder}/banner-movil.png`
+            `/images/editions/${edition.folder}/banner-movil.jpg`
           ];
 
           return (
@@ -316,6 +316,13 @@ export const Editions = () => {
                           </button>
                         </div>
 
+                      </div>
+
+                      {/* Pre-carga silenciosa de todas las imágenes de la edición en segundo plano */}
+                      <div className="hidden">
+                        {images.map((src, i) => (
+                          <img key={i} src={src} alt="preload" />
+                        ))}
                       </div>
 
                     </div>
