@@ -149,9 +149,8 @@ export default function Home() {
           <h2 className="text-[#231E1A] text-[26px] lg:text-[30px] font-bold font-averia uppercase tracking-wide mt-1 mb-3">
             {t.hero.place}
           </h2>
-          <div className="text-[#231E1A] text-[15px]/6 font-nunito font-light max-w-xs flex flex-col items-center lg:items-end">
-            <span>Vereda Tafetanes Ruta 429180</span>
-            <span>Vía Antigua a Sopetrán, Antioquia</span>
+          <div className="text-[#231E1A] text-[15px]/6 font-nunito font-light max-w-xs flex flex-col items-center lg:items-end text-center lg:text-right">
+            <span>{t.home.address}</span>
           </div>
         </div>
       </div>

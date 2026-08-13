@@ -207,9 +207,9 @@ export const translations = {
     },
     home: {
       title: 'BOHO SUNDAY',
-      desc1: 'It is a ritual, a meeting point, and an escape from the everyday. It is the place where the sun, music, dance, and bohemian energy merge to create the best day of the week.',
-      desc2: 'Each edition is completely different, combining a carefully curated selection of international DJs, live shows, and impact performances.',
-      desc3: 'Siente el ritmo, vive el ritual y reserva tu lugar para la próxima edición.',
+      desc1: 'It’s a ritual, a meeting point, and an escape from the everyday. It’s where the sun, music, dancing, and bohemian energy come together to create the best day of the week.',
+      desc2: 'Each edition is completely different, bringing together a carefully curated selection of international DJs, live shows, and captivating performances.',
+      desc3: 'Feel the rhythm, live the ritual, and reserve your spot for the next edition.',
       location: 'LOCATION:',
       address: 'Vereda Tafetanes Route 429180 Old Way to Sopetrán, Antioquia',
       // English logos (placeholder if you want to use the same or different files)
@@ -374,18 +374,18 @@ export const translations = {
       seconds: 'Seconds',
     },
     allies: {
-      title: 'Allies',
+      title: 'Sponsors',
     },
     map: {
       runway: 'RUNWAY'
     },
     preregister: {
-      title: 'DON\'T MISS THE NEXT EDITION',
+      title: 'DON’T MISS THE NEXT EDITION',
       subtitle: 'Priority access for our community',
       placeholderName: 'Full name',
       placeholderEmail: 'Email address',
-      placeholderPhone: 'Phone number',
-      buttonText: 'I want priority access',
+      placeholderPhone: 'Phone',
+      buttonText: 'I WANT PRIORITY ACCESS',
       successMessage: 'Registration successful!',
       errorMessage: 'An error occurred during registration, please try again.',
       loadingMessage: 'Registering...'

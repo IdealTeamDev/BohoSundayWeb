@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 
 interface EditionData {
   id: string;
@@ -190,6 +191,8 @@ const SmartImage = ({ srcOptions, alt, className }: { srcOptions: string[]; alt:
 };
 
 export const Editions = () => {
+  const params = useParams();
+  const locale = (params?.locale as 'es' | 'en') || 'es';
   const [activeEditionId, setActiveEditionId] = useState<string | null>(null);
   const [carouselIndex, setCarouselIndex] = useState<{ [key: string]: number }>({});
 
@@ -245,7 +248,7 @@ export const Editions = () => {
   return (
     <div className="w-full bg-[#F4EFE9] flex flex-col items-center py-10 px-4 md:px-10 select-none">
       <h2 className="text-[#231E1A] text-[28px] md:text-[34px] font-bold font-averia text-center pb-8 uppercase tracking-wide">
-        EDICIONES
+        {locale === 'en' ? 'EDITIONS' : 'EDICIONES'}
       </h2>
 
       <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl flex flex-col gap-5">
@@ -301,7 +304,7 @@ export const Editions = () => {
                   {/* Encabezado del Desplegable */}
                   <div className="w-full relative flex items-center justify-center mb-2 px-4">
                     <h3 className="text-[#231E1A] text-[22px] md:text-[26px] font-bold font-averia uppercase tracking-wide">
-                      ASÍ SE VIVIÓ
+                      {locale === 'en' ? 'THIS IS HOW IT WAS LIVED' : 'ASÍ SE VIVIÓ'}
                     </h3>
                     <button
                       onClick={() => toggleEdition(edition.id)}
