@@ -13,13 +13,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'orderId es requerido' }, { status: 400 });
     }
 
-    let order = getOrder(orderId);
+    let order = await getOrder(orderId);
 
     // If order is not found in memory (due to stateless serverless reset), recreate it using the details passed from sessionStorage
     if (!order && buyerInfo && ticketId && quantity) {
       console.log(`[OrderStore] 🔄 Recreating missing order ${orderId} in memory for verification.`);
       const activeStage = await getActiveStage();
-      order = createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi', activeStage?.id);
+      order = await createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi', activeStage?.id);
       
       // If it is a quick sale, approve it immediately
       if (orderId.startsWith('ORD-QUICK-')) {
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
               console.log(`[Wompi API Polling] ✅ Wompi transaction ${wompiTxId} APPROVED. Order updated.`);
             } else if (['DECLINED', 'VOIDED', 'ERROR'].includes(transactionStatus)) {
               // Reject order
-              const updated = rejectOrder(orderId, `Transacción Wompi: ${transactionStatus}. Detalle: ${transaction.status_message || ''}`);
+              const updated = await rejectOrder(orderId, `Transacción Wompi: ${transactionStatus}. Detalle: ${transaction.status_message || ''}`);
               if (updated) order = updated;
 
               const tickets = await getDynamicTickets();

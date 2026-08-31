@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
     }
 
-    const order = getOrder(orderId);
+    const order = await getOrder(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
@@ -130,7 +130,7 @@ export async function POST(req: NextRequest) {
       const detail = paymentResult.status_detail || 'Payment was not approved';
       console.warn(`[Checkout API] ❌ Payment not approved for Order ${orderId}: ${paymentStatus} (${detail})`);
       
-      rejectOrder(orderId, `Mercado Pago payment status: ${paymentStatus}. Detail: ${detail}`);
+      await rejectOrder(orderId, `Mercado Pago payment status: ${paymentStatus}. Detail: ${detail}`);
       await releaseLock(order.ticketId, order.sessionToken, tickets);
 
       return NextResponse.json({

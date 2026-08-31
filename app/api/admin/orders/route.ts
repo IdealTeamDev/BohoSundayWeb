@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const allOrders = getAllOrders();
+    const allOrders = await getAllOrders();
     // Sort by most recent first
     allOrders.sort((a, b) => b.createdAt - a.createdAt);
     

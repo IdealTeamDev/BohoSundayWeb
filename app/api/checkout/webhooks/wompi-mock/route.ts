@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
     }
 
-    const order = getOrder(orderId);
+    const order = await getOrder(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       console.log(`[Wompi Mock Webhook] ✅ Order ${orderId} finalized and email sent.`);
     } else {
       // Rejected
-      rejectOrder(orderId, 'Pago rechazado en el simulador de Wompi.');
+      await rejectOrder(orderId, 'Pago rechazado en el simulador de Wompi.');
       
       // Release lock
       await releaseLock(order.ticketId, order.sessionToken, tickets);

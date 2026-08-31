@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const order = getOrder(orderId);
+    const order = await getOrder(orderId);
     if (!order) {
       console.error(`[Webhook Mercado Pago] ❌ Order ${orderId} not found in orderStore.`);
       return new Response(JSON.stringify({ error: 'Order not found' }), {
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       // Compare amount (allow float tolerance if needed)
       if (Math.abs(transactionAmount - expectedAmount) > 1) {
         console.error(`[Webhook Mercado Pago] 🚨 Payment amount mismatch! Paid: ${transactionAmount}, Expected: ${expectedAmount}`);
-        rejectOrder(orderId, `Amount mismatch. Paid ${transactionAmount}, expected ${expectedAmount}`);
+        await rejectOrder(orderId, `Amount mismatch. Paid ${transactionAmount}, expected ${expectedAmount}`);
         await releaseLock(order.ticketId, order.sessionToken, tickets);
         return new Response(JSON.stringify({ error: 'Amount mismatch' }), {
           status: 200,
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
     } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
       // 2. If payment was REJECTED / CANCELLED
       console.log(`[Webhook Mercado Pago] ❌ Payment for Order ${orderId} was ${paymentStatus}. Rejecting order & releasing lock.`);
-      rejectOrder(orderId, `Payment ${paymentStatus} by provider.`);
+      await rejectOrder(orderId, `Payment ${paymentStatus} by provider.`);
       await releaseLock(order.ticketId, order.sessionToken, tickets);
     }
 

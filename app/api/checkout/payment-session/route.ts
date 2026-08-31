@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     const activeStage = await getActiveStage();
 
     // Create pending order
-    createOrder(orderId, ticketId, sessionToken, buyerInfo, finalQty, paymentMethod, activeStage?.id);
+    await createOrder(orderId, ticketId, sessionToken, buyerInfo, finalQty, paymentMethod, activeStage?.id);
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 

@@ -48,7 +48,7 @@ export async function GET(
     }
 
     // 2. Fallback to in-memory store (for local testing/development)
-    const order = getOrder(orderId);
+    const order = await getOrder(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
@@ -167,7 +167,7 @@ export async function POST(
     }
 
     // 2. Fallback to in-memory store (for local testing/development)
-    const order = getOrder(orderId);
+    const order = await getOrder(orderId);
     if (!order) {
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
@@ -180,7 +180,7 @@ export async function POST(
     const basePersons = ticket ? (ticket.stock !== undefined ? 1 : (ticket.persons || 1)) : 1;
     const totalCapacity = basePersons * order.quantity;
 
-    const result = updateOrderAccesses(orderId, count, totalCapacity);
+    const result = await updateOrderAccesses(orderId, count, totalCapacity);
 
     if (!result.success) {
       return NextResponse.json({ 

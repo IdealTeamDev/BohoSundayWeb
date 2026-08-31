@@ -3,8 +3,6 @@ import { decreaseWordPressStock, decreaseDatabaseStock } from './tickets';
 import { sendAdminNotificationEmail } from './emailService';
 import { getDynamicTickets } from './tickets';
 import { supabase } from './supabase';
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 
 export interface OrderDetail {
@@ -22,58 +20,30 @@ export interface OrderDetail {
   stageId?: string;
 }
 
-const ORDERS_FILE = path.join(process.cwd(), 'data', 'orders.json');
-
-// Read orders from filesystem JSON database
-function readOrdersFromFile(): Map<string, OrderDetail> {
-  const map = new Map<string, OrderDetail>();
-  try {
-    if (!fs.existsSync(ORDERS_FILE)) {
-      const dir = path.dirname(ORDERS_FILE);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      fs.writeFileSync(ORDERS_FILE, JSON.stringify([]));
-      return map;
-    }
-    const content = fs.readFileSync(ORDERS_FILE, 'utf8');
-    const list = JSON.parse(content) as OrderDetail[];
-    list.forEach(o => map.set(o.orderId, o));
-  } catch (error) {
-    console.error('[OrderStore] Error reading orders file, using memory backup:', error);
-  }
-  return map;
-}
-
-// Write orders to filesystem JSON database
-function writeOrdersToFile(map: Map<string, OrderDetail>): void {
-  try {
-    const list = Array.from(map.values());
-    const dir = path.dirname(ORDERS_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(ORDERS_FILE, JSON.stringify(list, null, 2), 'utf8');
-  } catch (error) {
-    console.error('[OrderStore] Error writing orders file:', error);
-  }
-}
-
-const globalForOrderStore = globalThis as unknown as {
-  orderStore?: Map<string, OrderDetail>;
-};
-
-// Initialize in-memory map from file
-const orderStore = globalForOrderStore.orderStore ?? readOrdersFromFile();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForOrderStore.orderStore = orderStore;
+/**
+ * Converts a Supabase database row to an OrderDetail object
+ */
+function dbRowToOrderDetail(row: any): OrderDetail {
+  return {
+    orderId: row.order_id,
+    ticketId: row.ticket_id,
+    sessionToken: row.session_token || '',
+    buyerInfo: typeof row.buyer_info === 'string' ? JSON.parse(row.buyer_info) : (row.buyer_info || {}),
+    quantity: Number(row.quantity) || 1,
+    paymentMethod: row.payment_method as 'mercadopago' | 'wompi',
+    status: row.status as 'pending' | 'approved' | 'rejected',
+    createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+    paymentId: row.payment_id || undefined,
+    errorDetail: row.error_detail || undefined,
+    accessesUsed: Number(row.accesses_used) || 0,
+    stageId: row.stage_id || undefined,
+  };
 }
 
 /**
- * Creates and registers a new pending order
+ * Creates and registers a new pending order in Supabase database
  */
-export function createOrder(
+export async function createOrder(
   orderId: string,
   ticketId: string,
   sessionToken: string,
@@ -81,7 +51,8 @@ export function createOrder(
   quantity: number,
   paymentMethod: 'mercadopago' | 'wompi',
   stageId?: string
-): OrderDetail {
+): Promise<OrderDetail> {
+  const createdAt = Date.now();
   const order: OrderDetail = {
     orderId,
     ticketId,
@@ -90,45 +61,93 @@ export function createOrder(
     quantity,
     paymentMethod,
     status: 'pending',
-    createdAt: Date.now(),
+    createdAt,
     accessesUsed: 0,
     stageId,
   };
   
-  orderStore.set(orderId, order);
-  writeOrdersToFile(orderStore);
-  
-  console.log(`[OrderStore] 📝 Order created: ${orderId} (Ticket: ${ticketId}, Method: ${paymentMethod}, Status: pending)`);
+  try {
+    const { error } = await supabase.from('orders').upsert({
+      order_id: orderId,
+      ticket_id: ticketId,
+      session_token: sessionToken,
+      buyer_info: buyerInfo,
+      quantity,
+      payment_method: paymentMethod,
+      status: 'pending',
+      accesses_used: 0,
+      stage_id: stageId || null,
+      created_at: new Date(createdAt).toISOString(),
+    });
+
+    if (error) {
+      console.error('[OrderStore] ❌ Error inserting order into Supabase:', error);
+    } else {
+      console.log(`[OrderStore] 📝 Order created in Supabase: ${orderId} (Ticket: ${ticketId}, Method: ${paymentMethod}, Status: pending)`);
+    }
+  } catch (err) {
+    console.error('[OrderStore] 🚨 Exception inserting order into Supabase:', err);
+  }
+
   return order;
 }
 
 /**
- * Retrieves an order by its ID
+ * Retrieves an order by its ID from Supabase
  */
-export function getOrder(orderId: string): OrderDetail | null {
-  // Sync memory store with file to verify fresh status
-  const freshMap = readOrdersFromFile();
-  if (freshMap.has(orderId)) {
-    // Keep in-memory cache synchronized
-    orderStore.set(orderId, freshMap.get(orderId)!);
+export async function getOrder(orderId: string): Promise<OrderDetail | null> {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`[OrderStore] ❌ Error fetching order ${orderId} from Supabase:`, error);
+      return null;
+    }
+
+    if (data) {
+      return dbRowToOrderDetail(data);
+    }
+  } catch (err) {
+    console.error(`[OrderStore] 🚨 Exception fetching order ${orderId} from Supabase:`, err);
   }
-  return orderStore.get(orderId) || null;
+
+  return null;
 }
 
 /**
- * Retrieves all orders from the store
+ * Retrieves all orders from Supabase
  */
-export function getAllOrders(): OrderDetail[] {
-  const freshMap = readOrdersFromFile();
-  return Array.from(freshMap.values());
+export async function getAllOrders(): Promise<OrderDetail[]> {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[OrderStore] ❌ Error fetching all orders from Supabase:', error);
+      return [];
+    }
+
+    if (data) {
+      return data.map(dbRowToOrderDetail);
+    }
+  } catch (err) {
+    console.error('[OrderStore] 🚨 Exception fetching all orders from Supabase:', err);
+  }
+
+  return [];
 }
 
 /**
- * Approves a pending order
+ * Approves a pending order in Supabase
  */
 export async function approveOrder(orderId: string, paymentId: string): Promise<OrderDetail | null> {
-  const freshMap = readOrdersFromFile();
-  const order = freshMap.get(orderId) || orderStore.get(orderId);
+  const order = await getOrder(orderId);
   if (!order) {
     console.error(`[OrderStore] ❌ Error: Order ${orderId} not found to approve.`);
     return null;
@@ -145,9 +164,23 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
     paymentId,
   };
   
-  orderStore.set(orderId, updatedOrder);
-  writeOrdersToFile(orderStore);
-  console.log(`[OrderStore] ✅ Order ${orderId} approved with paymentId ${paymentId}`);
+  try {
+    const { error: updateOrderErr } = await supabase
+      .from('orders')
+      .update({
+        status: 'approved',
+        payment_id: paymentId,
+      })
+      .eq('order_id', orderId);
+
+    if (updateOrderErr) {
+      console.error(`[OrderStore] ❌ Error updating order status to approved in Supabase:`, updateOrderErr);
+    } else {
+      console.log(`[OrderStore] ✅ Order ${orderId} status updated to approved in Supabase orders table.`);
+    }
+  } catch (err) {
+    console.error(`[OrderStore] 🚨 Exception updating order ${orderId} in Supabase:`, err);
+  }
 
   // Save buyer/ticket details to Supabase database (purchased_tickets table)
   try {
@@ -168,7 +201,6 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
       .substring(0, 16);
 
     const languageStr = (order.buyerInfo.locale || 'es').toUpperCase() === 'EN' ? 'EN' : 'ES';
-
     const ticketPrice = ticket?.price || 0;
 
     const { error } = await supabase.from('purchased_tickets').insert([{
@@ -218,11 +250,10 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
 }
 
 /**
- * Marks an order as rejected/failed
+ * Marks an order as rejected/failed in Supabase
  */
-export function rejectOrder(orderId: string, errorDetail?: string): OrderDetail | null {
-  const freshMap = readOrdersFromFile();
-  const order = freshMap.get(orderId) || orderStore.get(orderId);
+export async function rejectOrder(orderId: string, errorDetail?: string): Promise<OrderDetail | null> {
+  const order = await getOrder(orderId);
   if (!order) {
     console.error(`[OrderStore] ❌ Error: Order ${orderId} not found to reject.`);
     return null;
@@ -234,9 +265,23 @@ export function rejectOrder(orderId: string, errorDetail?: string): OrderDetail 
     errorDetail,
   };
   
-  orderStore.set(orderId, updatedOrder);
-  writeOrdersToFile(orderStore);
-  console.log(`[OrderStore] ❌ Order ${orderId} marked as rejected. Reason: ${errorDetail}`);
+  try {
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        status: 'rejected',
+        error_detail: errorDetail || null,
+      })
+      .eq('order_id', orderId);
+
+    if (error) {
+      console.error(`[OrderStore] ❌ Error updating order status to rejected in Supabase:`, error);
+    } else {
+      console.log(`[OrderStore] ❌ Order ${orderId} marked as rejected in Supabase. Reason: ${errorDetail}`);
+    }
+  } catch (err) {
+    console.error(`[OrderStore] 🚨 Exception marking order ${orderId} as rejected in Supabase:`, err);
+  }
 
   // Send failed notification email to admin asynchronously
   if (order.status !== 'rejected' && order.status !== 'approved') {
@@ -249,11 +294,10 @@ export function rejectOrder(orderId: string, errorDetail?: string): OrderDetail 
 }
 
 /**
- * Records accesses check-in for an order
+ * Records accesses check-in for an order in Supabase
  */
-export function updateOrderAccesses(orderId: string, count: number, totalCapacity: number): { success: boolean; error?: string; remaining?: number } {
-  const freshMap = readOrdersFromFile();
-  const order = freshMap.get(orderId) || orderStore.get(orderId);
+export async function updateOrderAccesses(orderId: string, count: number, totalCapacity: number): Promise<{ success: boolean; error?: string; remaining?: number }> {
+  const order = await getOrder(orderId);
   
   if (!order) {
     return { success: false, error: 'Orden no encontrada' };
@@ -274,13 +318,14 @@ export function updateOrderAccesses(orderId: string, count: number, totalCapacit
     };
   }
 
-  const updatedOrder: OrderDetail = {
-    ...order,
-    accessesUsed: newUsed
-  };
-
-  orderStore.set(orderId, updatedOrder);
-  writeOrdersToFile(orderStore);
+  try {
+    await supabase
+      .from('orders')
+      .update({ accesses_used: newUsed })
+      .eq('order_id', orderId);
+  } catch (err) {
+    console.error(`[OrderStore] Error updating accesses_used in Supabase for ${orderId}:`, err);
+  }
 
   console.log(`[OrderStore] 🎟️ Access validation: order ${orderId} used ${count} more access(es). Total used: ${newUsed}/${totalCapacity}`);
   
@@ -289,3 +334,4 @@ export function updateOrderAccesses(orderId: string, count: number, totalCapacit
     remaining: totalCapacity - newUsed 
   };
 }
+

@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const allOrders = getAllOrders();
+    const allOrders = await getAllOrders();
     const approvedOrders = allOrders.filter(o => o.status === 'approved');
     
     // Revenue calculations

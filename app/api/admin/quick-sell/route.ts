@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     const orderId = `ORD-QUICK-${ticketId.toUpperCase()}-${Date.now()}`;
 
     // Create order in memory (pass empty sessionToken for manual sale)
-    createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi', stageId);
+    await createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi', stageId);
 
     // Immediately approve the order (handles stock reduction and admin notification email)
     await approveOrder(orderId, 'manual-sale');
