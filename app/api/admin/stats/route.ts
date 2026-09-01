@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     const { data: dbPurchased, error: dbError } = await supabase
       .from('purchased_tickets')
       .select('*')
-      .eq('status', 'paid');
+      .in('status', ['paid', 'used']);
 
     if (dbError) throw dbError;
 

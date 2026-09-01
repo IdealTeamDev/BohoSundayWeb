@@ -164,7 +164,7 @@ export async function resetInventoryForEdition(): Promise<{ success: boolean; me
     const { error: locksErr } = await supabase
       .from('ticket_locks')
       .delete()
-      .neq('id', '____none____');
+      .neq('lock_key', '____none____');
 
     if (locksErr) {
       console.error('[Editions Service] Error cleaning ticket_locks:', locksErr);

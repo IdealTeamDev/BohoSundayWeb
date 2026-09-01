@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     const { data: purchases, error: purError } = await supabase
       .from('purchased_tickets')
       .select('*')
-      .eq('status', 'paid')
+      .in('status', ['paid', 'used'])
       .eq('edition_slug', activeEdition.slug);
 
     if (purError) {
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
         .from('purchased_tickets')
         .select('order_id, buyer_name')
         .eq('ticket_id', ticketId)
-        .eq('status', 'paid')
+        .in('status', ['paid', 'used'])
         .eq('edition_slug', activeEdition.slug)
         .maybeSingle();
 

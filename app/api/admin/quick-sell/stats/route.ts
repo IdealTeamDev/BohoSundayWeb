@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     let purQuery = supabase
       .from('purchased_tickets')
       .select('ticket_id, ticket_price, total_accesos, zone, edition_slug')
-      .eq('status', 'paid');
+      .in('status', ['paid', 'used']);
 
     if (targetEditionSlug !== 'all') {
       purQuery = purQuery.eq('edition_slug', targetEditionSlug);
