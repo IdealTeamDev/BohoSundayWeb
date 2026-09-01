@@ -3,6 +3,7 @@ import { decreaseWordPressStock, decreaseDatabaseStock } from './tickets';
 import { sendAdminNotificationEmail } from './emailService';
 import { getDynamicTickets } from './tickets';
 import { supabase } from './supabase';
+import { getActiveEdition } from './editions';
 import crypto from 'crypto';
 
 export interface OrderDetail {
@@ -18,6 +19,8 @@ export interface OrderDetail {
   errorDetail?: string;
   accessesUsed?: number;
   stageId?: string;
+  editionSlug?: string;
+  editionName?: string;
 }
 
 /**
@@ -37,6 +40,8 @@ function dbRowToOrderDetail(row: any): OrderDetail {
     errorDetail: row.error_detail || undefined,
     accessesUsed: Number(row.accesses_used) || 0,
     stageId: row.stage_id || undefined,
+    editionSlug: row.edition_slug || 'colombiamoda',
+    editionName: row.edition_name || 'Colombiamoda',
   };
 }
 
@@ -53,6 +58,7 @@ export async function createOrder(
   stageId?: string
 ): Promise<OrderDetail> {
   const createdAt = Date.now();
+  const activeEdition = await getActiveEdition();
   const order: OrderDetail = {
     orderId,
     ticketId,
@@ -64,6 +70,8 @@ export async function createOrder(
     createdAt,
     accessesUsed: 0,
     stageId,
+    editionSlug: activeEdition.slug,
+    editionName: activeEdition.name,
   };
   
   try {
@@ -77,13 +85,15 @@ export async function createOrder(
       status: 'pending',
       accesses_used: 0,
       stage_id: stageId || null,
+      edition_slug: activeEdition.slug,
+      edition_name: activeEdition.name,
       created_at: new Date(createdAt).toISOString(),
     });
 
     if (error) {
       console.error('[OrderStore] ❌ Error inserting order into Supabase:', error);
     } else {
-      console.log(`[OrderStore] 📝 Order created in Supabase: ${orderId} (Ticket: ${ticketId}, Method: ${paymentMethod}, Status: pending)`);
+      console.log(`[OrderStore] 📝 Order created in Supabase: ${orderId} (Ticket: ${ticketId}, Edition: ${activeEdition.name}, Status: pending)`);
     }
   } catch (err) {
     console.error('[OrderStore] 🚨 Exception inserting order into Supabase:', err);
@@ -202,6 +212,7 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
 
     const languageStr = (order.buyerInfo.locale || 'es').toUpperCase() === 'EN' ? 'EN' : 'ES';
     const ticketPrice = ticket?.price || 0;
+    const activeEdition = order.editionSlug ? { slug: order.editionSlug, name: order.editionName || 'Colombiamoda' } : await getActiveEdition();
 
     const { error } = await supabase.from('purchased_tickets').insert([{
       order_id: order.orderId,
@@ -219,7 +230,9 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
       payment_ref: paymentId,
       created_at: new Date(order.createdAt).toISOString(),
       language: languageStr,
-      ticket_price: ticketPrice
+      ticket_price: ticketPrice,
+      edition_slug: activeEdition.slug,
+      edition_name: activeEdition.name
     }]);
 
     if (error) {

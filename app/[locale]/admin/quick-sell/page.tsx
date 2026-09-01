@@ -75,6 +75,19 @@ export default function QuickSellPage() {
   // Navigation Tabs State
   const [activeTab, setActiveTab] = useState<'register' | 'map' | 'list'>('register');
 
+  // Event Editions State
+  const [editions, setEditions] = useState<any[]>([]);
+  const [activeEdition, setActiveEdition] = useState<{ id: string; slug: string; name: string } | null>(null);
+  const [selectedEditionFilter, setSelectedEditionFilter] = useState<string>('all');
+  const [showEditionsModal, setShowEditionsModal] = useState<boolean>(false);
+  const [newEditionName, setNewEditionName] = useState<string>('');
+  const [creatingEdition, setCreatingEdition] = useState<boolean>(false);
+  const [resettingInventory, setResettingInventory] = useState<boolean>(false);
+
+  // Metrics Tab & Comparison State
+  const [metricsTab, setMetricsTab] = useState<'current' | 'comparison'>('current');
+  const [editionsComparison, setEditionsComparison] = useState<any[]>([]);
+
   // Purchased Tickets Module State
   const [purchasedList, setPurchasedList] = useState<any[]>([]);
   const [purchasedLoading, setPurchasedLoading] = useState<boolean>(false);
@@ -87,11 +100,113 @@ export default function QuickSellPage() {
   const [purchasedTotal, setPurchasedTotal] = useState<number>(0);
   const [purchasedTotalPages, setPurchasedTotalPages] = useState<number>(1);
 
+  const fetchEditions = async () => {
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/editions', {
+        headers: { 'x-admin-token': token }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setEditions(data.editions || []);
+          setActiveEdition(data.activeEdition || null);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching editions:', err);
+    }
+  };
+
+  const handleSetActiveEdition = async (slug: string) => {
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/editions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        },
+        body: JSON.stringify({ action: 'set_active', slug })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setActiveEdition(data.activeEdition);
+        fetchEditions();
+        alert(`Edición activa cambiada a: ${data.activeEdition.name}`);
+      } else {
+        alert(data.error || 'Error al cambiar edición activa');
+      }
+    } catch (err) {
+      console.error('Error setting active edition:', err);
+      alert('Error de red al activar la edición');
+    }
+  };
+
+  const handleCreateEdition = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEditionName.trim()) return;
+    setCreatingEdition(true);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/editions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token
+        },
+        body: JSON.stringify({ action: 'create', name: newEditionName })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNewEditionName('');
+        fetchEditions();
+        alert(`Nueva edición "${data.edition.name}" creada exitosamente.`);
+      } else {
+        alert(data.error || 'Error al crear la edición');
+      }
+    } catch (err) {
+      console.error('Error creating edition:', err);
+      alert('Error de red al crear la edición');
+    } finally {
+      setCreatingEdition(false);
+    }
+  };
+
+  const handleResetInventory = async () => {
+    const confirmReset = window.confirm(
+      `¿Estás seguro de reiniciar la disponibilidad del aforo de mesas y boletas para la edición activa "${activeEdition?.name || 'Entre Soles'}"?\n\nTODOS los registros históricos de clientes y ventas pasadas (como Colombiamoda) permanecerán 100% GUARDADOS.`
+    );
+    if (!confirmReset) return;
+
+    setResettingInventory(true);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/editions', {
+        method: 'PUT',
+        headers: { 'x-admin-token': token }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message || 'Inventario e información de aforo reiniciados con éxito para la nueva edición.');
+        setShowEditionsModal(false);
+      } else {
+        alert(data.error || 'Error al reiniciar inventario');
+      }
+    } catch (err) {
+      console.error('Error resetting inventory:', err);
+      alert('Error de red al reiniciar inventario');
+    } finally {
+      setResettingInventory(false);
+    }
+  };
+
   const fetchPurchasedTickets = async (
     page = purchasedPage,
     zone = selectedZone,
     search = purchasedSearch,
-    limit = purchasedLimit
+    limit = purchasedLimit,
+    edition = selectedEditionFilter
   ) => {
     setPurchasedLoading(true);
     setPurchasedError(null);
@@ -102,6 +217,7 @@ export default function QuickSellPage() {
         limit: String(limit),
         zone: zone,
         search: search,
+        edition: edition,
       });
 
       const res = await fetch(`/api/admin/quick-sell/purchased-tickets?${params.toString()}`, {
@@ -116,6 +232,9 @@ export default function QuickSellPage() {
         if (data.zones) {
           setPurchasedZones(data.zones);
         }
+        if (data.editions) {
+          setEditions(data.editions);
+        }
       } else {
         setPurchasedError(data.error || 'Error al cargar las compras');
       }
@@ -128,13 +247,17 @@ export default function QuickSellPage() {
   };
 
   useEffect(() => {
+    fetchEditions();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === 'list') {
       const delayDebounceFn = setTimeout(() => {
-        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit);
+        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter);
       }, 300);
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [activeTab, purchasedPage, selectedZone, purchasedSearch, purchasedLimit]);
+  }, [activeTab, purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter]);
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
@@ -362,6 +485,18 @@ export default function QuickSellPage() {
     setMetricsError(null);
     try {
       const token = localStorage.getItem('admin_token') || '';
+      
+      // Fetch multi-edition stats comparison
+      const resStats = await fetch('/api/admin/stats?edition=all', {
+        headers: { 'x-admin-token': token }
+      });
+      if (resStats.ok) {
+        const statsData = await resStats.json();
+        if (statsData.success && statsData.editionsComparison) {
+          setEditionsComparison(statsData.editionsComparison);
+        }
+      }
+
       const res = await fetch('/api/admin/quick-sell/stats', {
         headers: { 'x-admin-token': token }
       });
@@ -625,15 +760,27 @@ export default function QuickSellPage() {
   return (
     <div className="min-h-screen bg-[#F4EFE9] py-12 px-4 sm:px-6 lg:px-8 relative">
       
-      {/* Metrics & Logout Buttons at the top of the container */}
-      <div className={`mx-auto flex justify-between items-center mb-4 transition-all duration-300 ${activeTab === 'register' ? 'max-w-2xl' : 'max-w-7xl'}`}>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="px-4 py-2.5 bg-white border border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer font-sans"
-        >
-          Cerrar Sesión
-        </button>
+      {/* Metrics, Active Edition Badge & Logout Buttons */}
+      <div className={`mx-auto flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 transition-all duration-300 ${activeTab === 'register' ? 'max-w-2xl' : 'max-w-7xl'}`}>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="px-4 py-2.5 bg-white border border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer font-sans"
+          >
+            Cerrar Sesión
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowEditionsModal(true)}
+            className="px-4 py-2.5 bg-[#8C6D46] text-[#F4EFE9] rounded-xl hover:opacity-90 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer font-sans"
+            title="Gestionar ediciones del evento y reiniciar disponibilidad"
+          >
+            <span>🌟</span>
+            <span>Edición Activa: {activeEdition?.name || 'Entre Soles'}</span>
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={handleOpenMetrics}
@@ -644,7 +791,7 @@ export default function QuickSellPage() {
             <line x1="12" y1="20" x2="12" y2="4"></line>
             <line x1="6" y1="20" x2="6" y2="14"></line>
           </svg>
-          VER MÉTRICAS DE VENTAS
+          VER MÉTRICAS DE VENTAS & COMPARATIVAS
         </button>
       </div>
 
@@ -1091,31 +1238,49 @@ export default function QuickSellPage() {
         {activeTab === 'list' && (
           <div className="p-6 space-y-6 font-sans">
             
-            {/* Filter and Search Header Controls */}
-            <div className="bg-[#FAF8F5] border border-[#E8E2DA] p-4 rounded-2xl flex flex-col md:flex-row gap-3 justify-between items-center">
+            {/* Top Filters & Controls */}
+            <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
               
               {/* Search Input */}
-              <div className="relative w-full md:w-96">
+              <div className="relative flex-1 max-w-md">
                 <input
                   type="text"
-                  placeholder="Buscar por comprador, correo, teléfono, orden o ticket..."
                   value={purchasedSearch}
                   onChange={(e) => {
                     setPurchasedSearch(e.target.value);
                     setPurchasedPage(1);
                   }}
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl pl-9 pr-4 py-2.5 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54] placeholder:text-[#9A9080]"
+                  placeholder="Buscar por cliente, correo, orden o ticket..."
+                  className="w-full bg-white border border-[#E0D9D0] rounded-xl pl-9 pr-4 py-2 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54]"
                 />
-                <svg className="w-4 h-4 absolute left-3 top-3 text-[#7A6F5E]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#7A6F5E] absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8"></circle>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
               </div>
 
-              {/* Filter Controls Group */}
-              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-                
-                {/* Zone Selector */}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Edition Filter Selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-[#7A6F5E]">Edición:</span>
+                  <select
+                    value={selectedEditionFilter}
+                    onChange={(e) => {
+                      setSelectedEditionFilter(e.target.value);
+                      setPurchasedPage(1);
+                    }}
+                    className="bg-white border border-[#8C6D46] font-bold text-[#8C6D46] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#8C6D46]"
+                  >
+                    <option value="all">Todas las Ediciones</option>
+                    {editions.map((ed) => (
+                      <option key={ed.slug} value={ed.slug}>
+                        {ed.name} {ed.is_active ? '★ (Activa)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Zone Filter Selector */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-[#7A6F5E]">Zona:</span>
                   <select
@@ -1156,7 +1321,7 @@ export default function QuickSellPage() {
                 {/* Refresh Button */}
                 <button
                   type="button"
-                  onClick={() => fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit)}
+                  onClick={() => fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter)}
                   className="p-2 bg-white border border-[#E0D9D0] text-[#686A54] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer"
                   title="Recargar tabla"
                 >
@@ -1165,9 +1330,7 @@ export default function QuickSellPage() {
                     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                   </svg>
                 </button>
-
               </div>
-
             </div>
 
             {/* Error message */}
@@ -1184,6 +1347,7 @@ export default function QuickSellPage() {
                   <thead>
                     <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] font-bold text-[#7A6F5E] uppercase tracking-wider">
                       <th className="px-4 py-3">Orden de Compra</th>
+                      <th className="px-4 py-3">Edición</th>
                       <th className="px-4 py-3">Ticket ID</th>
                       <th className="px-4 py-3">Nombre Ticket</th>
                       <th className="px-4 py-3">Zona</th>
@@ -1198,7 +1362,7 @@ export default function QuickSellPage() {
                   <tbody className="divide-y divide-[#FAF8F5]">
                     {purchasedLoading ? (
                       <tr>
-                        <td colSpan={10} className="px-4 py-12 text-center text-[#7A6F5E]">
+                        <td colSpan={11} className="px-4 py-12 text-center text-[#7A6F5E]">
                           <div className="flex flex-col items-center justify-center space-y-2">
                             <div className="w-7 h-7 border-3 border-[#686A54] border-t-transparent rounded-full animate-spin" />
                             <span>Cargando registros de compras...</span>
@@ -1207,7 +1371,7 @@ export default function QuickSellPage() {
                       </tr>
                     ) : purchasedList.length === 0 ? (
                       <tr>
-                        <td colSpan={10} className="px-4 py-12 text-center text-[#7A6F5E]">
+                        <td colSpan={11} className="px-4 py-12 text-center text-[#7A6F5E]">
                           No se encontraron ventas registradas que coincidan con los filtros.
                         </td>
                       </tr>
@@ -1219,6 +1383,17 @@ export default function QuickSellPage() {
                           <td className="px-4 py-3 font-mono font-bold text-[#231E1A] whitespace-nowrap">
                             <span className="bg-[#F4EFE9] text-[#686A54] px-2 py-1 rounded-md text-[11px] border border-[#E8E2DA]">
                               {item.orderId}
+                            </span>
+                          </td>
+
+                          {/* 1.5 Edición */}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${
+                              item.editionSlug === 'entre-soles'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-purple-100 text-purple-900 border border-purple-200'
+                            }`}>
+                              {item.editionName || item.editionSlug}
                             </span>
                           </td>
 
@@ -1461,17 +1636,17 @@ export default function QuickSellPage() {
       {/* Metrics Modal */}
       {showMetricsModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#F4EFE9] max-w-2xl w-full rounded-3xl p-6 shadow-xl border border-[#E8E2DA] flex flex-col max-h-[90vh] overflow-hidden">
+          <div className="bg-[#F4EFE9] max-w-3xl w-full rounded-3xl p-6 shadow-xl border border-[#E8E2DA] flex flex-col max-h-[90vh] overflow-hidden">
             
             {/* Modal Header */}
-            <div className="flex justify-between items-center pb-4 border-b border-[#E8E2DA] mb-4">
+            <div className="flex justify-between items-center pb-3 border-b border-[#E8E2DA] mb-3">
               <div className="flex items-center gap-2 text-[#686A54]">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <line x1="18" y1="20" x2="18" y2="10"></line>
                   <line x1="12" y1="20" x2="12" y2="4"></line>
                   <line x1="6" y1="20" x2="6" y2="14"></line>
                 </svg>
-                <h2 className="font-sans font-bold text-lg uppercase tracking-wider">Métricas de Ventas en Tiempo Real</h2>
+                <h2 className="font-sans font-bold text-lg uppercase tracking-wider">Métricas de Ventas & Comparativas</h2>
               </div>
               <button
                 type="button"
@@ -1479,6 +1654,32 @@ export default function QuickSellPage() {
                 className="w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold cursor-pointer"
               >
                 ✕
+              </button>
+            </div>
+
+            {/* Metrics Sub-Tabs Selector */}
+            <div className="flex border-b border-[#E8E2DA] mb-4 bg-white rounded-xl p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setMetricsTab('current')}
+                className={`flex-1 py-2 text-center font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+                  metricsTab === 'current'
+                    ? 'bg-[#686A54] text-[#F4EFE9]'
+                    : 'text-[#7A6F5E] hover:text-[#231E1A]'
+                }`}
+              >
+                📊 Edición Activa ({activeEdition?.name || 'Entre Soles'})
+              </button>
+              <button
+                type="button"
+                onClick={() => setMetricsTab('comparison')}
+                className={`flex-1 py-2 text-center font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+                  metricsTab === 'comparison'
+                    ? 'bg-[#8C6D46] text-[#F4EFE9]'
+                    : 'text-[#7A6F5E] hover:text-[#231E1A]'
+                }`}
+              >
+                ⚖️ Comparativa de Ediciones
               </button>
             </div>
 
@@ -1497,7 +1698,84 @@ export default function QuickSellPage() {
                 </div>
               )}
 
-              {!loadingMetrics && !metricsError && metricsData && (
+              {!loadingMetrics && !metricsError && metricsTab === 'comparison' && (
+                <div className="space-y-6">
+                  <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4">
+                    <h3 className="text-xs font-bold text-[#8C6D46] uppercase tracking-wider mb-2">
+                      Resumen Comparativo Histórico de Ediciones
+                    </h3>
+                    <p className="text-xs text-[#7A6F5E]">
+                      Comparación de rendimiento acumulado entre la edición anterior (Colombiamoda) y la edición actual/futuras (Entre Soles).
+                    </p>
+                  </div>
+
+                  {/* Cards side by side */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {editionsComparison.map((ed) => (
+                      <div key={ed.slug} className={`border rounded-2xl p-5 bg-white relative overflow-hidden ${ed.slug === 'entre-soles' ? 'border-amber-400 shadow-md' : 'border-[#E8E2DA]'}`}>
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-bold text-base text-[#231E1A]">{ed.name}</h4>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${ed.slug === 'entre-soles' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-purple-100 text-purple-900 border border-purple-200'}`}>
+                            {ed.slug === activeEdition?.slug ? 'Edición Activa' : 'Archivada'}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2.5 text-xs">
+                          <div className="flex justify-between border-b border-[#FAF8F5] pb-1.5">
+                            <span className="text-[#7A6F5E]">Ingresos Recaudados:</span>
+                            <span className="font-mono font-bold text-[#231E1A]">${ed.totalRevenue.toLocaleString('es-CO')} COP</span>
+                          </div>
+                          <div className="flex justify-between border-b border-[#FAF8F5] pb-1.5">
+                            <span className="text-[#7A6F5E]">Boletas Vendidas:</span>
+                            <span className="font-bold text-[#686A54]">{ed.totalSold} boletas</span>
+                          </div>
+                          <div className="flex justify-between border-b border-[#FAF8F5] pb-1.5">
+                            <span className="text-[#7A6F5E]">Órdenes Procesadas:</span>
+                            <span className="font-bold text-[#231E1A]">{ed.totalOrders} órdenes</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[#7A6F5E]">Check-ins / Ingresos:</span>
+                            <span className="font-bold text-[#231E1A]">{ed.totalCheckIns} asistencias</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Comparative Table */}
+                  <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden shadow-inner">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] font-bold text-[#7A6F5E] uppercase tracking-wider">
+                          <th className="px-4 py-3">Edición</th>
+                          <th className="px-4 py-3 text-right">Recaudado (COP)</th>
+                          <th className="px-4 py-3 text-center">Boletas Vendidas</th>
+                          <th className="px-4 py-3 text-center">Órdenes</th>
+                          <th className="px-4 py-3 text-center">Check-ins</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#FAF8F5]">
+                        {editionsComparison.map((ed) => (
+                          <tr key={ed.slug} className="hover:bg-[#FAF8F5]/50">
+                            <td className="px-4 py-3 font-semibold text-[#231E1A] flex items-center gap-2">
+                              <span>{ed.name}</span>
+                              {ed.slug === activeEdition?.slug && (
+                                <span className="text-[9px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded font-bold uppercase">Activa</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-[#231E1A]">${ed.totalRevenue.toLocaleString('es-CO')}</td>
+                            <td className="px-4 py-3 text-center font-bold text-[#686A54]">{ed.totalSold}</td>
+                            <td className="px-4 py-3 text-center text-[#7A6F5E]">{ed.totalOrders}</td>
+                            <td className="px-4 py-3 text-center text-[#7A6F5E]">{ed.totalCheckIns}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {!loadingMetrics && !metricsError && metricsTab === 'current' && metricsData && (
                 <>
                   {/* Summary Cards */}
                   <div className="grid grid-cols-2 gap-4">
@@ -1619,6 +1897,130 @@ export default function QuickSellPage() {
         </div>
       )}
 
+      {/* Editions Management Modal */}
+      {showEditionsModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#F4EFE9] max-w-xl w-full rounded-3xl p-6 shadow-xl border border-[#E8E2DA] flex flex-col max-h-[90vh] overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center pb-3 border-b border-[#E8E2DA] mb-4">
+              <div className="flex items-center gap-2 text-[#8C6D46]">
+                <span className="text-xl">🌟</span>
+                <h2 className="font-sans font-bold text-lg uppercase tracking-wider">Gestión de Ediciones & Reinicio</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditionsModal(false)}
+                className="w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-1 space-y-6 text-sm">
+              {/* Active Edition Info */}
+              <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4 space-y-2">
+                <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wider">Edición Activa en la Web</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xl font-bold text-[#231E1A]">{activeEdition?.name || 'Entre Soles'}</span>
+                  <span className="px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full font-bold text-xs uppercase">
+                    Recibiendo Ventas
+                  </span>
+                </div>
+              </div>
+
+              {/* List of Registered Editions */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider border-l-2 border-[#686A54] pl-2">
+                  Ediciones Registradas
+                </h3>
+                <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden divide-y divide-[#FAF8F5]">
+                  {editions.map((ed) => (
+                    <div key={ed.slug} className="p-3.5 flex justify-between items-center hover:bg-[#FAF8F5]/50 transition-colors">
+                      <div>
+                        <span className="font-semibold text-[#231E1A] block">{ed.name}</span>
+                        <span className="text-[11px] text-[#7A6F5E] font-mono">slug: {ed.slug}</span>
+                      </div>
+
+                      {ed.is_active ? (
+                        <span className="px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-[11px] font-bold uppercase">
+                          ★ Activa Actual
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetActiveEdition(ed.slug)}
+                          className="px-3 py-1.5 bg-[#FAF8F5] border border-[#E0D9D0] text-[#686A54] hover:bg-[#686A54] hover:text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                          Activar Esta Edición
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Form to Create New Edition */}
+              <form onSubmit={handleCreateEdition} className="bg-white border border-[#E8E2DA] rounded-2xl p-4 space-y-3">
+                <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider">Crear Nueva Edición de Evento</h3>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newEditionName}
+                    onChange={(e) => setNewEditionName(e.target.value)}
+                    placeholder="Ej. Sunset Edition 2026..."
+                    className="flex-1 bg-[#FAF8F5] border border-[#E0D9D0] rounded-xl px-3 py-2 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={creatingEdition || !newEditionName.trim()}
+                    className="px-4 py-2 bg-[#686A54] text-[#F4EFE9] rounded-xl text-xs font-bold uppercase hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
+                  >
+                    {creatingEdition ? 'Creando...' : 'Crear'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Action Box: Reiniciar Aforo para Nueva Edición */}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
+                  <span>🔄</span>
+                  <span>Reiniciar Disponibilidad para Nueva Edición</span>
+                </div>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Esta acción actualizará las mesas a <strong>Disponible</strong> y restablecerá el stock de boletería individual para que la web venda la edición <strong>{activeEdition?.name || 'Entre Soles'}</strong>.
+                  <br />
+                  <span className="text-[11px] text-green-700 font-semibold block mt-1">
+                    ✓ Ninguna venta pasadas (como Colombiamoda) ni datos de clientes serán eliminados.
+                  </span>
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResetInventory}
+                  disabled={resettingInventory}
+                  className="w-full py-3 bg-[#8C6D46] text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:opacity-95 disabled:opacity-50 transition-opacity shadow-sm cursor-pointer"
+                >
+                  {resettingInventory ? 'Reiniciando disponibilidad...' : 'REINICIAR DISPONIBILIDAD E INVENTARIO'}
+                </button>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="pt-3 border-t border-[#E8E2DA] mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowEditionsModal(false)}
+                className="px-4 py-2 bg-white border border-[#E0D9D0] text-[#7A6F5E] hover:bg-[#FAF8F5] rounded-xl text-xs font-bold uppercase transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -1729,3 +2131,4 @@ function AdminPrefixDropdown({
     </div>
   );
 }
+

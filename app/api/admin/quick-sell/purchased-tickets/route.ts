@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { validateSession } from '@/lib/authStore';
+import { getAllEditions } from '@/lib/editions';
 
 export const revalidate = 0;
 
@@ -22,7 +23,11 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '10', 10)));
     const zone = searchParams.get('zone') || 'all';
+    const edition = searchParams.get('edition') || 'all';
     const q = searchParams.get('search') || searchParams.get('q') || '';
+
+    // Fetch registered editions for selector
+    const registeredEditions = await getAllEditions();
 
     // 1. Fetch available unique zones for filtering selector
     const { data: zoneData } = await supabase
@@ -49,11 +54,16 @@ export async function GET(req: NextRequest) {
       queryBuilder = queryBuilder.ilike('zone', zone.trim());
     }
 
+    // Filter by Edition
+    if (edition && edition !== 'all') {
+      queryBuilder = queryBuilder.eq('edition_slug', edition.trim());
+    }
+
     // Filter by Search Query
     if (q.trim().length > 0) {
       const searchTerm = `%${q.trim()}%`;
       queryBuilder = queryBuilder.or(
-        `order_id.ilike.${searchTerm},buyer_name.ilike.${searchTerm},buyer_email.ilike.${searchTerm},buyer_phone.ilike.${searchTerm},ticket_name.ilike.${searchTerm},ticket_id.ilike.${searchTerm}`
+        `order_id.ilike.${searchTerm},buyer_name.ilike.${searchTerm},buyer_email.ilike.${searchTerm},buyer_phone.ilike.${searchTerm},ticket_name.ilike.${searchTerm},ticket_id.ilike.${searchTerm},edition_name.ilike.${searchTerm}`
       );
     }
 
@@ -89,6 +99,8 @@ export async function GET(req: NextRequest) {
       paymentRef: p.payment_ref || '',
       ticketPrice: p.ticket_price || 0,
       language: p.language || 'ES',
+      editionSlug: p.edition_slug || 'colombiamoda',
+      editionName: p.edition_name || (p.edition_slug === 'entre-soles' ? 'Entre Soles' : 'Colombiamoda'),
     }));
 
     return NextResponse.json({
@@ -101,6 +113,7 @@ export async function GET(req: NextRequest) {
         totalPages,
       },
       zones: availableZones,
+      editions: registeredEditions,
     });
 
   } catch (error) {

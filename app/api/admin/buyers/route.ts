@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     const token = req.headers.get('x-admin-token');
     const secret = process.env.ADMIN_SECRET_TOKEN;
     const isValidLegacy = secret && token === secret;
-    const sessionUser = validateSession(token);
+    const sessionUser = await validateSession(token);
     
     // We also allow an API Key passed by query param for external services
     const queryKey = req.nextUrl.searchParams.get('api_key');
@@ -20,8 +20,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { searchParams } = req.nextUrl;
+    const edition = searchParams.get('edition') || 'all';
+
     const allOrders = await getAllOrders();
-    const approvedOrders = allOrders.filter(o => o.status === 'approved');
+    let approvedOrders = allOrders.filter(o => o.status === 'approved');
+
+    if (edition !== 'all') {
+      approvedOrders = approvedOrders.filter(o => (o.editionSlug || 'colombiamoda') === edition);
+    }
 
     const tickets = await getDynamicTickets();
     const ticketsMap = new Map(tickets.map(t => [t.id, t.name]));
@@ -38,6 +45,8 @@ export async function GET(req: NextRequest) {
           buyer_phone: order.buyerInfo.phone || '',
           buyer_locale: order.buyerInfo.locale === 'en' ? 'INGLES' : 'ESPAÑOL',
           ticket_purchased: ticketsMap.get(order.ticketId) || 'Boleto/Mesa',
+          edition_name: order.editionName || (order.editionSlug === 'entre-soles' ? 'Entre Soles' : 'Colombiamoda'),
+          edition_slug: order.editionSlug || 'colombiamoda',
           order_date: new Date(order.createdAt).toISOString()
         });
       }
@@ -45,6 +54,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      edition_filter: edition,
       total_buyers: buyersMap.size,
       data: Array.from(buyersMap.values())
     });
