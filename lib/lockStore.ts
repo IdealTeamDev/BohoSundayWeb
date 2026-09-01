@@ -1,6 +1,7 @@
 import type { TicketLock } from '@/types/checkout';
 import type { Ticket } from '@/types';
 import { supabase } from './supabase';
+import { getActiveEdition } from './editions';
 
 const LOCK_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
@@ -43,16 +44,18 @@ export async function acquireLock(
   }
 
   const lockKey = ticket.stock !== undefined ? `${ticketId}_${sessionToken}` : ticketId;
+  const activeEdition = await getActiveEdition();
 
   // If the ticket has stock defined (individual tickets early/anytime)
   if (ticket.stock !== undefined) {
     try {
-      // 1. Get total sold count from purchased_tickets
+      // 1. Get total sold count from purchased_tickets for current active edition
       const { data: soldData, error: soldError } = await supabase
         .from('purchased_tickets')
         .select('total_accesos')
         .eq('ticket_id', ticketId)
-        .eq('status', 'paid');
+        .eq('status', 'paid')
+        .eq('edition_slug', activeEdition.slug);
 
       if (soldError) throw soldError;
       const soldCount = (soldData || []).reduce((sum, row) => sum + Number(row.total_accesos), 0);
@@ -147,17 +150,18 @@ export async function acquireLock(
         return null;
       }
 
-      // Check if already sold in purchased_tickets
+      // Check if already sold in purchased_tickets for active edition
       const { data: purchase, error: purchaseError } = await supabase
         .from('purchased_tickets')
         .select('order_id')
         .eq('ticket_id', ticketId)
         .eq('status', 'paid')
+        .eq('edition_slug', activeEdition.slug)
         .maybeSingle();
 
       if (purchaseError) throw purchaseError;
       if (purchase) {
-        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold (found in purchased_tickets)`);
+        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold in ${activeEdition.name} (found in purchased_tickets)`);
         return null;
       }
 
@@ -200,20 +204,22 @@ export async function verifyLock(ticketId: string, sessionToken: string, tickets
   const list = ticketsList || [];
   const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
+  const activeEdition = await getActiveEdition();
 
   try {
-    // If it's a table/bed (stock is undefined), verify if it has already been sold
+    // If it's a table/bed (stock is undefined), verify if it has already been sold in active edition
     if (!ticket || ticket.stock === undefined) {
       const { data: purchase, error: purchaseError } = await supabase
         .from('purchased_tickets')
         .select('order_id')
         .eq('ticket_id', ticketId)
         .eq('status', 'paid')
+        .eq('edition_slug', activeEdition.slug)
         .maybeSingle();
 
       if (purchaseError) throw purchaseError;
       if (purchase) {
-        console.warn(`[LockStore] ❌ verifyLock: Bed/Table ${ticketId} is already sold (found in purchased_tickets)`);
+        console.warn(`[LockStore] ❌ verifyLock: Bed/Table ${ticketId} is already sold in ${activeEdition.name} (found in purchased_tickets)`);
         return false;
       }
     }
@@ -227,7 +233,6 @@ export async function verifyLock(ticketId: string, sessionToken: string, tickets
     if (error) throw error;
 
     if (!lock) {
-      // Vercel serverless container bypass fallback
       if (sessionToken) return true;
       return false;
     }
@@ -277,14 +282,13 @@ export async function markAsSold(ticketId: string, sessionToken?: string, ticket
   const lockKey = (ticket && ticket.stock !== undefined && sessionToken) ? `${ticketId}_${sessionToken}` : ticketId;
 
   try {
-    // Set expiry way in the future (permanent) and change status to 'sold'
     await supabase
       .from('ticket_locks')
       .upsert({
         lock_key: lockKey,
         ticket_id: ticketId,
         session_token: sessionToken || 'admin',
-        quantity: 1, // we don't count quantity for table locks sold, individual tickets are in purchased_tickets
+        quantity: 1,
         status: 'sold',
         expires_at: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString()
       });
@@ -323,22 +327,24 @@ export async function getRemainingSeconds(ticketId: string, sessionToken: string
 }
 
 /**
- * Get current status of a ticket.
+ * Get current status of a ticket for active edition.
  */
 export async function getTicketStatus(ticketId: string, ticketsList?: Ticket[]): Promise<'available' | 'locked' | 'sold'> {
   const list = ticketsList || [];
   const ticket = list.find((t) => t.id === ticketId);
+  const activeEdition = await getActiveEdition();
 
   if (ticket && ticket.stock !== undefined) {
     await cleanExpiredLocks();
 
     try {
-      // 1. Get sold count
+      // 1. Get sold count for active edition
       const { data: soldData } = await supabase
         .from('purchased_tickets')
         .select('total_accesos')
         .eq('ticket_id', ticketId)
-        .eq('status', 'paid');
+        .eq('status', 'paid')
+        .eq('edition_slug', activeEdition.slug);
       
       const soldCount = (soldData || []).reduce((sum, row) => sum + Number(row.total_accesos), 0);
 
@@ -375,12 +381,13 @@ export async function getTicketStatus(ticketId: string, ticketsList?: Ticket[]):
   } else {
     // Table/Cama ticket status
     try {
-      // 1. Check if there's an approved purchase in purchased_tickets
+      // 1. Check if there's an approved purchase in purchased_tickets for active edition
       const { data: purchase, error: purchaseError } = await supabase
         .from('purchased_tickets')
         .select('order_id')
         .eq('ticket_id', ticketId)
         .eq('status', 'paid')
+        .eq('edition_slug', activeEdition.slug)
         .maybeSingle();
 
       if (purchaseError) throw purchaseError;
@@ -410,18 +417,20 @@ export async function getTicketStatus(ticketId: string, ticketsList?: Ticket[]):
 }
 
 /**
- * Get remaining available stock (total stock - sold - locked).
+ * Get remaining available stock (total stock - sold - locked) for active edition.
  */
 export async function getRemainingStock(ticketId: string, totalStock: number): Promise<number> {
   await cleanExpiredLocks();
+  const activeEdition = await getActiveEdition();
 
   try {
-    // 1. Get sold count
+    // 1. Get sold count for active edition
     const { data: soldData } = await supabase
       .from('purchased_tickets')
       .select('total_accesos')
       .eq('ticket_id', ticketId)
-      .eq('status', 'paid');
+      .eq('status', 'paid')
+      .eq('edition_slug', activeEdition.slug);
     
     const soldCount = (soldData || []).reduce((sum, row) => sum + Number(row.total_accesos), 0);
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { validateSession } from '@/lib/authStore';
 import { getDynamicTickets } from '@/lib/tickets';
+import { getActiveEdition } from '@/lib/editions';
 
 export const revalidate = 0;
 
@@ -19,6 +20,8 @@ export async function GET(req: NextRequest) {
     if (!isValidLegacy && !sessionUser && !isValidQueryKey) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const activeEdition = await getActiveEdition();
 
     // 1. Clean expired locks first
     await supabase
@@ -39,11 +42,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Error al consultar bloqueos' }, { status: 500 });
     }
 
-    // 3. Fetch paid purchased tickets from DB
+    // 3. Fetch paid purchased tickets for current active edition
     const { data: purchases, error: purError } = await supabase
       .from('purchased_tickets')
       .select('*')
-      .eq('status', 'paid');
+      .eq('status', 'paid')
+      .eq('edition_slug', activeEdition.slug);
 
     if (purError) {
       console.error('[Admin Locks API] Error fetching purchases:', purError);
@@ -70,10 +74,12 @@ export async function GET(req: NextRequest) {
       buyerEmail: p.buyer_email,
       buyerPhone: p.buyer_phone,
       createdAt: p.created_at,
+      editionSlug: p.edition_slug,
     }));
 
     return NextResponse.json({
       success: true,
+      activeEdition,
       locks: formattedLocks,
       purchases: formattedPurchases,
     });
@@ -102,27 +108,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Campos requeridos: action, ticketId' }, { status: 400 });
     }
 
+    const activeEdition = await getActiveEdition();
     const tickets = await getDynamicTickets();
     const ticket = tickets.find((t) => t.id === ticketId);
     const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_admin_manual` : ticketId;
 
     if (action === 'lock') {
-      // 1. Check if already sold in purchased_tickets
+      // 1. Check if already sold in active edition
       const { data: purchase } = await supabase
         .from('purchased_tickets')
         .select('order_id, buyer_name')
         .eq('ticket_id', ticketId)
         .eq('status', 'paid')
+        .eq('edition_slug', activeEdition.slug)
         .maybeSingle();
 
       if (purchase) {
         return NextResponse.json(
-          { error: `No se puede bloquear: la entrada/mesa ya fue vendida a ${purchase.buyer_name || 'un cliente'} (Orden: ${purchase.order_id}).` },
+          { error: `No se puede bloquear: la entrada/mesa ya fue vendida en ${activeEdition.name} a ${purchase.buyer_name || 'un cliente'} (Orden: ${purchase.order_id}).` },
           { status: 409 }
         );
       }
 
-      // Expiration time for admin manual locks defaults to July 27, 2026 (23:59:59 -05:00)
       const defaultJuly27Exp = new Date('2026-07-27T23:59:59-05:00').toISOString();
       const expiresAt = body.expiresAtISO || defaultJuly27Exp;
 

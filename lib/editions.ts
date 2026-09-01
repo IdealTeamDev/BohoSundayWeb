@@ -155,11 +155,22 @@ export async function createEdition(name: string, slug?: string): Promise<EventE
 
 /**
  * Reset inventory for beds/tables and individual tickets for a fresh event edition.
+ * Clears temporary table locks so tables start 100% available.
  * Does NOT delete historical sales or buyer information.
  */
 export async function resetInventoryForEdition(): Promise<{ success: boolean; message: string }> {
   try {
-    // 1. Set all camas/mesas available = true in Supabase
+    // 1. Delete all temporary locks from ticket_locks table
+    const { error: locksErr } = await supabase
+      .from('ticket_locks')
+      .delete()
+      .neq('id', '____none____');
+
+    if (locksErr) {
+      console.error('[Editions Service] Error cleaning ticket_locks:', locksErr);
+    }
+
+    // 2. Set all camas/mesas available = true in Supabase
     const { error: mesasErr } = await supabase
       .from('boleteria_mesas')
       .update({ available: true })
@@ -169,7 +180,7 @@ export async function resetInventoryForEdition(): Promise<{ success: boolean; me
       console.error('[Editions Service] Error resetting boleteria_mesas:', mesasErr);
     }
 
-    // 2. Reset individual tickets stock to 100 in Supabase
+    // 3. Reset individual tickets stock to 100 in Supabase
     const { error: individualErr } = await supabase
       .from('boleteria_individual')
       .update({ stock: 100 })
@@ -179,10 +190,10 @@ export async function resetInventoryForEdition(): Promise<{ success: boolean; me
       console.error('[Editions Service] Error resetting boleteria_individual:', individualErr);
     }
 
-    console.log('[Editions Service] 🔄 Inventory reset executed successfully for new edition.');
+    console.log('[Editions Service] 🔄 Inventory and locks reset executed successfully for new edition.');
     return {
       success: true,
-      message: 'Inventario de mesas y disponibilidad de boletas reiniciado exitosamente para la nueva edición.',
+      message: 'Inventario de mesas, bloqueos y disponibilidad de boletas reiniciado exitosamente para la nueva edición.',
     };
   } catch (err: any) {
     console.error('[Editions Service] Exception resetting inventory:', err);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { validateSession } from '@/lib/authStore';
+import { getActiveEdition } from '@/lib/editions';
 
 export const revalidate = 0;
 
@@ -14,6 +15,10 @@ export async function GET(req: NextRequest) {
     if (!isValidLegacy && !sessionUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { searchParams } = req.nextUrl;
+    const activeEdition = await getActiveEdition();
+    const targetEditionSlug = searchParams.get('edition') || activeEdition.slug;
 
     // 1. Fetch all configured tables/beds from boleteria_mesas
     const { data: dbMesas, error: dbMesasError } = await supabase
@@ -29,11 +34,17 @@ export async function GET(req: NextRequest) {
 
     if (dbIndError) throw dbIndError;
 
-    // 3. Fetch all paid purchased tickets
-    const { data: dbPurchased, error: dbPurError } = await supabase
+    // 3. Fetch paid purchased tickets for target edition (or all if target is 'all')
+    let purQuery = supabase
       .from('purchased_tickets')
-      .select('ticket_id, ticket_price, total_accesos, zone')
+      .select('ticket_id, ticket_price, total_accesos, zone, edition_slug')
       .eq('status', 'paid');
+
+    if (targetEditionSlug !== 'all') {
+      purQuery = purQuery.eq('edition_slug', targetEditionSlug);
+    }
+
+    const { data: dbPurchased, error: dbPurError } = await purQuery;
 
     if (dbPurError) throw dbPurError;
 
@@ -50,7 +61,7 @@ export async function GET(req: NextRequest) {
       mesasByZone[zone].total += 1;
     });
 
-    // Populate sold counts and revenue for mesas
+    // Populate sold counts and revenue for mesas matching target edition
     const mesaIds = new Set(dbMesas?.map(m => m.id) || []);
     dbPurchased?.forEach(p => {
       if (mesaIds.has(p.ticket_id)) {
@@ -79,7 +90,7 @@ export async function GET(req: NextRequest) {
 
     // --- Process Individual Tickets Stats ---
     const individualStats = dbIndividual?.map(ind => {
-      // Find matching sales
+      // Find matching sales for target edition
       const sales = dbPurchased?.filter(p => p.ticket_id === ind.id) || [];
       const soldCount = sales.reduce((sum, s) => sum + (s.total_accesos || 0), 0);
       const revenue = sales.reduce((sum, s) => sum + ((s.ticket_price || 0) * (s.total_accesos || 0)), 0);
@@ -96,6 +107,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      edition: targetEditionSlug,
       data: {
         zones: zoneStats,
         individuals: individualStats

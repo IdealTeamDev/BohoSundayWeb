@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllOrders } from '@/lib/orderStore';
+import { supabase } from '@/lib/supabase';
 import { getDynamicTickets } from '@/lib/tickets';
 import { validateSession } from '@/lib/authStore';
 import { getAllEditions, getActiveEdition } from '@/lib/editions';
@@ -20,14 +20,20 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl;
     const activeEdition = await getActiveEdition();
     const editions = await getAllEditions();
-    const selectedEdition = searchParams.get('edition') || 'all';
+    const selectedEdition = searchParams.get('edition') || activeEdition.slug;
 
-    const allOrders = await getAllOrders();
-    const approvedOrders = allOrders.filter(o => o.status === 'approved');
+    // Fetch all paid purchased tickets from database
+    const { data: dbPurchased, error: dbError } = await supabase
+      .from('purchased_tickets')
+      .select('*')
+      .eq('status', 'paid');
+
+    if (dbError) throw dbError;
+
+    const purchasedList = dbPurchased || [];
     const tickets = await getDynamicTickets();
-    const ticketsMap = new Map(tickets.map(t => [t.id, t]));
 
-    // Calculate overall available capacity for active tickets
+    // Calculate overall capacity for active tickets
     let currentCapacity = 0;
     tickets.forEach(t => {
       if (!t.disabled && t.available) {
@@ -39,7 +45,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Breakdown per edition
+    // Breakdown per edition map
     const editionsMap = new Map<string, {
       slug: string;
       name: string;
@@ -47,9 +53,10 @@ export async function GET(req: NextRequest) {
       totalSold: number;
       totalCheckIns: number;
       totalOrders: number;
+      ordersSet: Set<string>;
     }>();
 
-    // Initialize map with known editions
+    // Initialize map with known registered editions
     editions.forEach(ed => {
       editionsMap.set(ed.slug, {
         slug: ed.slug,
@@ -58,25 +65,29 @@ export async function GET(req: NextRequest) {
         totalSold: 0,
         totalCheckIns: 0,
         totalOrders: 0,
+        ordersSet: new Set<string>(),
       });
     });
 
-    // Process all approved orders
+    // Process all paid purchased tickets
     let filteredRevenue = 0;
     let filteredSold = 0;
     let filteredCheckIns = 0;
-    let filteredOrdersCount = 0;
+    const filteredOrdersSet = new Set<string>();
 
-    approvedOrders.forEach(order => {
-      const edSlug = order.editionSlug || 'colombiamoda';
-      const edName = order.editionName || (edSlug === 'entre-soles' ? 'Entre Soles' : 'Colombiamoda');
-      const ticket = ticketsMap.get(order.ticketId);
-      const price = ticket ? ticket.price : 0;
-      const rev = price * order.quantity;
-      const sold = order.quantity;
-      const checkIns = order.accessesUsed || 0;
+    purchasedList.forEach(ticketRow => {
+      const edSlug = ticketRow.edition_slug || 'colombiamoda';
+      const edName = ticketRow.edition_name || (edSlug === 'entre-soles' ? 'Entre Soles' : 'Colombiamoda');
+      
+      const price = Number(ticketRow.ticket_price) || 0;
+      const totalAccesos = Number(ticketRow.total_accesos) || 1;
+      const accesosRestantes = Number(ticketRow.accesos_restantes) ?? totalAccesos;
+      const checkInsUsed = Math.max(0, totalAccesos - accesosRestantes);
 
-      // Update edition stats
+      // Revenue: if price is bed price or ticket price
+      const rev = price;
+      const sold = 1; // 1 ticket or bed purchased
+
       if (!editionsMap.has(edSlug)) {
         editionsMap.set(edSlug, {
           slug: edSlug,
@@ -85,25 +96,37 @@ export async function GET(req: NextRequest) {
           totalSold: 0,
           totalCheckIns: 0,
           totalOrders: 0,
+          ordersSet: new Set<string>(),
         });
       }
 
       const edStat = editionsMap.get(edSlug)!;
       edStat.totalRevenue += rev;
       edStat.totalSold += sold;
-      edStat.totalCheckIns += checkIns;
-      edStat.totalOrders += 1;
+      edStat.totalCheckIns += checkInsUsed;
+      if (ticketRow.order_id) {
+        edStat.ordersSet.add(ticketRow.order_id);
+      }
 
       // Filter check
       if (selectedEdition === 'all' || edSlug === selectedEdition) {
         filteredRevenue += rev;
         filteredSold += sold;
-        filteredCheckIns += checkIns;
-        filteredOrdersCount += 1;
+        filteredCheckIns += checkInsUsed;
+        if (ticketRow.order_id) {
+          filteredOrdersSet.add(ticketRow.order_id);
+        }
       }
     });
 
-    const editionsComparison = Array.from(editionsMap.values());
+    const editionsComparison = Array.from(editionsMap.values()).map(item => ({
+      slug: item.slug,
+      name: item.name,
+      totalRevenue: item.totalRevenue,
+      totalSold: item.totalSold,
+      totalCheckIns: item.totalCheckIns,
+      totalOrders: item.ordersSet.size,
+    }));
 
     return NextResponse.json({
       success: true,
@@ -115,7 +138,7 @@ export async function GET(req: NextRequest) {
         totalSold: filteredSold,
         totalCheckIns: filteredCheckIns,
         totalCapacity: currentCapacity,
-        totalOrders: filteredOrdersCount,
+        totalOrders: filteredOrdersSet.size,
       },
       editionsComparison,
     });
