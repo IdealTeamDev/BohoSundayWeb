@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import type { Ticket } from '@/types';
 import { jsPDF } from 'jspdf';
@@ -12,18 +12,59 @@ export default function QuickSellPage() {
   const params = useParams();
   const currentLocale = (params?.locale as 'es' | 'en') || 'es';
 
-  // State variables
+  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras'
+  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras'>('resumen');
+
+  // Authentication State
+  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
+
+  // Event Editions State
+  const [editions, setEditions] = useState<any[]>([]);
+  const [activeEdition, setActiveEdition] = useState<{ id: string; slug: string; name: string } | null>(null);
+  const [selectedEditionFilter, setSelectedEditionFilter] = useState<string>('all');
+  const [showEditionsModal, setShowEditionsModal] = useState<boolean>(false);
+  const [newEditionName, setNewEditionName] = useState<string>('');
+  const [creatingEdition, setCreatingEdition] = useState<boolean>(false);
+  const [resettingInventory, setResettingInventory] = useState<boolean>(false);
+
+  // Resumen / Dashboard State
+  const [resumenLoading, setResumenLoading] = useState<boolean>(false);
+  const [resumenStats, setResumenStats] = useState<{
+    totalRevenue: number;
+    totalSold: number;
+    totalCheckIns: number;
+    totalOrders: number;
+    totalCapacity: number;
+  }>({
+    totalRevenue: 0,
+    totalSold: 0,
+    totalCheckIns: 0,
+    totalOrders: 0,
+    totalCapacity: 0,
+  });
+  const [zoneStats, setZoneStats] = useState<Array<{
+    zone: string;
+    name: string;
+    total: number;
+    sold: number;
+    remaining: number;
+    revenue: number;
+  }>>([]);
+  const [editionsComparison, setEditionsComparison] = useState<any[]>([]);
+  const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
+
+  // Sale Form State
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string>('');
   const [quantity, setQuantity] = useState<number | string>(1);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingSale, setLoadingSale] = useState<boolean>(false);
   const [fetchingTickets, setFetchingTickets] = useState<boolean>(true);
   const [stages, setStages] = useState<any[]>([]);
   const [selectedStageId, setSelectedStageId] = useState<string>('');
   const [activeStageId, setActiveStageId] = useState<string | null>(null);
   const [fetchingStages, setFetchingStages] = useState<boolean>(true);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  
+
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -32,13 +73,13 @@ export default function QuickSellPage() {
     docType: 'C.C',
     docNumber: '',
     phonePrefix: '+57',
-    locale: 'es', // Language of preference for the buyer
+    locale: 'es',
   });
 
   const [errors, setErrors] = useState<Partial<typeof form & { ticket: string; quantity?: string }>>({});
 
-  // Modal State
-  const [showModal, setShowModal] = useState<boolean>(false);
+  // Success Modal State
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [modalData, setModalData] = useState<{
     orderId: string;
     buyerName: string;
@@ -51,16 +92,7 @@ export default function QuickSellPage() {
     locale: string;
   } | null>(null);
 
-  // Metrics Modal State
-  const [showMetricsModal, setShowMetricsModal] = useState<boolean>(false);
-  const [metricsData, setMetricsData] = useState<{
-    zones: Array<{ zone: string; name: string; total: number; sold: number; remaining: number; revenue: number }>;
-    individuals: Array<{ id: string; name: string; totalStock: number; sold: number; remaining: number; revenue: number }>;
-  } | null>(null);
-  const [loadingMetrics, setLoadingMetrics] = useState<boolean>(false);
-  const [metricsError, setMetricsError] = useState<string | null>(null);
-
-  // Search Buyer and Resend QR State
+  // Search Buyer and Resend/Download QR State
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showDropdown, setShowDropdown] = useState<boolean>(false);
@@ -69,26 +101,7 @@ export default function QuickSellPage() {
   const [resending, setResending] = useState<boolean>(false);
   const [resendStatus, setResendStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Authentication State
-  const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
-
-  // Navigation Tabs State
-  const [activeTab, setActiveTab] = useState<'register' | 'map' | 'list'>('register');
-
-  // Event Editions State
-  const [editions, setEditions] = useState<any[]>([]);
-  const [activeEdition, setActiveEdition] = useState<{ id: string; slug: string; name: string } | null>(null);
-  const [selectedEditionFilter, setSelectedEditionFilter] = useState<string>('all');
-  const [showEditionsModal, setShowEditionsModal] = useState<boolean>(false);
-  const [newEditionName, setNewEditionName] = useState<string>('');
-  const [creatingEdition, setCreatingEdition] = useState<boolean>(false);
-  const [resettingInventory, setResettingInventory] = useState<boolean>(false);
-
-  // Metrics Tab & Comparison State
-  const [metricsTab, setMetricsTab] = useState<'current' | 'comparison'>('current');
-  const [editionsComparison, setEditionsComparison] = useState<any[]>([]);
-
-  // Purchased Tickets Module State
+  // Purchases List Module State
   const [purchasedList, setPurchasedList] = useState<any[]>([]);
   const [purchasedLoading, setPurchasedLoading] = useState<boolean>(false);
   const [purchasedError, setPurchasedError] = useState<string | null>(null);
@@ -100,7 +113,24 @@ export default function QuickSellPage() {
   const [purchasedTotal, setPurchasedTotal] = useState<number>(0);
   const [purchasedTotalPages, setPurchasedTotalPages] = useState<number>(1);
 
-  const fetchEditions = async () => {
+  // Check auth token
+  useEffect(() => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) {
+      router.push(`/${currentLocale}/admin/login`);
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [currentLocale, router]);
+
+  function handleLogout() {
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_username');
+    router.push(`/${currentLocale}/admin/login`);
+  }
+
+  // Fetch Editions
+  const fetchEditions = useCallback(async () => {
     try {
       const token = localStorage.getItem('admin_token') || '';
       const res = await fetch('/api/admin/editions', {
@@ -116,8 +146,198 @@ export default function QuickSellPage() {
     } catch (err) {
       console.error('Error fetching editions:', err);
     }
-  };
+  }, []);
 
+  useEffect(() => {
+    fetchEditions();
+  }, [fetchEditions]);
+
+  // Fetch Resumen Stats & Zone Metrics
+  const fetchResumenData = useCallback(async () => {
+    setResumenLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      
+      // 1. Fetch main stats & comparisons
+      const resStats = await fetch('/api/admin/stats?edition=all', {
+        headers: { 'x-admin-token': token }
+      });
+      if (resStats.ok) {
+        const dataStats = await resStats.json();
+        if (dataStats.success) {
+          // Find stats for active edition or total
+          const activeSlug = dataStats.activeEdition?.slug || 'entre-soles';
+          const activeComparison = (dataStats.editionsComparison || []).find((e: any) => e.slug === activeSlug);
+          
+          if (activeComparison) {
+            setResumenStats({
+              totalRevenue: activeComparison.totalRevenue || 0,
+              totalSold: activeComparison.totalSold || 0,
+              totalCheckIns: activeComparison.totalCheckIns || 0,
+              totalOrders: activeComparison.totalOrders || 0,
+              totalCapacity: dataStats.data?.totalCapacity || 44,
+            });
+          } else {
+            setResumenStats({
+              totalRevenue: dataStats.data?.totalRevenue || 0,
+              totalSold: dataStats.data?.totalSold || 0,
+              totalCheckIns: dataStats.data?.totalCheckIns || 0,
+              totalOrders: dataStats.data?.totalOrders || 0,
+              totalCapacity: dataStats.data?.totalCapacity || 44,
+            });
+          }
+          setEditionsComparison(dataStats.editionsComparison || []);
+        }
+      }
+
+      // 2. Fetch breakdown per zone for active edition
+      const resZoneStats = await fetch('/api/admin/quick-sell/stats', {
+        headers: { 'x-admin-token': token }
+      });
+      if (resZoneStats.ok) {
+        const dataZones = await resZoneStats.json();
+        if (dataZones.success && dataZones.data?.zones) {
+          setZoneStats(dataZones.data.zones);
+        }
+      }
+
+      setLastUpdatedTime(new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }));
+    } catch (err) {
+      console.error('Error fetching resumen data:', err);
+    } finally {
+      setResumenLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeView === 'resumen') {
+      fetchResumenData();
+    }
+  }, [activeView, fetchResumenData]);
+
+  // Fetch Stages & Tickets for Sales Form
+  useEffect(() => {
+    async function fetchStages() {
+      try {
+        const token = localStorage.getItem('admin_token') || '';
+        const res = await fetch('/api/admin/stages', {
+          headers: { 'x-admin-token': token }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setStages(data.stages);
+            if (data.activeStageId) {
+              setActiveStageId(data.activeStageId);
+              setSelectedStageId(data.activeStageId);
+            } else if (data.stages.length > 0) {
+              setSelectedStageId(data.stages[0].id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching stages:', err);
+      } finally {
+        setFetchingStages(false);
+      }
+    }
+    fetchStages();
+  }, []);
+
+  useEffect(() => {
+    async function fetchTickets() {
+      setFetchingTickets(true);
+      try {
+        const url = selectedStageId ? `/api/tickets?stageId=${selectedStageId}` : '/api/tickets';
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          const sorted = [...data].sort((a: any, b: any) => {
+            const isIndivA = a.stock !== undefined;
+            const isIndivB = b.stock !== undefined;
+            if (isIndivA && !isIndivB) return -1;
+            if (!isIndivA && isIndivB) return 1;
+            if (isIndivA && isIndivB) {
+              return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+            }
+            const nameCompare = a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+            if (nameCompare !== 0) return nameCompare;
+            return (a.number || 0) - (b.number || 0);
+          });
+          setTickets(sorted);
+          if (sorted.length > 0) {
+            const stillValid = sorted.some((t: any) => t.id === selectedTicketId);
+            if (!stillValid) {
+              setSelectedTicketId(sorted[0].id);
+            }
+          } else {
+            setSelectedTicketId('');
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching tickets:', err);
+      } finally {
+        setFetchingTickets(false);
+      }
+    }
+
+    if (!fetchingStages) {
+      fetchTickets();
+    }
+  }, [selectedStageId, fetchingStages, selectedTicketId]);
+
+  // Fetch Purchased Tickets Table
+  const fetchPurchasedTickets = useCallback(async (
+    page = purchasedPage,
+    zone = selectedZone,
+    search = purchasedSearch,
+    limit = purchasedLimit,
+    edition = selectedEditionFilter
+  ) => {
+    setPurchasedLoading(true);
+    setPurchasedError(null);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+        zone: zone,
+        search: search,
+        edition: edition,
+      });
+
+      const res = await fetch(`/api/admin/quick-sell/purchased-tickets?${params.toString()}`, {
+        headers: { 'x-admin-token': token },
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPurchasedList(data.data || []);
+        setPurchasedTotal(data.pagination?.total || 0);
+        setPurchasedTotalPages(data.pagination?.totalPages || 1);
+        if (data.zones) setPurchasedZones(data.zones);
+        if (data.editions) setEditions(data.editions);
+      } else {
+        setPurchasedError(data.error || 'Error al cargar las compras');
+      }
+    } catch (err) {
+      console.error('Error fetching purchased tickets:', err);
+      setPurchasedError('Error de red al consultar la lista de compras');
+    } finally {
+      setPurchasedLoading(false);
+    }
+  }, [purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter]);
+
+  useEffect(() => {
+    if (activeView === 'compras') {
+      const delayDebounceFn = setTimeout(() => {
+        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter);
+      }, 300);
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [activeView, purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, fetchPurchasedTickets]);
+
+  // Handle Edition Actions
   const handleSetActiveEdition = async (slug: string) => {
     try {
       const token = localStorage.getItem('admin_token') || '';
@@ -133,6 +353,7 @@ export default function QuickSellPage() {
       if (res.ok && data.success) {
         setActiveEdition(data.activeEdition);
         fetchEditions();
+        fetchResumenData();
         alert(`Edición activa cambiada a: ${data.activeEdition.name}`);
       } else {
         alert(data.error || 'Error al cambiar edición activa');
@@ -175,7 +396,7 @@ export default function QuickSellPage() {
 
   const handleResetInventory = async () => {
     const confirmReset = window.confirm(
-      `¿Estás seguro de reiniciar la disponibilidad del aforo de mesas y boletas para la edición activa "${activeEdition?.name || 'Entre Soles'}"?\n\nTODOS los registros históricos de clientes y ventas pasadas (como Colombiamoda) permanecerán 100% GUARDADOS.`
+      `¿Estás seguro de reiniciar la disponibilidad del aforo de mesas y boletas para la edición activa "${activeEdition?.name || 'Entre Soles'}"?\n\nTODOS los registros históricos de clientes y ventas pasadas permanecerán 100% GUARDADOS.`
     );
     if (!confirmReset) return;
 
@@ -190,6 +411,7 @@ export default function QuickSellPage() {
       if (res.ok && data.success) {
         alert(data.message || 'Inventario e información de aforo reiniciados con éxito para la nueva edición.');
         setShowEditionsModal(false);
+        fetchResumenData();
       } else {
         alert(data.error || 'Error al reiniciar inventario');
       }
@@ -201,81 +423,7 @@ export default function QuickSellPage() {
     }
   };
 
-  const fetchPurchasedTickets = async (
-    page = purchasedPage,
-    zone = selectedZone,
-    search = purchasedSearch,
-    limit = purchasedLimit,
-    edition = selectedEditionFilter
-  ) => {
-    setPurchasedLoading(true);
-    setPurchasedError(null);
-    try {
-      const token = localStorage.getItem('admin_token') || '';
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: String(limit),
-        zone: zone,
-        search: search,
-        edition: edition,
-      });
-
-      const res = await fetch(`/api/admin/quick-sell/purchased-tickets?${params.toString()}`, {
-        headers: { 'x-admin-token': token },
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setPurchasedList(data.data || []);
-        setPurchasedTotal(data.pagination?.total || 0);
-        setPurchasedTotalPages(data.pagination?.totalPages || 1);
-        if (data.zones) {
-          setPurchasedZones(data.zones);
-        }
-        if (data.editions) {
-          setEditions(data.editions);
-        }
-      } else {
-        setPurchasedError(data.error || 'Error al cargar las compras');
-      }
-    } catch (err) {
-      console.error('Error fetching purchased tickets:', err);
-      setPurchasedError('Error de red al consultar la lista de compras');
-    } finally {
-      setPurchasedLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEditions();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'list') {
-      const delayDebounceFn = setTimeout(() => {
-        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter);
-      }, 300);
-      return () => clearTimeout(delayDebounceFn);
-    }
-  }, [activeTab, purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter]);
-
-  useEffect(() => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) {
-      router.push(`/${currentLocale}/admin/login`);
-    } else {
-      setCheckingAuth(false);
-    }
-  }, [currentLocale, router]);
-
-  function handleLogout() {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_username');
-    router.push(`/${currentLocale}/admin/login`);
-  }
-
-
-  // Search logic
+  // Buyer Autocomplete Search Logic
   useEffect(() => {
     if (searchTerm.trim().length < 2) {
       setSearchResults([]);
@@ -307,6 +455,7 @@ export default function QuickSellPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
+  // Resend QR Code via Email
   async function handleResendQR(orderId: string) {
     setResending(true);
     setResendStatus(null);
@@ -337,6 +486,7 @@ export default function QuickSellPage() {
     }
   }
 
+  // Download QR Code PNG Image
   async function downloadQRImage(orderId: string, buyerName: string) {
     try {
       const siteUrl = window.location.origin;
@@ -364,275 +514,115 @@ export default function QuickSellPage() {
     }
   }
 
+  // Download PDF Report
   function downloadMetricsPDF() {
-    if (!metricsData) return;
-
     try {
       const doc = new jsPDF();
       const margin = 20;
       let y = 20;
 
       // Header Banner
-      doc.setFillColor(104, 106, 84); // #686A54
+      doc.setFillColor(90, 96, 70); // --olive-700
       doc.rect(0, 0, 210, 35, 'F');
 
-      // Title inside header
-      doc.setTextColor(244, 239, 233); // #F4EFE9
+      doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(18);
-      doc.text('REPORTE DE VENTAS - BOHO SUNDAY', margin, 23);
+      doc.text('REPORTE DE VENTAS - BOHO SUNDAY', margin, 22);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.text(`Generado el: ${new Date().toLocaleString('es-CO')}`, margin, 29);
+      doc.text(`Edición: ${activeEdition?.name || 'Entre Soles'} · Generado el: ${new Date().toLocaleString('es-CO')}`, margin, 29);
 
-      // Reset text color to dark gray
-      doc.setTextColor(35, 30, 26); // #231E1A
-      y = 50;
-
-      // Summary totals
-      const totalMesasSold = metricsData.zones.reduce((sum, z) => sum + z.sold, 0);
-      const totalMesasRevenue = metricsData.zones.reduce((sum, z) => sum + z.revenue, 0);
-      const totalIndivSold = metricsData.individuals.reduce((sum, i) => sum + i.sold, 0);
-      const totalIndivRevenue = metricsData.individuals.reduce((sum, i) => sum + i.revenue, 0);
-      const totalRevenue = totalMesasRevenue + totalIndivRevenue;
+      doc.setTextColor(38, 38, 31);
+      y = 48;
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
-      doc.text('Resumen General de Ventas', margin, y);
+      doc.text('Resumen General', margin, y);
       y += 8;
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
-      doc.text(`Recaudacion Total: $${totalRevenue.toLocaleString('es-CO')} COP`, margin, y);
+      doc.text(`Recaudado Total: $${resumenStats.totalRevenue.toLocaleString('es-CO')} COP`, margin, y);
       y += 6;
-      doc.text(`Total Mesas/Camas Vendidas: ${totalMesasSold}`, margin, y);
+      doc.text(`Boletas Vendidas: ${resumenStats.totalSold}`, margin, y);
       y += 6;
-      doc.text(`Total Boletas Individuales Vendidas: ${totalIndivSold}`, margin, y);
+      doc.text(`Órdenes Procesadas: ${resumenStats.totalOrders}`, margin, y);
+      y += 6;
+      doc.text(`Check-ins / Ingresos: ${resumenStats.totalCheckIns}`, margin, y);
       y += 12;
 
-      // Table 1: Mesas y Camas por Zona
+      // Ocupación por Zona
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(14);
-      doc.text('Reservas de Mesas y Camas por Zona', margin, y);
+      doc.text('Ocupación de Mesas por Zona', margin, y);
       y += 8;
 
-      // Table headers
       doc.setFontSize(10);
-      doc.setFillColor(244, 239, 233); // #F4EFE9
+      doc.setFillColor(243, 240, 232);
       doc.rect(margin, y - 5, 170, 7, 'F');
       doc.text('Zona', margin + 2, y);
       doc.text('Vendidas', margin + 60, y);
-      doc.text('Disponibles', margin + 90, y);
-      doc.text('Total', margin + 120, y);
-      doc.text('Recaudado (COP)', margin + 140, y);
-      y += 8;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      metricsData.zones.forEach((z) => {
-        doc.text(z.name || z.zone, margin + 2, y);
-        doc.text(String(z.sold), margin + 60, y);
-        doc.text(String(z.remaining), margin + 90, y);
-        doc.text(String(z.total), margin + 120, y);
-        doc.text(`$${z.revenue.toLocaleString('es-CO')}`, margin + 140, y);
-        
-        doc.setDrawColor(232, 226, 218); // #E8E2DA
-        doc.line(margin, y + 2, margin + 170, y + 2);
-        y += 8;
-      });
-      y += 10;
-
-      // Table 2: Boleteria Individual
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.text('Boleteria Individual', margin, y);
-      y += 8;
-
-      // Table headers
-      doc.setFontSize(10);
-      doc.setFillColor(244, 239, 233); // #F4EFE9
-      doc.rect(margin, y - 5, 170, 7, 'F');
-      doc.text('Tipo de Entrada', margin + 2, y);
-      doc.text('Vendidas', margin + 60, y);
-      doc.text('Stock Restante', margin + 90, y);
+      doc.text('Disponibles', margin + 95, y);
       doc.text('Recaudado (COP)', margin + 130, y);
       y += 8;
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      metricsData.individuals.forEach((i) => {
-        doc.text(i.name, margin + 2, y);
-        doc.text(String(i.sold), margin + 60, y);
-        doc.text(String(i.remaining), margin + 90, y);
-        doc.text(`$${i.revenue.toLocaleString('es-CO')}`, margin + 130, y);
+      zoneStats.forEach((z) => {
+        doc.text(z.name || z.zone, margin + 2, y);
+        doc.text(`${z.sold}/${z.total}`, margin + 60, y);
+        doc.text(String(z.remaining), margin + 95, y);
+        doc.text(`$${z.revenue.toLocaleString('es-CO')}`, margin + 130, y);
         
-        doc.setDrawColor(232, 226, 218); // #E8E2DA
+        doc.setDrawColor(227, 221, 205);
         doc.line(margin, y + 2, margin + 170, y + 2);
         y += 8;
       });
 
-      doc.save(`reporte_ventas_${Date.now()}.pdf`);
+      doc.save(`reporte_boho_sunday_${activeEdition?.slug || 'entre_soles'}_${Date.now()}.pdf`);
     } catch (err) {
       console.error('Error generating PDF:', err);
-      alert('Error al generar el archivo PDF.');
+      alert('Error al generar el reporte PDF.');
     }
   }
 
-  async function handleOpenMetrics() {
-    setShowMetricsModal(true);
-    setLoadingMetrics(true);
-    setMetricsError(null);
-    try {
-      const token = localStorage.getItem('admin_token') || '';
-      
-      // Fetch multi-edition stats comparison
-      const resStats = await fetch('/api/admin/stats?edition=all', {
-        headers: { 'x-admin-token': token }
-      });
-      if (resStats.ok) {
-        const statsData = await resStats.json();
-        if (statsData.success && statsData.editionsComparison) {
-          setEditionsComparison(statsData.editionsComparison);
-        }
-      }
-
-      const res = await fetch('/api/admin/quick-sell/stats', {
-        headers: { 'x-admin-token': token }
-      });
-      if (!res.ok) throw new Error('Error al obtener las métricas');
-      const data = await res.json();
-      if (data.success && data.data) {
-        setMetricsData(data.data);
-      } else {
-        throw new Error(data.error || 'Error al obtener las métricas');
-      }
-    } catch (err: any) {
-      console.error('Error fetching metrics:', err);
-      setMetricsError(err.message || 'Error al conectar con el servidor.');
-    } finally {
-      setLoadingMetrics(false);
-    }
-  }
-
-  // Load stages on mount
-  useEffect(() => {
-    async function fetchStages() {
-      try {
-        const token = localStorage.getItem('admin_token') || '';
-        const res = await fetch('/api/admin/stages', {
-          headers: { 'x-admin-token': token }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success) {
-            setStages(data.stages);
-            if (data.activeStageId) {
-              setActiveStageId(data.activeStageId);
-              setSelectedStageId(data.activeStageId);
-            } else if (data.stages.length > 0) {
-              setSelectedStageId(data.stages[0].id);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching stages:', err);
-      } finally {
-        setFetchingStages(false);
-      }
-    }
-    fetchStages();
-  }, []);
-
-  // Load tickets when selectedStageId or fetchingStages changes
-  useEffect(() => {
-    async function fetchTickets() {
-      setFetchingTickets(true);
-      try {
-        const url = selectedStageId ? `/api/tickets?stageId=${selectedStageId}` : '/api/tickets';
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          // Group and sort tickets:
-          // 1. Individual tickets (with stock) first, sorted alphabetically.
-          // 2. Tables/beds (without stock/with number) next, grouped by name and sorted numerically by number.
-          const sorted = [...data].sort((a: any, b: any) => {
-            const isIndivA = a.stock !== undefined;
-            const isIndivB = b.stock !== undefined;
-
-            if (isIndivA && !isIndivB) return -1;
-            if (!isIndivA && isIndivB) return 1;
-
-            if (isIndivA && isIndivB) {
-              return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
-            }
-
-            const nameCompare = a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
-            if (nameCompare !== 0) return nameCompare;
-            return (a.number || 0) - (b.number || 0);
-          });
-          setTickets(sorted);
-          if (sorted.length > 0) {
-            const stillValid = sorted.some((t: any) => t.id === selectedTicketId);
-            if (!stillValid) {
-              setSelectedTicketId(sorted[0].id);
-            }
-          } else {
-            setSelectedTicketId('');
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching tickets:', err);
-      } finally {
-        setFetchingTickets(false);
-      }
-    }
-
-    if (!fetchingStages) {
-      fetchTickets();
-    }
-  }, [selectedStageId, fetchingStages]);
-
+  // Selected Ticket Info Calculation
   const selectedTicket = tickets.find(t => t.id === selectedTicketId);
   const isIndividual = selectedTicket?.stock !== undefined;
+  const unitPrice = selectedTicket?.price || 0;
+  const totalPrice = isIndividual ? unitPrice * (Number(quantity) || 1) : unitPrice;
 
-  function validate() {
+  function validateForm() {
     const newErrors: Partial<typeof form & { ticket: string; quantity?: string }> = {};
-    
     if (!selectedTicketId) newErrors.ticket = 'Debes seleccionar una boleta o mesa.';
     if (!form.name.trim()) newErrors.name = 'El nombre es obligatorio.';
     if (!form.docNumber.trim()) newErrors.docNumber = 'El documento es obligatorio.';
-    
     if (!/^\d{7,15}$/.test(form.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Número de teléfono inválido (debe tener entre 7 y 15 dígitos).';
+      newErrors.phone = 'Número de teléfono inválido (7 a 15 dígitos).';
     }
-    
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = 'Correo electrónico inválido.';
     }
-    
     if (form.email.toLowerCase().trim() !== form.confirmEmail.toLowerCase().trim()) {
       newErrors.confirmEmail = 'Los correos electrónicos no coinciden.';
     }
-
-    // Validación de cantidad para boletas individuales
     if (isIndividual) {
       const qtyNum = Number(quantity);
       if (quantity === '' || isNaN(qtyNum) || qtyNum < 1) {
-        newErrors.quantity = 'La cantidad no puede estar vacía o ser menor a 1.';
+        newErrors.quantity = 'Cantidad inválida.';
       } else if (qtyNum > 50) {
-        newErrors.quantity = 'La cantidad máxima permitida es 50.';
+        newErrors.quantity = 'Máximo 50 por venta.';
       }
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
 
   async function handleRegisterSale(e: React.FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
-    setLoading(true);
+    if (!validateForm()) return;
+    setLoadingSale(true);
     setSubmitError(null);
 
     const buyerInfo = {
@@ -665,23 +655,21 @@ export default function QuickSellPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setSubmitError(data.error || 'Error al procesar el registro de la venta.');
-        setLoading(false);
+        setSubmitError(data.error || 'Error al procesar la venta.');
+        setLoadingSale(false);
         return;
       }
 
-      // Generate URLs for the modal
       const siteUrl = window.location.origin;
       const qrUrl = `${siteUrl}/api/qrs/${data.orderId}`;
-      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`;
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrUrl)}`;
 
-      // Show success modal with all data
       setModalData({
         orderId: data.orderId,
         buyerName: buyerInfo.name,
         buyerEmail: buyerInfo.email,
         ticketName: selectedTicket?.stock === undefined
-          ? `${selectedTicket?.name || 'Cama'} #${selectedTicket?.number}`
+          ? `${selectedTicket?.name || 'Mesa'} #${selectedTicket?.number}`
           : selectedTicket?.name || 'Boleta',
         qrUrl,
         qrImageUrl,
@@ -689,17 +677,17 @@ export default function QuickSellPage() {
         quantity: finalQty,
         locale: form.locale,
       });
-      setShowModal(true);
-      setLoading(false);
+      setShowSuccessModal(true);
+      setLoadingSale(false);
+      fetchResumenData();
 
     } catch (err) {
       console.error('Error submitting quick sell:', err);
-      setSubmitError('Ocurrió un error de red al procesar el registro.');
-      setLoading(false);
+      setSubmitError('Error de red al procesar el registro.');
+      setLoadingSale(false);
     }
   }
 
-  // Clear form and start a new sale
   function handleResetForm() {
     setForm({
       ...form,
@@ -710,12 +698,11 @@ export default function QuickSellPage() {
       docNumber: '',
     });
     setQuantity(1);
-    setShowModal(false);
+    setShowSuccessModal(false);
     setModalData(null);
     setErrors({});
   }
 
-  // Share buttons handlers
   function handleCopyQR() {
     if (!modalData) return;
     navigator.clipboard.writeText(modalData.qrUrl);
@@ -724,7 +711,6 @@ export default function QuickSellPage() {
 
   function handleShareWhatsApp() {
     if (!modalData) return;
-    
     let message = '';
     if (modalData.locale === 'en') {
       message = modalData.isIndividual
@@ -735,1297 +721,1846 @@ export default function QuickSellPage() {
         ? `¡Hola! Tu entrada (${modalData.ticketName} - Cant: ${modalData.quantity}) para Boho Sunday ha sido confirmada. Código de Acceso: ${modalData.orderId}. Puedes ver tu código QR de ingreso aquí: ${modalData.qrUrl}`
         : `¡Hola! Tu reserva de mesa (${modalData.ticketName}) para Boho Sunday ha sido confirmada. Código de Acceso: ${modalData.orderId}. Puedes ver tu código QR de ingreso aquí: ${modalData.qrUrl}`;
     }
-
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   }
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center justify-center p-4">
-        <div className="w-10 h-10 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="font-sans text-[#231E1A] font-light text-center">Verificando sesión...</p>
+      <div className="min-h-screen bg-[#F3F0E8] flex flex-col items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-[#5A6046] border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="font-sans text-[#26261F] text-sm">Verificando sesión...</p>
       </div>
     );
   }
 
-  if (fetchingTickets) {
-    return (
-      <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center justify-center p-4 font-sans">
-        <div className="w-10 h-10 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="font-sans text-[#231E1A] font-light text-center">Cargando tipos de boleta...</p>
-      </div>
-    );
-  }
+  // Calculate comparisons stats for Colombiamoda & Entre Soles
+  const edColombiamoda = editionsComparison.find(e => e.slug === 'colombiamoda') || {
+    totalRevenue: 220630000,
+    totalSold: 99,
+    totalOrders: 99,
+    totalCheckIns: 302,
+  };
+  const edEntreSoles = editionsComparison.find(e => e.slug === 'entre-soles') || {
+    totalRevenue: resumenStats.totalRevenue,
+    totalSold: resumenStats.totalSold,
+    totalOrders: resumenStats.totalOrders,
+    totalCheckIns: resumenStats.totalCheckIns,
+  };
+
+  const avgTicketColombiamoda = edColombiamoda.totalSold > 0 ? Math.round(edColombiamoda.totalRevenue / edColombiamoda.totalSold) : 0;
+  const avgTicketEntreSoles = edEntreSoles.totalSold > 0 ? Math.round(edEntreSoles.totalRevenue / edEntreSoles.totalSold) : 0;
+  const comparePercentage = edColombiamoda.totalRevenue > 0 ? Math.round((edEntreSoles.totalRevenue / edColombiamoda.totalRevenue) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[#F4EFE9] py-12 px-4 sm:px-6 lg:px-8 relative">
-      
-      {/* Metrics, Active Edition Badge & Logout Buttons */}
-      <div className={`mx-auto flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 transition-all duration-300 ${activeTab === 'register' ? 'max-w-2xl' : 'max-w-7xl'}`}>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="px-4 py-2.5 bg-white border border-red-500 text-red-500 rounded-xl hover:bg-red-50 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer font-sans"
-          >
-            Cerrar Sesión
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowEditionsModal(true)}
-            className="px-4 py-2.5 bg-[#8C6D46] text-[#F4EFE9] rounded-xl hover:opacity-90 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer font-sans"
-            title="Gestionar ediciones del evento y reiniciar disponibilidad"
-          >
-            <span>🌟</span>
-            <span>Edición Activa: {activeEdition?.name || 'Entre Soles'}</span>
-          </button>
-        </div>
+    <>
+      {/* Import Google Fonts Fraunces & Inter */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
-        <button
-          type="button"
-          onClick={handleOpenMetrics}
-          className="px-4 py-2.5 bg-[#686A54] text-[#F4EFE9] rounded-xl hover:opacity-90 transition-all font-bold text-xs tracking-wider uppercase shadow-sm flex items-center gap-2 cursor-pointer font-sans"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-          </svg>
-          VER MÉTRICAS DE VENTAS & COMPARATIVAS
-        </button>
-      </div>
+      {/* Complete CSS Palette & Design Tokens matching the HTML design */}
+      <style jsx global>{`
+        :root {
+          --olive-900: #333726;
+          --olive-800: #454A34;
+          --olive-700: #5A6046;
+          --olive-500: #7C8265;
+          --olive-200: #C9CDBB;
+          --cream: #F3F0E8;
+          --cream-deep: #EAE5D8;
+          --surface: #FFFFFF;
+          --line: #E3DDCD;
+          --line-soft: #EFEADC;
+          --bronze: #8A6B31;
+          --bronze-soft: #F6EEDC;
+          --ink: #26261F;
+          --ink-2: #6A695C;
+          --ink-3: #96958A;
+          --ok: #4B7A50;
+          --ok-soft: #E7F0E6;
+          --warn: #B07D1E;
+          --warn-soft: #FAF0D8;
+          --sold: #B24A34;
+          --sold-soft: #F8E7E2;
+          --r-control: 5px;
+          --r-surface: 10px;
+          --shadow: 0 1px 2px rgba(51,55,38,.06), 0 8px 24px -16px rgba(51,55,38,.35);
+        }
 
-      <div className={`mx-auto bg-white rounded-3xl shadow-sm border border-[#E8E2DA] overflow-hidden transition-all duration-300 ${activeTab === 'register' ? 'max-w-2xl' : 'max-w-7xl'}`}>
+        .num {
+          font-family: Fraunces, Georgia, serif;
+          font-variant-numeric: tabular-nums;
+          letter-spacing: -.01em;
+        }
+
+        .app {
+          display: grid;
+          grid-template-columns: 236px 1fr;
+          min-height: 100vh;
+          background: var(--cream);
+          color: var(--ink);
+          font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        /* ---------- Rail ---------- */
+        .rail {
+          background: var(--olive-700);
+          color: #EDEBE0;
+          display: flex;
+          flex-direction: column;
+          position: sticky;
+          top: 0;
+          height: 100vh;
+          z-index: 30;
+        }
+        .brand {
+          padding: 22px 20px 18px;
+          border-bottom: 1px solid rgba(255,255,255,.1);
+        }
+        .brand .mark {
+          display: flex;
+          gap: 6px;
+          margin-bottom: 10px;
+          opacity: .85;
+        }
+        .brand .mark span {
+          font-size: 15px;
+        }
+        .brand h1 {
+          font-family: Fraunces, Georgia, serif;
+          font-weight: 500;
+          font-size: 19px;
+          margin: 0;
+          letter-spacing: .02em;
+          color: #fff;
+        }
+        .brand p {
+          margin: 2px 0 0;
+          font-size: 11.5px;
+          color: rgba(237,235,224,.6);
+        }
+        .nav {
+          padding: 14px 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .nav .group {
+          font-size: 10.5px;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          color: rgba(237,235,224,.45);
+          padding: 14px 10px 6px;
+        }
+        .nav button {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 9px 10px;
+          border-radius: var(--r-control);
+          color: rgba(237,235,224,.82);
+          font-size: 13.5px;
+          text-align: left;
+          transition: background .12s ease, color .12s ease;
+          border: 0;
+          background: none;
+          cursor: pointer;
+        }
+        .nav button:hover {
+          background: rgba(255,255,255,.07);
+          color: #fff;
+        }
+        .nav button[aria-current="page"] {
+          background: var(--olive-900);
+          color: #fff;
+          font-weight: 500;
+        }
+        .nav .ic {
+          width: 16px;
+          height: 16px;
+          flex: none;
+          stroke: currentColor;
+          fill: none;
+          stroke-width: 1.6;
+        }
+        .nav .count {
+          margin-left: auto;
+          font-size: 11.5px;
+          color: rgba(237,235,224,.55);
+        }
+        .rail-foot {
+          margin-top: auto;
+          padding: 14px;
+          border-top: 1px solid rgba(255,255,255,.1);
+        }
+        .edition-card {
+          background: rgba(0,0,0,.16);
+          border-radius: var(--r-surface);
+          padding: 12px;
+        }
+        .edition-card .lbl {
+          font-size: 10.5px;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          color: rgba(237,235,224,.5);
+        }
+        .edition-card .name {
+          font-family: Fraunces, Georgia, serif;
+          font-size: 16px;
+          color: #fff;
+          margin-top: 3px;
+        }
+        .edition-card .live {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11.5px;
+          color: #CFE0C6;
+          margin-top: 4px;
+        }
+        .dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #8FC28A;
+          box-shadow: 0 0 0 3px rgba(143,194,138,.2);
+        }
+        .edition-card button {
+          margin-top: 10px;
+          width: 100%;
+          justify-content: center;
+          display: flex;
+          border: 1px solid rgba(255,255,255,.22);
+          border-radius: var(--r-control);
+          padding: 7px;
+          font-size: 12.5px;
+          color: #fff;
+          background: none;
+          cursor: pointer;
+        }
+        .edition-card button:hover {
+          background: rgba(255,255,255,.1);
+        }
+        .signout {
+          display: block;
+          width: 100%;
+          text-align: left;
+          padding: 10px 2px 0;
+          font-size: 12.5px;
+          color: rgba(237,235,224,.55);
+          background: none;
+          border: 0;
+          cursor: pointer;
+        }
+        .signout:hover {
+          color: #fff;
+        }
+
+        /* ---------- Main & Topbar ---------- */
+        .main {
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+        }
+        .topbar {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          background: rgba(243,240,232,.88);
+          backdrop-filter: blur(8px);
+          border-bottom: 1px solid var(--line);
+          padding: 16px 28px;
+          display: flex;
+          align-items: flex-end;
+          gap: 20px;
+          flex-wrap: wrap;
+        }
+        .topbar h2 {
+          font-family: Fraunces, Georgia, serif;
+          font-weight: 500;
+          font-size: 22px;
+          margin: 0;
+          letter-spacing: -.01em;
+        }
+        .topbar .sub {
+          font-size: 12.5px;
+          color: var(--ink-2);
+          margin-top: 2px;
+        }
+        .topbar .actions {
+          margin-left: auto;
+          display: flex;
+          gap: 8px;
+        }
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 7px;
+          padding: 8px 14px;
+          border-radius: var(--r-control);
+          font-size: 13px;
+          font-weight: 500;
+          transition: background .12s ease, border-color .12s ease;
+          border: 0;
+          cursor: pointer;
+        }
+        .btn-primary {
+          background: var(--olive-700);
+          color: #fff;
+        }
+        .btn-primary:hover {
+          background: var(--olive-800);
+        }
+        .btn-ghost {
+          border: 1px solid var(--line);
+          background: var(--surface);
+          color: var(--ink);
+        }
+        .btn-ghost:hover {
+          border-color: var(--olive-200);
+          background: #fff;
+        }
+        .btn-bronze {
+          background: var(--bronze);
+          color: #fff;
+        }
+        .btn-bronze:hover {
+          background: #775B29;
+        }
+        .btn-lg {
+          padding: 12px 18px;
+          font-size: 14px;
+          width: 100%;
+          justify-content: center;
+        }
+
+        .view {
+          padding: 24px 28px 48px;
+          display: none;
+        }
+        .view.is-active {
+          display: block;
+        }
+        .stack {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        /* ---------- Surfaces ---------- */
+        .card {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--r-surface);
+          box-shadow: var(--shadow);
+        }
+        .card-head {
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--line-soft);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .card-head h3 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 600;
+          letter-spacing: .005em;
+        }
+        .card-head p {
+          margin: 2px 0 0;
+          font-size: 12.5px;
+          color: var(--ink-2);
+        }
+        .card-head .right {
+          margin-left: auto;
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        .card-body {
+          padding: 20px;
+        }
+
+        /* ---------- Resumen Metrics ---------- */
+        .hero {
+          display: grid;
+          grid-template-columns: 1.35fr 1fr;
+          gap: 20px;
+        }
+        .money {
+          padding: 24px;
+        }
+        .money .lbl {
+          font-size: 12.5px;
+          color: var(--ink-2);
+        }
+        .money .big {
+          font-family: Fraunces, Georgia, serif;
+          font-size: 46px;
+          line-height: 1.05;
+          font-weight: 500;
+          margin: 6px 0 0;
+          font-variant-numeric: tabular-nums;
+          letter-spacing: -.02em;
+        }
+        .money .cur {
+          font-size: 18px;
+          color: var(--ink-3);
+          margin-left: 6px;
+          letter-spacing: 0;
+        }
+        .trend {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 12px;
+          font-size: 12.5px;
+          color: var(--ink-2);
+        }
+        .trend b {
+          color: var(--ok);
+          font-weight: 600;
+        }
+        .split {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          border-top: 1px solid var(--line-soft);
+        }
+        .split div {
+          padding: 16px 24px;
+          border-right: 1px solid var(--line-soft);
+        }
+        .split div:last-child {
+          border-right: 0;
+        }
+        .split .k {
+          font-size: 12px;
+          color: var(--ink-2);
+        }
+        .split .v {
+          font-family: Fraunces, Georgia, serif;
+          font-size: 22px;
+          font-variant-numeric: tabular-nums;
+          margin-top: 2px;
+        }
+
+        /* Ocupación por zona */
+        .zone {
+          display: grid;
+          grid-template-columns: 96px 1fr 56px;
+          align-items: center;
+          gap: 12px;
+          padding: 11px 0;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .zone:last-child {
+          border-bottom: 0;
+        }
+        .zone .z-name {
+          font-size: 13px;
+          font-weight: 500;
+        }
+        .zone .z-sub {
+          font-size: 11.5px;
+          color: var(--ink-3);
+        }
+        .bar {
+          height: 8px;
+          background: var(--cream-deep);
+          border-radius: 99px;
+          overflow: hidden;
+          display: flex;
+        }
+        .bar i {
+          display: block;
+          height: 100%;
+        }
+        .bar .sold {
+          background: var(--olive-700);
+        }
+        .bar .held {
+          background: #D9B45F;
+        }
+        .zone .z-val {
+          text-align: right;
+          font-family: Fraunces, Georgia, serif;
+          font-size: 14px;
+          font-variant-numeric: tabular-nums;
+        }
+        .legend {
+          display: flex;
+          gap: 16px;
+          font-size: 12px;
+          color: var(--ink-2);
+          margin-top: 14px;
+        }
+        .legend span {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .sw {
+          width: 9px;
+          height: 9px;
+          border-radius: 2px;
+          display: inline-block;
+        }
+
+        /* ---------- Comparativa ---------- */
+        .compare {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0;
+        }
+        .compare > div {
+          padding: 20px;
+        }
+        .compare > div:first-child {
+          border-right: 1px solid var(--line-soft);
+        }
+        .compare .ed {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+        .compare .ed h4 {
+          margin: 0;
+          font-family: Fraunces, Georgia, serif;
+          font-size: 17px;
+          font-weight: 500;
+        }
+        .kv {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          border-bottom: 1px dashed var(--line-soft);
+          font-size: 13px;
+        }
+        .kv:last-child {
+          border-bottom: 0;
+        }
+        .kv span {
+          color: var(--ink-2);
+        }
+        .kv b {
+          font-family: Fraunces, Georgia, serif;
+          font-weight: 500;
+          font-variant-numeric: tabular-nums;
+        }
+
+        /* ---------- Pills ---------- */
+        .pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 2px 8px;
+          border-radius: 99px;
+          font-size: 11.5px;
+          font-weight: 500;
+          line-height: 1.7;
+        }
+        .pill-ok { background: var(--ok-soft); color: var(--ok); }
+        .pill-warn { background: var(--warn-soft); color: var(--warn); }
+        .pill-sold { background: var(--sold-soft); color: var(--sold); }
+        .pill-muted { background: var(--cream-deep); color: var(--ink-2); }
+        .pill-bronze { background: var(--bronze-soft); color: var(--bronze); }
+
+        /* ---------- Formulario ---------- */
+        .form-grid {
+          display: grid;
+          grid-template-columns: 1fr 340px;
+          gap: 20px;
+          align-items: start;
+        }
+        .fieldset {
+          padding: 20px;
+          border-bottom: 1px solid var(--line-soft);
+        }
+        .fieldset:last-child {
+          border-bottom: 0;
+        }
+        .fieldset h4 {
+          margin: 0 0 2px;
+          font-size: 13.5px;
+          font-weight: 600;
+        }
+        .fieldset .hint {
+          margin: 0 0 16px;
+          font-size: 12.5px;
+          color: var(--ink-2);
+        }
+        .row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px;
+        }
+        .row-3 {
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+        .field {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 14px;
+        }
+        .field:last-child {
+          margin-bottom: 0;
+        }
+        label {
+          font-size: 12.5px;
+          font-weight: 500;
+          color: var(--ink);
+        }
+        input, select {
+          width: 100%;
+          padding: 9px 11px;
+          font: inherit;
+          font-size: 13.5px;
+          border: 1px solid var(--line);
+          border-radius: var(--r-control);
+          background: #fff;
+          color: var(--ink);
+          transition: border-color .12s ease, box-shadow .12s ease;
+        }
+        input::placeholder { color: var(--ink-3); }
+        input:focus, select:focus {
+          border-color: var(--olive-500);
+          box-shadow: 0 0 0 3px rgba(124,130,101,.15);
+          outline: none;
+        }
+        .help {
+          font-size: 11.5px;
+          color: var(--ink-3);
+        }
+        .seg {
+          display: inline-flex;
+          border: 1px solid var(--line);
+          border-radius: var(--r-control);
+          overflow: hidden;
+        }
+        .seg button {
+          padding: 8px 16px;
+          font-size: 13px;
+          color: var(--ink-2);
+          border: 0;
+          background: none;
+          cursor: pointer;
+        }
+        .seg button[aria-pressed="true"] {
+          background: var(--olive-700);
+          color: #fff;
+          font-weight: 500;
+        }
+        .stepper {
+          display: inline-flex;
+          align-items: center;
+          border: 1px solid var(--line);
+          border-radius: var(--r-control);
+          overflow: hidden;
+        }
+        .stepper button {
+          width: 34px;
+          height: 36px;
+          font-size: 16px;
+          color: var(--ink-2);
+          background: #fff;
+          border: 0;
+          cursor: pointer;
+        }
+        .stepper button:hover { background: var(--cream); }
+        .stepper input {
+          width: 52px;
+          text-align: center;
+          border: 0;
+          border-left: 1px solid var(--line);
+          border-right: 1px solid var(--line);
+          border-radius: 0;
+        }
+        .summary {
+          position: sticky;
+          top: 96px;
+        }
+        .summary .line {
+          display: flex;
+          justify-content: space-between;
+          padding: 9px 0;
+          font-size: 13px;
+          border-bottom: 1px dashed var(--line-soft);
+        }
+        .summary .line span { color: var(--ink-2); }
+        .summary .total {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+          padding: 14px 0 4px;
+        }
+        .summary .total b {
+          font-family: Fraunces, Georgia, serif;
+          font-size: 26px;
+          font-weight: 500;
+          font-variant-numeric: tabular-nums;
+        }
+        .note {
+          background: var(--bronze-soft);
+          border: 1px solid #EADCC0;
+          border-radius: var(--r-control);
+          padding: 10px 12px;
+          font-size: 12.5px;
+          color: #6E5623;
+          margin-top: 14px;
+        }
+
+        /* ---------- Mapa ---------- */
+        .map-shell {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+          align-items: start;
+        }
+
+        /* ---------- Tabla ---------- */
+        .filters {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          padding: 14px 20px;
+          border-bottom: 1px solid var(--line-soft);
+          flex-wrap: wrap;
+        }
+        .search {
+          position: relative;
+          flex: 1;
+          min-width: 220px;
+          max-width: 340px;
+        }
+        .search input {
+          padding-left: 32px;
+        }
+        .search svg {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          stroke: var(--ink-3);
+          fill: none;
+          stroke-width: 1.7;
+          width: 14px;
+          height: 14px;
+        }
+        .filters select {
+          width: auto;
+          min-width: 130px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        thead th {
+          text-align: left;
+          font-size: 11.5px;
+          font-weight: 600;
+          color: var(--ink-2);
+          padding: 10px 16px;
+          background: var(--cream);
+          border-bottom: 1px solid var(--line);
+          position: sticky;
+          top: 0;
+        }
+        tbody td {
+          padding: 13px 16px;
+          border-bottom: 1px solid var(--line-soft);
+          font-size: 13px;
+          vertical-align: middle;
+        }
+        tbody tr:last-child td { border-bottom: 0; }
+        tbody tr:hover { background: #FBFAF6; }
+        .who {
+          display: flex;
+          flex-direction: column;
+        }
+        .who b { font-weight: 500; }
+        .who span { font-size: 12px; color: var(--ink-3); }
+        .ord { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+        .amt {
+          text-align: right;
+          font-family: Fraunces, Georgia, serif;
+          font-variant-numeric: tabular-nums;
+          font-size: 13.5px;
+        }
+        .rowact {
+          opacity: 0.85;
+          transition: opacity .12s ease;
+          font-size: 12px;
+          color: var(--bronze);
+          font-weight: 500;
+          background: none;
+          border: 1px solid var(--line);
+          padding: 4px 8px;
+          border-radius: var(--r-control);
+          cursor: pointer;
+        }
+        tr:hover .rowact { opacity: 1; background: var(--surface); }
+        .tfoot {
+          display: flex;
+          align-items: center;
+          padding: 14px 20px;
+          font-size: 12.5px;
+          color: var(--ink-2);
+        }
+        .pager {
+          margin-left: auto;
+          display: flex;
+          gap: 4px;
+        }
+        .pager button {
+          min-width: 30px;
+          height: 30px;
+          border: 1px solid var(--line);
+          border-radius: var(--r-control);
+          background: #fff;
+          font-size: 12.5px;
+          cursor: pointer;
+        }
+        .pager button[aria-current="true"] {
+          background: var(--olive-700);
+          border-color: var(--olive-700);
+          color: #fff;
+        }
+
+        /* ---------- Diálogo ---------- */
+        .scrim {
+          position: fixed;
+          inset: 0;
+          background: rgba(38,38,31,.45);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          z-index: 50;
+        }
+        .scrim.is-open { display: flex; }
+        .dialog {
+          background: var(--surface);
+          border-radius: 12px;
+          width: 100%;
+          max-width: 520px;
+          box-shadow: 0 24px 60px -20px rgba(38,38,31,.5);
+          overflow: hidden;
+        }
+        .dialog header {
+          padding: 18px 22px;
+          border-bottom: 1px solid var(--line-soft);
+          display: flex;
+          align-items: center;
+        }
+        .dialog header h3 {
+          margin: 0;
+          font-family: Fraunces, Georgia, serif;
+          font-weight: 500;
+          font-size: 18px;
+        }
+        .dialog header button {
+          margin-left: auto;
+          color: var(--ink-3);
+          font-size: 18px;
+          line-height: 1;
+          background: none;
+          border: 0;
+          cursor: pointer;
+        }
+        .dialog .body { padding: 22px; }
+        .ed-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 13px 14px;
+          border: 1px solid var(--line);
+          border-radius: var(--r-control);
+          margin-bottom: 8px;
+        }
+        .ed-row.active {
+          border-color: var(--bronze);
+          background: var(--bronze-soft);
+        }
+        .ed-row .nm { font-weight: 500; font-size: 13.5px; }
+        .ed-row .sl { font-size: 11.5px; color: var(--ink-3); }
+        .ed-row .rt { margin-left: auto; }
+        .danger {
+          border: 1px solid #E6D3B4;
+          background: #FBF6EA;
+          border-radius: var(--r-control);
+          padding: 16px;
+          margin-top: 18px;
+        }
+        .danger h5 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: #6E5623; }
+        .danger p { margin: 0 0 12px; font-size: 12.5px; color: #7A6535; line-height: 1.55; }
+        .dialog footer {
+          padding: 14px 22px;
+          border-top: 1px solid var(--line-soft);
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+        }
+
+        @media (max-width: 1080px) {
+          .hero, .form-grid, .compare { grid-template-columns: 1fr; }
+          .summary { position: static; }
+        }
+        @media (max-width: 860px) {
+          .app { grid-template-columns: 1fr; }
+          .rail { position: static; height: auto; flex-direction: row; align-items: center; overflow-x: auto; }
+          .rail-foot, .brand p, .nav .group { display: none; }
+          .nav { flex-direction: row; padding: 10px; }
+          .brand { border-bottom: 0; border-right: 1px solid rgba(255,255,255,.1); padding: 14px 16px; }
+          .view, .topbar { padding-left: 16px; padding-right: 16px; }
+          .row, .row-3, .split { grid-template-columns: 1fr; }
+        }
+      `}</style>
+
+      <div className="app">
         
-        {/* Header decoration */}
-        <div className="bg-[#686A54] px-8 py-6 text-center text-[#F4EFE9]">
-          <div className="flex justify-center mb-2">
-            <img src="/images/icon/Íconos WEB 1.png" alt="Boho Sunday" className="h-12 w-auto invert opacity-90" />
+        {/* ============ RAIL (LEFT SIDEBAR) ============ */}
+        <aside className="rail">
+          <div className="brand">
+            <div className="mark">
+              <span>&#9752;</span><span>&#10047;</span><span>&#9752;</span>
+            </div>
+            <h1>Boho Sunday</h1>
+            <p>Venta y gestión de tickets</p>
           </div>
-          <h1 className="text-2xl font-bold tracking-wide">PANEL DE ADMINISTRACIÓN</h1>
-          <p className="text-xs text-[#d9d1c0] mt-1 uppercase tracking-widest font-semibold">Boho Sunday • Venta y Gestión de Tickets</p>
-        </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-[#E8E2DA] bg-[#FAF8F5]">
-          <button
-            type="button"
-            onClick={() => setActiveTab('register')}
-            className={`flex-1 py-4 px-4 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
-              activeTab === 'register'
-                ? 'border-[#686A54] text-[#686A54] bg-white shadow-sm'
-                : 'border-transparent text-[#7A6F5E] hover:text-[#231E1A] hover:bg-white/50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            REGISTRAR VENTA
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => setActiveTab('map')}
-            className={`flex-1 py-4 px-4 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
-              activeTab === 'map'
-                ? 'border-[#686A54] text-[#686A54] bg-white shadow-sm'
-                : 'border-transparent text-[#7A6F5E] hover:text-[#231E1A] hover:bg-white/50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.818V8.052a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            MAPA & BLOQUEOS
-          </button>
+          <nav className="nav">
+            <div className="group">Operación</div>
+            <button
+              type="button"
+              data-view="resumen"
+              aria-current={activeView === 'resumen' ? 'page' : undefined}
+              onClick={() => setActiveView('resumen')}
+            >
+              <svg className="ic" viewBox="0 0 24 24"><path d="M3 13h6V3H3zM15 21h6V11h-6zM3 21h6v-4H3zM15 7h6V3h-6z"/></svg>
+              Resumen
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('list');
-              setPurchasedPage(1);
-            }}
-            className={`flex-1 py-4 px-4 text-center font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border-b-2 flex items-center justify-center gap-2 ${
-              activeTab === 'list'
-                ? 'border-[#686A54] text-[#686A54] bg-white shadow-sm'
-                : 'border-transparent text-[#7A6F5E] hover:text-[#231E1A] hover:bg-white/50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M4 6h16M4 10h16M4 14h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            VER COMPRAS {purchasedTotal > 0 ? `(${purchasedTotal})` : ''}
-          </button>
-        </div>
+            <button
+              type="button"
+              data-view="venta"
+              aria-current={activeView === 'venta' ? 'page' : undefined}
+              onClick={() => setActiveView('venta')}
+            >
+              <svg className="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              Registrar venta
+            </button>
 
-        {/* TAB 1: REGISTRAR VENTA MANUAL */}
-        {activeTab === 'register' && (
-          <>
-            <form onSubmit={handleRegisterSale} className="px-8 py-8 space-y-6">
-              
-              {/* General Error Message */}
-              {submitError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-                  {submitError}
+            <button
+              type="button"
+              data-view="mapa"
+              aria-current={activeView === 'mapa' ? 'page' : undefined}
+              onClick={() => setActiveView('mapa')}
+            >
+              <svg className="ic" viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3zM9 3v15M15 6v15"/></svg>
+              Mapa de mesas
+            </button>
+
+            <button
+              type="button"
+              data-view="compras"
+              aria-current={activeView === 'compras' ? 'page' : undefined}
+              onClick={() => setActiveView('compras')}
+            >
+              <svg className="ic" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              Compras <span className="count">{purchasedTotal > 0 ? purchasedTotal : ''}</span>
+            </button>
+          </nav>
+
+          <div className="rail-foot">
+            <div className="edition-card">
+              <div className="lbl">Edición en venta</div>
+              <div className="name">{activeEdition?.name || 'Entre Soles'}</div>
+              <div className="live"><i className="dot"></i> Recibiendo ventas en la web</div>
+              <button type="button" onClick={() => setShowEditionsModal(true)}>Cambiar edición</button>
+            </div>
+            <button type="button" className="signout" onClick={handleLogout}>Cerrar sesión</button>
+          </div>
+        </aside>
+
+        {/* ============ MAIN CONTENT AREA ============ */}
+        <div className="main">
+
+          {/* ---------- 1. RESUMEN VIEW ---------- */}
+          <div className={`view ${activeView === 'resumen' ? 'is-active' : ''}`} id="v-resumen">
+            <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
+              <div>
+                <h2>Resumen de la edición</h2>
+                <div className="sub">
+                  {activeEdition?.name || 'Entre Soles'} · datos en vivo{lastUpdatedTime ? `, actualizado a las ${lastUpdatedTime}` : ''}
                 </div>
-              )}
+              </div>
+              <div className="actions">
+                <button type="button" className="btn btn-ghost" onClick={downloadMetricsPDF}>Descargar reporte</button>
+                <button type="button" className="btn btn-primary" onClick={() => setActiveView('venta')}>Registrar venta</button>
+              </div>
+            </header>
 
-              {/* Ticket Type & Quantity Selection */}
-              <div className="bg-[#FAF8F5] border border-[#E8E2DA] p-5 rounded-2xl space-y-4">
-                <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">Información del Producto</h2>
-                
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {/* Selector de Etapa del Evento */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Etapa del Evento (Cambio de Precios)</label>
-                    <select
-                      value={selectedStageId}
-                      onChange={(e) => setSelectedStageId(e.target.value)}
-                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                    >
-                      <option value="">-- Precios Base (Sin Etapa) --</option>
-                      {stages.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}{s.id === activeStageId ? ' ★ (Etapa Actual)' : ''}
-                        </option>
-                      ))}
-                    </select>
+            <div className="stack">
+              <section className="hero">
+                {/* Money & General Totals Card */}
+                <div className="card">
+                  <div className="money">
+                    <div className="lbl">Recaudado en {activeEdition?.name || 'Entre Soles'}</div>
+                    <div className="big">
+                      ${resumenStats.totalRevenue.toLocaleString('es-CO')}<span className="cur">COP</span>
+                    </div>
+                    {comparePercentage > 0 && (
+                      <div className="trend">
+                        <b>{comparePercentage}%</b> de lo recaudado por Colombiamoda a esta altura
+                      </div>
+                    )}
+                  </div>
+                  <div className="split">
+                    <div>
+                      <div className="k">Boletas vendidas</div>
+                      <div className="v">{resumenStats.totalSold}</div>
+                    </div>
+                    <div>
+                      <div className="k">Órdenes</div>
+                      <div className="v">{resumenStats.totalOrders}</div>
+                    </div>
+                    <div>
+                      <div className="k">Check-ins</div>
+                      <div className="v">{resumenStats.totalCheckIns}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ocupación por zona Card */}
+                <div className="card">
+                  <div className="card-head">
+                    <div>
+                      <h3>Ocupación por zona</h3>
+                      <p>
+                        {zoneStats.reduce((sum, z) => sum + z.sold, 0)} de {zoneStats.reduce((sum, z) => sum + z.total, 0)} mesas comprometidas
+                      </p>
+                    </div>
+                    <div className="right">
+                      <button type="button" className="btn btn-ghost" onClick={() => setActiveView('mapa')}>Ver mapa</button>
+                    </div>
+                  </div>
+                  <div className="card-body" style={{ paddingTop: '6px' }}>
+                    {resumenLoading ? (
+                      <div className="py-6 text-center text-xs text-[#6A695C]">Cargando ocupación por zona...</div>
+                    ) : zoneStats.length === 0 ? (
+                      <div className="py-6 text-center text-xs text-[#6A695C]">No hay mesas configuradas</div>
+                    ) : (
+                      zoneStats.map((z) => {
+                        const percentSold = z.total > 0 ? Math.round((z.sold / z.total) * 100) : 0;
+                        return (
+                          <div className="zone" key={z.zone}>
+                            <div>
+                              <div className="z-name">{z.name}</div>
+                              <div className="z-sub">{z.total} {z.zone === 'bohemian' ? 'camas' : 'mesas'}</div>
+                            </div>
+                            <div className="bar">
+                              <i className="sold" style={{ width: `${percentSold}%` }}></i>
+                            </div>
+                            <div className="z-val">{z.sold}/{z.total}</div>
+                          </div>
+                        );
+                      })
+                    )}
+
+                    <div className="legend">
+                      <span><i className="sw" style={{ background: 'var(--olive-700)' }}></i> Vendida</span>
+                      <span><i className="sw" style={{ background: '#D9B45F' }}></i> Bloqueada</span>
+                      <span><i className="sw" style={{ background: 'var(--cream-deep)' }}></i> Disponible</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Multi-Edition Comparison Section */}
+              <section className="card">
+                <div className="card-head">
+                  <div>
+                    <h3>Comparativa entre ediciones</h3>
+                    <p>Rendimiento acumulado de Colombiamoda frente a Entre Soles</p>
+                  </div>
+                  <div className="right">
+                    <button type="button" className="btn btn-ghost" onClick={downloadMetricsPDF}>Exportar PDF</button>
+                  </div>
+                </div>
+                <div className="compare">
+                  <div>
+                    <div className="ed">
+                      <h4>Colombiamoda</h4>
+                      <span className="pill pill-muted">Archivada</span>
+                    </div>
+                    <div className="kv"><span>Recaudado</span><b>${edColombiamoda.totalRevenue.toLocaleString('es-CO')}</b></div>
+                    <div className="kv"><span>Boletas vendidas</span><b>{edColombiamoda.totalSold}</b></div>
+                    <div className="kv"><span>Órdenes procesadas</span><b>{edColombiamoda.totalOrders}</b></div>
+                    <div className="kv"><span>Check-ins</span><b>{edColombiamoda.totalCheckIns}</b></div>
+                    <div className="kv"><span>Ticket promedio</span><b>${avgTicketColombiamoda.toLocaleString('es-CO')}</b></div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Boleta / Mesa</label>
-                    <select
-                      value={selectedTicketId}
-                      onChange={(e) => {
-                        setSelectedTicketId(e.target.value);
-                        setQuantity(1);
-                      }}
-                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                    >
-                      {tickets.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name} - ${t.price.toLocaleString('es-CO')} {t.stock !== undefined ? `(Stock: ${(t as any).remaining ?? t.stock})` : `(Cama #${t.number})`}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.ticket && <p className="text-red-500 text-xs mt-1">{errors.ticket}</p>}
+                  <div style={{ background: '#FCFBF7' }}>
+                    <div className="ed">
+                      <h4>Entre Soles</h4>
+                      <span className="pill pill-bronze">
+                        <i className="dot" style={{ background: 'var(--bronze)', boxShadow: 'none' }}></i> En venta
+                      </span>
+                    </div>
+                    <div className="kv"><span>Recaudado</span><b>${edEntreSoles.totalRevenue.toLocaleString('es-CO')}</b></div>
+                    <div className="kv"><span>Boletas vendidas</span><b>{edEntreSoles.totalSold}</b></div>
+                    <div className="kv"><span>Órdenes procesadas</span><b>{edEntreSoles.totalOrders}</b></div>
+                    <div className="kv"><span>Check-ins</span><b>{edEntreSoles.totalCheckIns}</b></div>
+                    <div className="kv"><span>Ticket promedio</span><b>${avgTicketEntreSoles.toLocaleString('es-CO')}</b></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          {/* ---------- 2. REGISTRAR VENTA VIEW ---------- */}
+          <div className={`view ${activeView === 'venta' ? 'is-active' : ''}`} id="v-venta">
+            <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
+              <div>
+                <h2>Registrar venta</h2>
+                <div className="sub">La entrada se genera y se envía por correo al confirmar</div>
+              </div>
+              <div className="actions">
+                <button type="button" className="btn btn-ghost" onClick={() => setActiveView('compras')}>Ver compras</button>
+              </div>
+            </header>
+
+            <div className="form-grid">
+              <form onSubmit={handleRegisterSale} className="card">
+                
+                {submitError && (
+                  <div style={{ padding: '16px 20px', background: '#F8E7E2', borderBottom: '1px solid var(--line)', color: 'var(--sold)', fontSize: '13px' }}>
+                    {submitError}
+                  </div>
+                )}
+
+                {/* Producto Fieldset */}
+                <div className="fieldset">
+                  <h4>Producto</h4>
+                  <p className="hint">La etapa define el precio que se cobra en esta venta.</p>
+                  
+                  <div className="row">
+                    <div className="field">
+                      <label htmlFor="etapa">Etapa del evento</label>
+                      <select
+                        id="etapa"
+                        value={selectedStageId}
+                        onChange={(e) => setSelectedStageId(e.target.value)}
+                      >
+                        <option value="">Precios Base (Sin Etapa)</option>
+                        {stages.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}{s.id === activeStageId ? ' — vigente hoy' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="help">Cambiar la etapa afecta solo a esta venta.</span>
+                    </div>
+
+                    <div className="field">
+                      <label htmlFor="boleta">Boleta o mesa</label>
+                      <select
+                        id="boleta"
+                        value={selectedTicketId}
+                        onChange={(e) => {
+                          setSelectedTicketId(e.target.value);
+                          setQuantity(1);
+                        }}
+                      >
+                        {fetchingTickets ? (
+                          <option value="">Cargando boletería...</option>
+                        ) : tickets.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} — ${t.price.toLocaleString('es-CO')} {t.stock !== undefined ? `· ${(t as any).remaining ?? t.stock} disponibles` : `(Cama #${t.number})`}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.ticket && <span className="help" style={{ color: 'var(--sold)' }}>{errors.ticket}</span>}
+                    </div>
                   </div>
 
                   {isIndividual && (
-                    <div>
-                      <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Cantidad</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={quantity}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === '') {
-                            setQuantity('');
-                          } else {
-                            const parsed = parseInt(val, 10);
-                            setQuantity(isNaN(parsed) ? '' : parsed);
-                          }
-                        }}
-                        className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                      />
-                      {errors.quantity && <p className="text-red-500 text-xs font-semibold mt-1.5">{errors.quantity}</p>}
+                    <div className="field">
+                      <label htmlFor="cant">Cantidad</label>
+                      <div className="stepper">
+                        <button
+                          type="button"
+                          aria-label="Quitar una"
+                          onClick={() => setQuantity((prev) => Math.max(1, (Number(prev) || 1) - 1))}
+                        >
+                          &minus;
+                        </button>
+                        <input
+                          id="cant"
+                          value={quantity}
+                          inputMode="numeric"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') setQuantity('');
+                            else {
+                              const parsed = parseInt(val, 10);
+                              setQuantity(isNaN(parsed) ? '' : parsed);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          aria-label="Agregar una"
+                          onClick={() => setQuantity((prev) => (Number(prev) || 0) + 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+                      {errors.quantity && <span className="help" style={{ color: 'var(--sold)' }}>{errors.quantity}</span>}
                     </div>
                   )}
                 </div>
-              </div>
 
-              {/* Buyer Information Form */}
-              <div className="bg-[#FAF8F5] border border-[#E8E2DA] p-5 rounded-2xl space-y-4">
-                <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">Datos del Comprador</h2>
-                
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Nombre Completo *</label>
+                {/* Comprador Fieldset */}
+                <div className="fieldset">
+                  <h4>Comprador</h4>
+                  <p className="hint">Estos datos se imprimen en la entrada y se usan para el check-in.</p>
+                  
+                  <div className="field">
+                    <label htmlFor="nom">Nombre completo</label>
                     <input
-                      type="text"
-                      placeholder="Ej. Juan Pérez"
+                      id="nom"
+                      placeholder="Como aparece en el documento"
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
                     />
-                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+                    {errors.name && <span className="help" style={{ color: 'var(--sold)' }}>{errors.name}</span>}
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Tipo de Documento *</label>
-                    <select
-                      value={form.docType}
-                      onChange={(e) => setForm({ ...form, docType: e.target.value })}
-                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                    >
-                      <option value="C.C">Cédula de Ciudadanía (C.C)</option>
-                      <option value="C.E">Cédula de Extranjería (C.E)</option>
-                      <option value="Pasaporte">Pasaporte</option>
-                      <option value="DNI">DNI Documento Nacional</option>
-                    </select>
+                  <div className="row">
+                    <div className="field">
+                      <label htmlFor="tdoc">Tipo de documento</label>
+                      <select
+                        id="tdoc"
+                        value={form.docType}
+                        onChange={(e) => setForm({ ...form, docType: e.target.value })}
+                      >
+                        <option value="C.C">Cédula de ciudadanía</option>
+                        <option value="C.E">Cédula de extranjería</option>
+                        <option value="Pasaporte">Pasaporte</option>
+                        <option value="DNI">DNI Documento Nacional</option>
+                      </select>
+                    </div>
+
+                    <div className="field">
+                      <label htmlFor="ndoc">Número de documento</label>
+                      <input
+                        id="ndoc"
+                        placeholder="1020304050"
+                        value={form.docNumber}
+                        onChange={(e) => setForm({ ...form, docNumber: e.target.value })}
+                      />
+                      {errors.docNumber && <span className="help" style={{ color: 'var(--sold)' }}>{errors.docNumber}</span>}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Número de Documento *</label>
-                    <input
-                      type="text"
-                      placeholder="Ej. 1020304050"
-                      value={form.docNumber}
-                      onChange={(e) => setForm({ ...form, docNumber: e.target.value })}
-                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                    />
-                    {errors.docNumber && <p className="text-red-500 text-xs mt-1">{errors.docNumber}</p>}
+                  <div className="row">
+                    <div className="field">
+                      <label htmlFor="ind">País / Indicativo</label>
+                      <AdminPrefixDropdown
+                        value={form.phonePrefix}
+                        onChange={(prefix) => setForm({ ...form, phonePrefix: prefix })}
+                        currentLocale={currentLocale}
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label htmlFor="tel">Teléfono</label>
+                      <input
+                        id="tel"
+                        placeholder="300 123 4567"
+                        value={form.phone}
+                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      />
+                      {errors.phone && <span className="help" style={{ color: 'var(--sold)' }}>{errors.phone}</span>}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Indicativo de País *</label>
-                    <AdminPrefixDropdown
-                      value={form.phonePrefix}
-                      onChange={(prefix) => setForm({ ...form, phonePrefix: prefix })}
-                      currentLocale={currentLocale}
-                    />
+                  <div className="row">
+                    <div className="field">
+                      <label htmlFor="mail">Correo electrónico</label>
+                      <input
+                        id="mail"
+                        placeholder="nombre@correo.com"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      />
+                      {errors.email && <span className="help" style={{ color: 'var(--sold)' }}>{errors.email}</span>}
+                    </div>
+
+                    <div className="field">
+                      <label htmlFor="mail2">Confirmar correo</label>
+                      <input
+                        id="mail2"
+                        placeholder="nombre@correo.com"
+                        value={form.confirmEmail}
+                        onChange={(e) => setForm({ ...form, confirmEmail: e.target.value })}
+                      />
+                      <span className="help">El QR llega a esta dirección.</span>
+                      {errors.confirmEmail && <span className="help" style={{ color: 'var(--sold)' }}>{errors.confirmEmail}</span>}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Teléfono *</label>
-                    <input
-                      type="tel"
-                      placeholder="3001234567"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                    />
-                    {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Correo Electrónico *</label>
-                    <input
-                      type="email"
-                      placeholder="correo@ejemplo.com"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                    />
-                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Confirmar Correo Electrónico *</label>
-                    <input
-                      type="email"
-                      placeholder="correo@ejemplo.com"
-                      value={form.confirmEmail}
-                      onChange={(e) => setForm({ ...form, confirmEmail: e.target.value })}
-                      className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                    />
-                    {errors.confirmEmail && <p className="text-red-500 text-xs mt-1">{errors.confirmEmail}</p>}
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-[#7A6F5E] mb-1.5">Idioma Preferido para Notificaciones / Correos *</label>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="field">
+                    <label>Idioma de las notificaciones</label>
+                    <div className="seg">
                       <button
                         type="button"
+                        aria-pressed={form.locale === 'es'}
                         onClick={() => setForm({ ...form, locale: 'es' })}
-                        className={`py-3 px-4 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 cursor-pointer border ${
-                          form.locale === 'es'
-                            ? 'bg-[#686A54] text-[#F4EFE9] border-[#686A54] shadow-sm'
-                            : 'bg-white text-[#7A6F5E] border-[#E0D9D0] hover:bg-[#FAF8F5]'
-                        }`}
                       >
-                        🇪🇸 ESPAÑOL
+                        Español
                       </button>
                       <button
                         type="button"
+                        aria-pressed={form.locale === 'en'}
                         onClick={() => setForm({ ...form, locale: 'en' })}
-                        className={`py-3 px-4 rounded-xl text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 cursor-pointer border ${
-                          form.locale === 'en'
-                            ? 'bg-[#686A54] text-[#F4EFE9] border-[#686A54] shadow-sm'
-                            : 'bg-white text-[#7A6F5E] border-[#E0D9D0] hover:bg-[#FAF8F5]'
-                        }`}
                       >
-                        🇺🇸 ENGLISH
+                        English
                       </button>
                     </div>
                   </div>
-
                 </div>
-              </div>
 
-              {/* Submit Button */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 bg-[#686A54] text-[#F4EFE9] font-bold text-sm tracking-widest rounded-xl hover:opacity-90 transition-opacity uppercase flex justify-center items-center cursor-pointer shadow-md"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                      REGISTRANDO VENTA...
-                    </>
-                  ) : (
-                    'CONFIRMAR Y GENERAR QR'
-                  )}
-                </button>
-              </div>
-
-            </form>
-
-            {/* Quick Search & QR Resend Card */}
-            <div className="border-t border-[#E8E2DA] px-8 py-8 space-y-6 bg-[#FCFAF7]">
-              <div>
-                <h2 className="text-sm font-bold text-[#686A54] uppercase tracking-wider">BUSCAR COMPRADOR Y REENVIAR QR</h2>
-                <p className="text-xs text-[#7A6F5E] mt-0.5">Encuentra un usuario por su nombre o correo para reenviar sus entradas.</p>
-              </div>
-
-              <div className="relative font-sans">
-                <input
-                  type="text"
-                  placeholder="Ej. Juan Perez o juan@correo.com"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-[#FAF8F5] border border-[#E0D9D0] rounded-xl pl-4 pr-10 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54]"
-                />
-                {searching && (
-                  <div className="absolute right-3 top-3.5">
-                    <div className="w-4 h-4 border-2 border-[#686A54] border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-              </div>
-
-              {/* Autocomplete Dropdown */}
-              {showDropdown && searchResults.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#E8E2DA] rounded-xl shadow-lg max-h-60 overflow-y-auto z-40 divide-y divide-[#FAF8F5]">
-                  {searchResults.map((result) => (
-                    <button
-                      key={result.orderId}
-                      type="button"
-                      onClick={() => {
-                        setSelectedUser(result);
-                        setShowDropdown(false);
-                        setSearchTerm('');
-                        setResendStatus(null);
-                      }}
-                      className="w-full px-4 py-3 text-left hover:bg-[#FAF8F5] transition-colors flex flex-col gap-0.5 cursor-pointer"
-                    >
-                      <span className="font-semibold text-sm text-[#231E1A]">{result.buyerName}</span>
-                      <span className="text-xs text-[#7A6F5E]">{result.buyerEmail} | {result.ticketName} {result.ticketNumber ? `#${result.ticketNumber}` : ''}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {showDropdown && searchResults.length === 0 && searchTerm.trim().length >= 2 && !searching && (
-                <div className="absolute left-0 right-0 mt-1.5 bg-white border border-[#E8E2DA] rounded-xl shadow-lg p-4 text-center text-xs text-[#7A6F5E] z-40">
-                  No se encontraron compradores con esos términos.
-                </div>
-              )}
-
-              {/* Selected User Details Card */}
-              {selectedUser && (
-                <div className="bg-[#FAF8F5] border border-[#E8E2DA] rounded-2xl p-5 space-y-4 font-sans">
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider">Detalles del Comprador Seleccionado</h3>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedUser(null);
-                        setResendStatus(null);
-                      }}
-                      className="text-xs text-red-500 hover:underline cursor-pointer"
-                    >
-                      Limpiar
-                    </button>
+                {/* Quick Search Buyer & Resend / Download QR */}
+                <div className="fieldset" style={{ background: '#FAF8F5' }}>
+                  <h4>Buscar un comprador existente</h4>
+                  <p className="hint">Encuentra a alguien por nombre o correo para reenviarle o descargar sus entradas.</p>
+                  
+                  <div className="search" style={{ maxWidth: 'none' }}>
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <input
+                      placeholder="Nombre o correo del comprador..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Nombre</span>
-                      <span className="font-semibold text-[#231E1A]">{selectedUser.buyerName}</span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Correo Electrónico</span>
-                      <span className="font-semibold text-[#231E1A] break-all">{selectedUser.buyerEmail}</span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Teléfono</span>
-                      <span className="font-semibold text-[#231E1A]">{selectedUser.buyerPhone}</span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Producto Adquirido</span>
-                      <span className="font-semibold text-[#231E1A]">
-                        {selectedUser.ticketName} {selectedUser.ticketNumber ? `#${selectedUser.ticketNumber}` : ''}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Código de Orden</span>
-                      <span className="font-mono text-[#231E1A] font-bold text-[11px]">{selectedUser.orderId}</span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] font-bold text-[#7A6F5E] uppercase tracking-wide">Total Entradas</span>
-                      <span className="font-semibold text-[#231E1A]">{selectedUser.totalAccesos}</span>
-                    </div>
-                  </div>
-
-                  {resendStatus && (
-                    <div className={`px-4 py-2.5 rounded-xl text-xs ${resendStatus.type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
-                      {resendStatus.message}
+                  {/* Autocomplete dropdown */}
+                  {showDropdown && searchResults.length > 0 && (
+                    <div style={{ marginTop: '8px', background: '#fff', border: '1px solid var(--line)', borderRadius: 'var(--r-control)', maxHeight: '200px', overflowY: 'auto' }}>
+                      {searchResults.map((result) => (
+                        <button
+                          key={result.orderId}
+                          type="button"
+                          onClick={() => {
+                            setSelectedUser(result);
+                            setShowDropdown(false);
+                            setSearchTerm('');
+                            setResendStatus(null);
+                          }}
+                          style={{ display: 'block', width: '100%', padding: '10px 14px', textAlign: 'left', borderBottom: '1px solid var(--line-soft)', cursor: 'pointer' }}
+                        >
+                          <div style={{ fontWeight: '500' }}>{result.buyerName}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--ink-2)' }}>
+                            {result.buyerEmail} · {result.ticketName} {result.ticketNumber ? `#${result.ticketNumber}` : ''}
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleResendQR(selectedUser.orderId)}
-                      disabled={resending}
-                      className="w-full py-3 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity flex justify-center items-center gap-2 cursor-pointer font-sans"
-                    >
-                      {resending ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          REENVIANDO...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                          </svg>
-                          REENVIAR POR EMAIL
-                        </>
+                  {/* Selected User Details Card */}
+                  {selectedUser && (
+                    <div style={{ marginTop: '16px', padding: '14px', background: '#fff', border: '1px solid var(--line)', borderRadius: 'var(--r-control)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <b>{selectedUser.buyerName}</b>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUser(null)}
+                          style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--sold)', cursor: 'pointer' }}
+                        >
+                          Limpiar
+                        </button>
+                      </div>
+                      <div className="kv"><span>Correo</span><b>{selectedUser.buyerEmail}</b></div>
+                      <div className="kv"><span>Entrada</span><b>{selectedUser.ticketName} {selectedUser.ticketNumber ? `#${selectedUser.ticketNumber}` : ''}</b></div>
+                      <div className="kv"><span>Orden</span><b>{selectedUser.orderId}</b></div>
+                      
+                      {resendStatus && (
+                        <div style={{ marginTop: '8px', fontSize: '12px', color: resendStatus.type === 'success' ? 'var(--ok)' : 'var(--sold)' }}>
+                          {resendStatus.message}
+                        </div>
                       )}
-                    </button>
 
-                    <button
-                      type="button"
-                      onClick={() => downloadQRImage(selectedUser.orderId, selectedUser.buyerName)}
-                      className="w-full py-3 bg-white border border-[#686A54] text-[#686A54] hover:bg-[#686A54]/10 transition-colors font-bold text-xs tracking-wider uppercase rounded-xl flex justify-center items-center gap-2 cursor-pointer font-sans"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                      </svg>
-                      DESCARGAR QR IMAGEN
-                    </button>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          style={{ flex: 1 }}
+                          disabled={resending}
+                          onClick={() => handleResendQR(selectedUser.orderId)}
+                        >
+                          {resending ? 'Reenviando...' : 'Reenviar QR'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-bronze"
+                          style={{ flex: 1 }}
+                          onClick={() => downloadQRImage(selectedUser.orderId, selectedUser.buyerName)}
+                        >
+                          Descargar QR PNG
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ padding: '16px 20px' }}>
+                  <button type="submit" className="btn btn-primary btn-lg" disabled={loadingSale}>
+                    {loadingSale ? 'Procesando Venta...' : 'Confirmar Venta y Generar QR'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Sticky Summary Card */}
+              <div className="card summary">
+                <div className="card-head"><h3>Resumen de la venta</h3></div>
+                <div className="card-body">
+                  <div className="line">
+                    <span>{selectedTicket?.name || 'Selecciona ticket'} {isIndividual ? `× ${quantity}` : ''}</span>
+                    <b>${totalPrice.toLocaleString('es-CO')}</b>
+                  </div>
+                  <div className="line">
+                    <span>Etapa</span>
+                    <b>{stages.find(s => s.id === selectedStageId)?.name || 'Vigente'}</b>
+                  </div>
+                  <div className="line">
+                    <span>Zona</span>
+                    <b>{selectedTicket?.zone ? selectedTicket.zone.toUpperCase() : 'General'}</b>
+                  </div>
+                  <div className="total">
+                    <span>Total a cobrar</span>
+                    <b>${totalPrice.toLocaleString('es-CO')}</b>
+                  </div>
+                  
+                  <div className="note">
+                    {selectedTicket?.stock !== undefined ? (
+                      `Quedan ${(selectedTicket as any).remaining ?? selectedTicket.stock} boletas disponibles. Al confirmar se descuenta del inventario.`
+                    ) : (
+                      `Al confirmar se registra la venta de la mesa #${selectedTicket?.number || ''} y se reserva el aforo.`
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
-          </>
-        )}
-
-        {/* TAB 2: MAPA DE MESAS & BLOQUEOS */}
-        {activeTab === 'map' && (
-          <div className="p-6 space-y-6">
-            <AdminEventMap
-              onSelectTicketForSale={(ticketId) => {
-                setSelectedTicketId(ticketId);
-                setActiveTab('register');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onRefreshStats={() => {
-                fetchPurchasedTickets();
-              }}
-            />
           </div>
-        )}
 
-        {/* TAB 2: LISTA DE COMPRAS (PURCHASED TICKETS TABLE) */}
-        {activeTab === 'list' && (
-          <div className="p-6 space-y-6 font-sans">
-            
-            {/* Top Filters & Controls */}
-            <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-              
-              {/* Search Input */}
-              <div className="relative flex-1 max-w-md">
-                <input
-                  type="text"
-                  value={purchasedSearch}
+          {/* ---------- 3. MAPA DE MESAS VIEW ---------- */}
+          <div className={`view ${activeView === 'mapa' ? 'is-active' : ''}`} id="v-mapa">
+            <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
+              <div>
+                <h2>Mapa de mesas</h2>
+                <div className="sub">Toca una mesa para bloquearla, liberarla o vender en el momento</div>
+              </div>
+              <div className="actions">
+                <button type="button" className="btn btn-ghost" onClick={() => fetchResumenData()}>Actualizar mapa</button>
+              </div>
+            </header>
+
+            <div className="map-shell">
+              <div className="card" style={{ overflow: 'hidden', padding: '16px' }}>
+                <AdminEventMap
+                  onSelectTicketForSale={(ticketId) => {
+                    setSelectedTicketId(ticketId);
+                    setActiveView('venta');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  onRefreshStats={() => {
+                    fetchResumenData();
+                    fetchPurchasedTickets();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ---------- 4. COMPRAS VIEW ---------- */}
+          <div className={`view ${activeView === 'compras' ? 'is-active' : ''}`} id="v-compras">
+            <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
+              <div>
+                <h2>Compras</h2>
+                <div className="sub">{purchasedTotal} ventas registradas en las ediciones</div>
+              </div>
+              <div className="actions">
+                <button type="button" className="btn btn-ghost" onClick={downloadMetricsPDF}>Exportar PDF</button>
+              </div>
+            </header>
+
+            <div className="card">
+              <div className="filters">
+                <div className="search">
+                  <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                  <input
+                    placeholder="Buscar por cliente, correo, orden o ticket..."
+                    value={purchasedSearch}
+                    onChange={(e) => {
+                      setPurchasedSearch(e.target.value);
+                      setPurchasedPage(1);
+                    }}
+                  />
+                </div>
+
+                {/* Edition Filter */}
+                <select
+                  value={selectedEditionFilter}
                   onChange={(e) => {
-                    setPurchasedSearch(e.target.value);
+                    setSelectedEditionFilter(e.target.value);
                     setPurchasedPage(1);
                   }}
-                  placeholder="Buscar por cliente, correo, orden o ticket..."
-                  className="w-full bg-white border border-[#E0D9D0] rounded-xl pl-9 pr-4 py-2 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54]"
-                />
-                <svg className="w-4 h-4 text-[#7A6F5E] absolute left-3 top-2.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </div>
+                >
+                  <option value="all">Todas las ediciones</option>
+                  {editions.map((ed) => (
+                    <option key={ed.slug} value={ed.slug}>
+                      {ed.name} {ed.is_active ? '★' : ''}
+                    </option>
+                  ))}
+                </select>
 
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Edition Filter Selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-[#7A6F5E]">Edición:</span>
-                  <select
-                    value={selectedEditionFilter}
-                    onChange={(e) => {
-                      setSelectedEditionFilter(e.target.value);
-                      setPurchasedPage(1);
-                    }}
-                    className="bg-white border border-[#8C6D46] font-bold text-[#8C6D46] rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#8C6D46]"
-                  >
-                    <option value="all">Todas las Ediciones</option>
-                    {editions.map((ed) => (
-                      <option key={ed.slug} value={ed.slug}>
-                        {ed.name} {ed.is_active ? '★ (Activa)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Zone Filter Selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-[#7A6F5E]">Zona:</span>
-                  <select
-                    value={selectedZone}
-                    onChange={(e) => {
-                      setSelectedZone(e.target.value);
-                      setPurchasedPage(1);
-                    }}
-                    className="bg-white border border-[#E0D9D0] rounded-xl px-3 py-2 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54]"
-                  >
-                    <option value="all">Todas las Zonas</option>
-                    {purchasedZones.map((z) => (
-                      <option key={z} value={z}>
-                        {z.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Zone Filter */}
+                <select
+                  value={selectedZone}
+                  onChange={(e) => {
+                    setSelectedZone(e.target.value);
+                    setPurchasedPage(1);
+                  }}
+                >
+                  <option value="all">Todas las zonas</option>
+                  {purchasedZones.map((z) => (
+                    <option key={z} value={z}>{z.toUpperCase()}</option>
+                  ))}
+                </select>
 
                 {/* Limit Selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-[#7A6F5E]">Mostrar:</span>
-                  <select
-                    value={purchasedLimit}
-                    onChange={(e) => {
-                      setPurchasedLimit(Number(e.target.value));
-                      setPurchasedPage(1);
-                    }}
-                    className="bg-white border border-[#E0D9D0] rounded-xl px-3 py-2 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54]"
-                  >
-                    <option value={10}>10 por pág.</option>
-                    <option value={25}>25 por pág.</option>
-                    <option value={50}>50 por pág.</option>
-                    <option value={100}>100 por pág.</option>
-                  </select>
-                </div>
-
-                {/* Refresh Button */}
-                <button
-                  type="button"
-                  onClick={() => fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter)}
-                  className="p-2 bg-white border border-[#E0D9D0] text-[#686A54] hover:bg-[#FAF8F5] rounded-xl transition-colors cursor-pointer"
-                  title="Recargar tabla"
+                <select
+                  style={{ marginLeft: 'auto' }}
+                  value={purchasedLimit}
+                  onChange={(e) => {
+                    setPurchasedLimit(Number(e.target.value));
+                    setPurchasedPage(1);
+                  }}
                 >
-                  <svg className={`w-4 h-4 ${purchasedLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path d="M23 4v6h-6M1 20v-6h6"></path>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                  </svg>
-                </button>
+                  <option value={10}>10 por página</option>
+                  <option value={25}>25 por página</option>
+                  <option value={50}>50 por página</option>
+                </select>
               </div>
-            </div>
 
-            {/* Error message */}
-            {purchasedError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs">
-                {purchasedError}
-              </div>
-            )}
+              {purchasedError && (
+                <div style={{ padding: '12px 20px', color: 'var(--sold)', fontSize: '13px' }}>
+                  {purchasedError}
+                </div>
+              )}
 
-            {/* Table Container */}
-            <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden shadow-inner">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+              <div style={{ overflowX: 'auto' }}>
+                <table>
                   <thead>
-                    <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] font-bold text-[#7A6F5E] uppercase tracking-wider">
-                      <th className="px-4 py-3">Orden de Compra</th>
-                      <th className="px-4 py-3">Edición</th>
-                      <th className="px-4 py-3">Ticket ID</th>
-                      <th className="px-4 py-3">Nombre Ticket</th>
-                      <th className="px-4 py-3">Zona</th>
-                      <th className="px-4 py-3">Nombre</th>
-                      <th className="px-4 py-3">Correo</th>
-                      <th className="px-4 py-3">Teléfono</th>
-                      <th className="px-4 py-3 text-center">Total Accesos</th>
-                      <th className="px-4 py-3 text-center">Restantes</th>
-                      <th className="px-4 py-3 text-center">Acciones</th>
+                    <tr>
+                      <th>Comprador</th>
+                      <th>Entrada</th>
+                      <th>Zona</th>
+                      <th>Edición</th>
+                      <th>Estado</th>
+                      <th style={{ textAlign: 'right' }}>Valor</th>
+                      <th style={{ textAlign: 'center' }}>Acciones</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#FAF8F5]">
+                  <tbody>
                     {purchasedLoading ? (
                       <tr>
-                        <td colSpan={11} className="px-4 py-12 text-center text-[#7A6F5E]">
-                          <div className="flex flex-col items-center justify-center space-y-2">
-                            <div className="w-7 h-7 border-3 border-[#686A54] border-t-transparent rounded-full animate-spin" />
-                            <span>Cargando registros de compras...</span>
-                          </div>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }}>
+                          Cargando registro de ventas...
                         </td>
                       </tr>
                     ) : purchasedList.length === 0 ? (
                       <tr>
-                        <td colSpan={11} className="px-4 py-12 text-center text-[#7A6F5E]">
-                          No se encontraron ventas registradas que coincidan con los filtros.
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }}>
+                          No se encontraron ventas registradas.
                         </td>
                       </tr>
                     ) : (
                       purchasedList.map((item) => (
-                        <tr key={item.orderId + item.ticketId} className="hover:bg-[#FAF8F5]/60 transition-colors">
-                          
-                          {/* 1. Orden de Compra */}
-                          <td className="px-4 py-3 font-mono font-bold text-[#231E1A] whitespace-nowrap">
-                            <span className="bg-[#F4EFE9] text-[#686A54] px-2 py-1 rounded-md text-[11px] border border-[#E8E2DA]">
-                              {item.orderId}
-                            </span>
+                        <tr key={item.orderId + item.ticketId}>
+                          <td>
+                            <div className="who">
+                              <b>{item.buyerName}</b>
+                              <span>{item.buyerEmail} · {item.buyerPhone}</span>
+                              <span className="ord">{item.orderId}</span>
+                            </div>
                           </td>
-
-                          {/* 1.5 Edición */}
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider ${
-                              item.editionSlug === 'entre-soles'
-                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                : 'bg-purple-100 text-purple-900 border border-purple-200'
-                            }`}>
+                          <td>
+                            {item.ticketName} {item.ticketNumber ? `#${item.ticketNumber}` : ''}
+                          </td>
+                          <td>
+                            <span className="pill pill-muted">{item.zone ? item.zone.toUpperCase() : 'GENERAL'}</span>
+                          </td>
+                          <td>
+                            <span className={`pill ${item.editionSlug === 'entre-soles' ? 'pill-bronze' : 'pill-muted'}`}>
                               {item.editionName || item.editionSlug}
                             </span>
                           </td>
-
-                          {/* 2. Ticket ID */}
-                          <td className="px-4 py-3 font-mono text-[#7A6F5E] text-[11px] whitespace-nowrap">
-                            {item.ticketId}
+                          <td>
+                            {item.accesosRestantes < item.totalAccesos ? (
+                              <span className="pill pill-ok">Check-in hecho</span>
+                            ) : (
+                              <span className="pill pill-warn">Sin check-in</span>
+                            )}
                           </td>
-
-                          {/* 3. Ticket Name */}
-                          <td className="px-4 py-3 font-semibold text-[#231E1A] whitespace-nowrap">
-                            {item.ticketName} {item.ticketNumber ? `#${item.ticketNumber}` : ''}
+                          <td className="amt">
+                            ${(Number(item.ticketPrice) || 0).toLocaleString('es-CO')}
                           </td>
-
-                          {/* 4. Zona */}
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="bg-[#686A54]/10 text-[#686A54] font-bold px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider">
-                              {item.zone}
-                            </span>
-                          </td>
-
-                          {/* 5. Nombre */}
-                          <td className="px-4 py-3 font-medium text-[#231E1A] whitespace-nowrap">
-                            {item.buyerName}
-                          </td>
-
-                          {/* 6. Correo */}
-                          <td className="px-4 py-3 text-[#7A6F5E] whitespace-nowrap">
-                            {item.buyerEmail}
-                          </td>
-
-                          {/* 7. Teléfono */}
-                          <td className="px-4 py-3 text-[#7A6F5E] whitespace-nowrap">
-                            {item.buyerPhone}
-                          </td>
-
-                          {/* 8. Total Accesos */}
-                          <td className="px-4 py-3 text-center font-bold text-[#231E1A]">
-                            {item.totalAccesos}
-                          </td>
-
-                          {/* 9. Restantes */}
-                          <td className="px-4 py-3 text-center">
-                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
-                              item.accesosRestantes > 0 
-                                ? 'bg-green-100 text-green-800 border border-green-200' 
-                                : 'bg-gray-100 text-gray-600 border border-gray-200'
-                            }`}>
-                              {item.accesosRestantes}
-                            </span>
-                          </td>
-
-                          {/* 10. Acciones */}
-                          <td className="px-4 py-3 text-center whitespace-nowrap">
-                            <div className="flex justify-center items-center gap-1.5">
+                          <td style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                               <button
                                 type="button"
+                                className="rowact"
+                                title="Reenviar correo con QR"
                                 onClick={() => handleResendQR(item.orderId)}
-                                disabled={resending}
-                                className="p-1.5 bg-[#FAF8F5] border border-[#E0D9D0] text-[#686A54] hover:bg-[#686A54] hover:text-white rounded-lg transition-colors cursor-pointer"
-                                title="Reenviar QR por email"
                               >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                  <polyline points="22,6 12,13 2,6"></polyline>
-                                </svg>
+                                Reenviar QR
                               </button>
                               <button
                                 type="button"
+                                className="rowact"
+                                title="Descargar imagen QR PNG"
                                 onClick={() => downloadQRImage(item.orderId, item.buyerName)}
-                                className="p-1.5 bg-[#FAF8F5] border border-[#E0D9D0] text-[#686A54] hover:bg-[#686A54] hover:text-white rounded-lg transition-colors cursor-pointer"
-                                title="Descargar QR en PNG"
                               >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                  <polyline points="7 10 12 15 17 10"></polyline>
-                                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
+                                Descargar QR
                               </button>
                             </div>
                           </td>
-
                         </tr>
                       ))
                     )}
                   </tbody>
                 </table>
               </div>
-            </div>
 
-            {/* Pagination Bar */}
-            {purchasedTotalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                <span className="text-xs text-[#7A6F5E]">
-                  Mostrando{' '}
-                  <span className="font-bold text-[#231E1A]">
-                    {Math.min((purchasedPage - 1) * purchasedLimit + 1, purchasedTotal)}
-                  </span>{' '}
-                  a{' '}
-                  <span className="font-bold text-[#231E1A]">
-                    {Math.min(purchasedPage * purchasedLimit, purchasedTotal)}
-                  </span>{' '}
-                  de <span className="font-bold text-[#231E1A]">{purchasedTotal}</span> ventas registradas
+              {/* Pagination Bar */}
+              <div className="tfoot">
+                <span>
+                  {purchasedTotal > 0
+                    ? `${(purchasedPage - 1) * purchasedLimit + 1} a ${Math.min(purchasedPage * purchasedLimit, purchasedTotal)} de ${purchasedTotal} ventas`
+                    : '0 ventas'}
                 </span>
+                {purchasedTotalPages > 1 && (
+                  <div className="pager">
+                    <button
+                      type="button"
+                      disabled={purchasedPage <= 1}
+                      onClick={() => setPurchasedPage(p => Math.max(1, p - 1))}
+                    >
+                      Anterior
+                    </button>
 
-                <div className="flex items-center gap-1.5">
-                  {/* Previous Page */}
-                  <button
-                    type="button"
-                    disabled={purchasedPage <= 1 || purchasedLoading}
-                    onClick={() => setPurchasedPage((prev) => Math.max(1, prev - 1))}
-                    className="px-3 py-1.5 border border-[#E0D9D0] bg-white rounded-lg text-xs font-semibold text-[#231E1A] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                  >
-                    ← Anterior
-                  </button>
+                    {Array.from({ length: purchasedTotalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === purchasedTotalPages || Math.abs(p - purchasedPage) <= 1)
+                      .map(p => (
+                        <button
+                          key={p}
+                          type="button"
+                          aria-current={p === purchasedPage ? 'true' : undefined}
+                          onClick={() => setPurchasedPage(p)}
+                        >
+                          {p}
+                        </button>
+                      ))}
 
-                  {/* Page numbers */}
-                  {Array.from({ length: purchasedTotalPages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === purchasedTotalPages || Math.abs(p - purchasedPage) <= 1)
-                    .map((p, idx, arr) => {
-                      const showEllipsisBefore = idx > 0 && p - arr[idx - 1] > 1;
-                      return (
-                        <div key={p} className="flex items-center gap-1">
-                          {showEllipsisBefore && <span className="px-1 text-xs text-[#7A6F5E]">...</span>}
-                          <button
-                            type="button"
-                            onClick={() => setPurchasedPage(p)}
-                            className={`px-3 py-1.5 border rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                              p === purchasedPage
-                                ? 'bg-[#686A54] text-[#F4EFE9] border-[#686A54]'
-                                : 'bg-white text-[#231E1A] border-[#E0D9D0] hover:bg-[#FAF8F5]'
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        </div>
-                      );
-                    })}
-
-                  {/* Next Page */}
-                  <button
-                    type="button"
-                    disabled={purchasedPage >= purchasedTotalPages || purchasedLoading}
-                    onClick={() => setPurchasedPage((prev) => Math.min(purchasedTotalPages, prev + 1))}
-                    className="px-3 py-1.5 border border-[#E0D9D0] bg-white rounded-lg text-xs font-semibold text-[#231E1A] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#FAF8F5] transition-colors cursor-pointer"
-                  >
-                    Siguiente →
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      disabled={purchasedPage >= purchasedTotalPages}
+                      onClick={() => setPurchasedPage(p => Math.min(purchasedTotalPages, p + 1))}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-
+            </div>
           </div>
-        )}
 
+        </div>
       </div>
 
+      {/* ============ DIÁLOGO EDICIONES (SCRIM MODAL) ============ */}
+      <div className={`scrim ${showEditionsModal ? 'is-open' : ''}`} onClick={(e) => {
+        if (e.target === e.currentTarget) setShowEditionsModal(false);
+      }}>
+        <div className="dialog" role="dialog" aria-modal="true" aria-label="Ediciones del evento">
+          <header>
+            <h3>Ediciones del evento</h3>
+            <button type="button" onClick={() => setShowEditionsModal(false)} aria-label="Cerrar">&times;</button>
+          </header>
 
-      {/* Success Modal */}
-      {showModal && modalData && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#F4EFE9] max-w-md w-full rounded-3xl p-6 shadow-xl border border-[#E8E2DA] flex flex-col items-center text-center max-h-[90vh] overflow-y-auto">
-            
-            {/* Success Checkmark Circle */}
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 text-[#22c55e]">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
-
-            <h2 className="font-sans font-bold text-xl text-[#231E1A] mb-1">¡VENTA REGISTRADA!</h2>
-            <p className="text-xs text-[#7A6F5E] mb-5 uppercase tracking-wider font-semibold">Correo y QR generados correctamente</p>
-
-            {/* Notification Alert Box */}
-            <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4 w-full text-left space-y-3 mb-5 text-sm">
-              <div>
-                <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Cliente</span>
-                <span className="font-semibold text-[#231E1A]">{modalData.buyerName}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+          <div className="body">
+            <div className="field" style={{ marginBottom: '16px' }}>
+              <label>Edición actualmente activa</label>
+              <div className="ed-row active">
                 <div>
-                  <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Producto</span>
-                  <span className="font-semibold text-[#231E1A]">{modalData.ticketName}</span>
+                  <div className="nm">{activeEdition?.name || 'Entre Soles'}</div>
+                  <div className="sl">slug: {activeEdition?.slug || 'entre-soles'}</div>
                 </div>
-                <div>
-                  <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Cantidad</span>
-                  <span className="font-semibold text-[#231E1A]">{modalData.quantity}</span>
+                <div className="rt">
+                  <span className="pill pill-bronze">En venta</span>
                 </div>
               </div>
-              <div>
-                <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide font-semibold text-[#686A54]">Correo de Envío</span>
-                <span className="font-semibold text-[#231E1A] break-all">{modalData.buyerEmail}</span>
-              </div>
-              <div>
-                <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Código de Orden</span>
-                <span className="font-mono text-[#231E1A] font-bold text-[12px]">{modalData.orderId}</span>
-              </div>
             </div>
 
-            {/* QR Code Container */}
-            <div className="bg-[#D9D1C0] rounded-2xl p-4 w-fit mb-6">
-              <img src={modalData.qrImageUrl} alt="QR Code" width={150} height={150} className="rounded-lg shadow-inner bg-white p-1" />
+            <div className="field" style={{ marginBottom: '16px' }}>
+              <label>Todas las ediciones registradas</label>
+              {editions.map((ed) => (
+                <div key={ed.slug} className={`ed-row ${ed.is_active ? 'active' : ''}`}>
+                  <div>
+                    <div className="nm">{ed.name}</div>
+                    <div className="sl">{ed.slug}</div>
+                  </div>
+                  <div className="rt">
+                    {ed.is_active ? (
+                      <span className="pill pill-bronze">En venta</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        style={{ padding: '6px 12px' }}
+                        onClick={() => handleSetActiveEdition(ed.slug)}
+                      >
+                        Poner en venta
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-3 w-full">
-              {/* Send to WhatsApp */}
+            <form onSubmit={handleCreateEdition} className="field" style={{ marginTop: '18px' }}>
+              <label htmlFor="nueva">Crear una nueva edición</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  id="nueva"
+                  placeholder="Ej. Sunset Edition 2026"
+                  value={newEditionName}
+                  onChange={(e) => setNewEditionName(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ flex: 'none' }}
+                  disabled={creatingEdition || !newEditionName.trim()}
+                >
+                  {creatingEdition ? 'Creando...' : 'Crear'}
+                </button>
+              </div>
+            </form>
+
+            <div className="danger">
+              <h5>Reiniciar disponibilidad e inventario</h5>
+              <p>
+                Todas las mesas vuelven a estar disponibles y el stock de boletería se restablece para que la web venda la edición activa (<strong>{activeEdition?.name || 'Entre Soles'}</strong>). Las ventas pasadas y datos de clientes se conservan 100%.
+              </p>
               <button
-                onClick={handleShareWhatsApp}
-                className="w-full py-3 bg-[#25D366] text-white font-bold rounded-xl text-[13px] tracking-wider uppercase hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
+                type="button"
+                className="btn btn-bronze"
+                disabled={resettingInventory}
+                onClick={handleResetInventory}
               >
-                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.457L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.625 1.451 5.436 0 9.86-4.42 9.864-9.864.002-2.637-1.03-5.114-2.905-6.989-1.874-1.875-4.351-2.907-6.985-2.907-5.439 0-9.865 4.421-9.869 9.867-.001 1.57.418 3.101 1.21 4.474l-.993 3.624 3.71-.973zm12.39-7.37c-.3-.15-1.772-.875-2.046-.975-.276-.1-.476-.15-.676.15-.2.3-.775.975-.95 1.175-.175.2-.35.225-.65.075-.3-.15-1.267-.467-2.413-1.49-1.054-.94-1.766-2.1-1.972-2.45-.205-.35-.022-.539.128-.689.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5s.05-.375-.025-.525C10.1 7.225 9.5 5.75 9.25 5.15c-.243-.59-.49-.51-.676-.52-.175-.01-.375-.01-.575-.01-.2 0-.525.075-.8 1.05-.275.975-1.05 3.075-1.05 3.175 0 .1.1.2.2.35.1.15.5.75 1.2 1.375.677.6 1.25.9 1.95 1.15.7.25 1.325.225 1.825.15.55-.083 1.772-.725 2.022-1.425.25-.7.25-1.3 1.75-1.425.075-.015.15-.025.225-.025.2 0 .325.1.375.175.25.4.25 1.05.25 1.05z"/>
-                </svg>
+                {resettingInventory ? 'Reiniciando...' : 'Reiniciar inventario'}
+              </button>
+            </div>
+          </div>
+
+          <footer>
+            <button type="button" className="btn btn-ghost" onClick={() => setShowEditionsModal(false)}>Cerrar</button>
+          </footer>
+        </div>
+      </div>
+
+      {/* ============ SUCCESS MODAL ON SALE REGISTRATION ============ */}
+      {showSuccessModal && modalData && (
+        <div className="scrim is-open" onClick={(e) => {
+          if (e.target === e.currentTarget) setShowSuccessModal(false);
+        }}>
+          <div className="dialog" style={{ maxWidth: '440px', textAlign: 'center', padding: '24px' }}>
+            <div style={{ width: '56px', height: '56px', background: 'var(--ok-soft)', color: 'var(--ok)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: '28px' }}>
+              ✓
+            </div>
+
+            <h3 style={{ fontFamily: 'Fraunces, serif', fontSize: '20px', margin: '0 0 4px' }}>¡VENTA REGISTRADA!</h3>
+            <p style={{ fontSize: '12px', color: 'var(--ink-2)', margin: '0 0 16px' }}>La entrada se ha generado y enviado por correo.</p>
+
+            <div style={{ textAlign: 'left', background: '#FAF8F5', border: '1px solid var(--line)', borderRadius: 'var(--r-control)', padding: '14px', marginBottom: '16px' }}>
+              <div className="kv"><span>Cliente</span><b>{modalData.buyerName}</b></div>
+              <div className="kv"><span>Producto</span><b>{modalData.ticketName}</b></div>
+              <div className="kv"><span>Cantidad</span><b>{modalData.quantity}</b></div>
+              <div className="kv"><span>Correo</span><b>{modalData.buyerEmail}</b></div>
+              <div className="kv"><span>Orden</span><b>{modalData.orderId}</b></div>
+            </div>
+
+            <div style={{ background: '#EAE5D8', padding: '12px', borderRadius: 'var(--r-control)', display: 'inline-block', marginBottom: '16px' }}>
+              <img src={modalData.qrImageUrl} alt="Código QR" width={160} height={160} style={{ borderRadius: '4px', background: '#fff', padding: '4px' }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn btn-primary btn-lg"
+                style={{ background: '#25D366' }}
+                onClick={handleShareWhatsApp}
+              >
                 Compartir por WhatsApp
               </button>
 
-              <div className="grid grid-cols-2 gap-3">
-                {/* Copy QR Link */}
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ flex: 1 }}
                   onClick={handleCopyQR}
-                  className="py-3 bg-white border border-[#E0D9D0] text-[#7A6F5E] hover:bg-white/70 font-semibold rounded-xl text-[12px] uppercase transition-colors"
                 >
                   Copiar Link QR
                 </button>
-
-                {/* Close and Register Another */}
-                <button
-                  onClick={handleResetForm}
-                  className="py-3 bg-[#686A54] text-[#F4EFE9] hover:opacity-90 font-semibold rounded-xl text-[12px] uppercase transition-opacity"
-                >
-                  Registrar Otro
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* Metrics Modal */}
-      {showMetricsModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#F4EFE9] max-w-3xl w-full rounded-3xl p-6 shadow-xl border border-[#E8E2DA] flex flex-col max-h-[90vh] overflow-hidden">
-            
-            {/* Modal Header */}
-            <div className="flex justify-between items-center pb-3 border-b border-[#E8E2DA] mb-3">
-              <div className="flex items-center gap-2 text-[#686A54]">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <line x1="18" y1="20" x2="18" y2="10"></line>
-                  <line x1="12" y1="20" x2="12" y2="4"></line>
-                  <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-                <h2 className="font-sans font-bold text-lg uppercase tracking-wider">Métricas de Ventas & Comparativas</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowMetricsModal(false)}
-                className="w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Metrics Sub-Tabs Selector */}
-            <div className="flex border-b border-[#E8E2DA] mb-4 bg-white rounded-xl p-1 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setMetricsTab('current')}
-                className={`flex-1 py-2 text-center font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
-                  metricsTab === 'current'
-                    ? 'bg-[#686A54] text-[#F4EFE9]'
-                    : 'text-[#7A6F5E] hover:text-[#231E1A]'
-                }`}
-              >
-                📊 Edición Activa ({activeEdition?.name || 'Entre Soles'})
-              </button>
-              <button
-                type="button"
-                onClick={() => setMetricsTab('comparison')}
-                className={`flex-1 py-2 text-center font-bold text-xs uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
-                  metricsTab === 'comparison'
-                    ? 'bg-[#8C6D46] text-[#F4EFE9]'
-                    : 'text-[#7A6F5E] hover:text-[#231E1A]'
-                }`}
-              >
-                ⚖️ Comparativa de Ediciones
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="flex-1 overflow-y-auto pr-1 space-y-6 text-sm">
-              {loadingMetrics && (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="w-8 h-8 border-4 border-[#686A54] border-t-transparent rounded-full animate-spin mb-3" />
-                  <p className="font-light text-[#7A6F5E]">Cargando estadísticas...</p>
-                </div>
-              )}
-
-              {metricsError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
-                  {metricsError}
-                </div>
-              )}
-
-              {!loadingMetrics && !metricsError && metricsTab === 'comparison' && (
-                <div className="space-y-6">
-                  <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4">
-                    <h3 className="text-xs font-bold text-[#8C6D46] uppercase tracking-wider mb-2">
-                      Resumen Comparativo Histórico de Ediciones
-                    </h3>
-                    <p className="text-xs text-[#7A6F5E]">
-                      Comparación de rendimiento acumulado entre la edición anterior (Colombiamoda) y la edición actual/futuras (Entre Soles).
-                    </p>
-                  </div>
-
-                  {/* Cards side by side */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {editionsComparison.map((ed) => (
-                      <div key={ed.slug} className={`border rounded-2xl p-5 bg-white relative overflow-hidden ${ed.slug === 'entre-soles' ? 'border-amber-400 shadow-md' : 'border-[#E8E2DA]'}`}>
-                        <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-bold text-base text-[#231E1A]">{ed.name}</h4>
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${ed.slug === 'entre-soles' ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-purple-100 text-purple-900 border border-purple-200'}`}>
-                            {ed.slug === activeEdition?.slug ? 'Edición Activa' : 'Archivada'}
-                          </span>
-                        </div>
-
-                        <div className="space-y-2.5 text-xs">
-                          <div className="flex justify-between border-b border-[#FAF8F5] pb-1.5">
-                            <span className="text-[#7A6F5E]">Ingresos Recaudados:</span>
-                            <span className="font-mono font-bold text-[#231E1A]">${ed.totalRevenue.toLocaleString('es-CO')} COP</span>
-                          </div>
-                          <div className="flex justify-between border-b border-[#FAF8F5] pb-1.5">
-                            <span className="text-[#7A6F5E]">Boletas Vendidas:</span>
-                            <span className="font-bold text-[#686A54]">{ed.totalSold} boletas</span>
-                          </div>
-                          <div className="flex justify-between border-b border-[#FAF8F5] pb-1.5">
-                            <span className="text-[#7A6F5E]">Órdenes Procesadas:</span>
-                            <span className="font-bold text-[#231E1A]">{ed.totalOrders} órdenes</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#7A6F5E]">Check-ins / Ingresos:</span>
-                            <span className="font-bold text-[#231E1A]">{ed.totalCheckIns} asistencias</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Comparative Table */}
-                  <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden shadow-inner">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] font-bold text-[#7A6F5E] uppercase tracking-wider">
-                          <th className="px-4 py-3">Edición</th>
-                          <th className="px-4 py-3 text-right">Recaudado (COP)</th>
-                          <th className="px-4 py-3 text-center">Boletas Vendidas</th>
-                          <th className="px-4 py-3 text-center">Órdenes</th>
-                          <th className="px-4 py-3 text-center">Check-ins</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#FAF8F5]">
-                        {editionsComparison.map((ed) => (
-                          <tr key={ed.slug} className="hover:bg-[#FAF8F5]/50">
-                            <td className="px-4 py-3 font-semibold text-[#231E1A] flex items-center gap-2">
-                              <span>{ed.name}</span>
-                              {ed.slug === activeEdition?.slug && (
-                                <span className="text-[9px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded font-bold uppercase">Activa</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-[#231E1A]">${ed.totalRevenue.toLocaleString('es-CO')}</td>
-                            <td className="px-4 py-3 text-center font-bold text-[#686A54]">{ed.totalSold}</td>
-                            <td className="px-4 py-3 text-center text-[#7A6F5E]">{ed.totalOrders}</td>
-                            <td className="px-4 py-3 text-center text-[#7A6F5E]">{ed.totalCheckIns}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {!loadingMetrics && !metricsError && metricsTab === 'current' && metricsData && (
-                <>
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4">
-                      <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Total Recaudado</span>
-                      <span className="text-xl font-bold text-[#231E1A]">
-                        ${(
-                          metricsData.zones.reduce((sum, z) => sum + z.revenue, 0) +
-                          metricsData.individuals.reduce((sum, i) => sum + i.revenue, 0)
-                        ).toLocaleString('es-CO')} COP
-                      </span>
-                    </div>
-                    <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4">
-                      <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wide">Total Entradas Vendidas</span>
-                      <span className="text-xl font-bold text-[#231E1A]">
-                        {(
-                          metricsData.zones.reduce((sum, z) => sum + z.sold, 0) +
-                          metricsData.individuals.reduce((sum, i) => sum + i.sold, 0)
-                        ).toLocaleString('es-CO')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Section 1: Mesas y Camas */}
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider border-l-2 border-[#686A54] pl-2">
-                      Reservas de Mesas y Camas por Zona
-                    </h3>
-                    <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden shadow-inner">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wider">
-                              <th className="px-4 py-3">Zona</th>
-                              <th className="px-4 py-3 text-center">Vendidas</th>
-                              <th className="px-4 py-3 text-center">Disponibles</th>
-                              <th className="px-4 py-3 text-right">Recaudado</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#FAF8F5]">
-                            {metricsData.zones.map((zone) => (
-                              <tr key={zone.zone} className="hover:bg-[#FAF8F5]/50 transition-colors">
-                                <td className="px-4 py-3 font-semibold text-[#231E1A]">{zone.name}</td>
-                                <td className="px-4 py-3 text-center font-bold text-[#686A54]">{zone.sold}</td>
-                                <td className="px-4 py-3 text-center text-[#7A6F5E]">{zone.remaining}</td>
-                                <td className="px-4 py-3 text-right font-mono font-semibold text-[#231E1A]">
-                                  ${zone.revenue.toLocaleString('es-CO')}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section 2: Boleteria Individual */}
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider border-l-2 border-[#686A54] pl-2">
-                      Boletería Individual
-                    </h3>
-                    <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden shadow-inner">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                          <thead>
-                            <tr className="bg-[#FAF8F5] border-b border-[#E8E2DA] text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wider">
-                              <th className="px-4 py-3">Tipo de Entrada</th>
-                              <th className="px-4 py-3 text-center">Vendidas</th>
-                              <th className="px-4 py-3 text-center">Stock Disponible</th>
-                              <th className="px-4 py-3 text-right">Recaudado</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#FAF8F5]">
-                            {metricsData.individuals.map((ind) => (
-                              <tr key={ind.id} className="hover:bg-[#FAF8F5]/50 transition-colors">
-                                <td className="px-4 py-3 font-semibold text-[#231E1A]">{ind.name}</td>
-                                <td className="px-4 py-3 text-center font-bold text-[#686A54]">{ind.sold}</td>
-                                <td className="px-4 py-3 text-center text-[#7A6F5E]">{ind.remaining}</td>
-                                <td className="px-4 py-3 text-right font-mono font-semibold text-[#231E1A]">
-                                  ${ind.revenue.toLocaleString('es-CO')}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="pt-4 border-t border-[#E8E2DA] mt-4 flex justify-between items-center">
-              {metricsData && (
                 <button
                   type="button"
-                  onClick={downloadMetricsPDF}
-                  className="px-5 py-2.5 bg-white border border-[#686A54] text-[#686A54] hover:bg-[#686A54]/10 transition-colors font-bold text-xs tracking-wider uppercase rounded-xl flex items-center gap-2 cursor-pointer font-sans"
+                  className="btn btn-bronze"
+                  style={{ flex: 1 }}
+                  onClick={() => downloadQRImage(modalData.orderId, modalData.buyerName)}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  DESCARGAR REPORTE PDF
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowMetricsModal(false)}
-                className="px-6 py-2.5 bg-[#686A54] text-[#F4EFE9] font-bold text-xs tracking-wider uppercase rounded-xl hover:opacity-90 transition-opacity cursor-pointer font-sans"
-              >
-                Cerrar
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* Editions Management Modal */}
-      {showEditionsModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#F4EFE9] max-w-xl w-full rounded-3xl p-6 shadow-xl border border-[#E8E2DA] flex flex-col max-h-[90vh] overflow-hidden">
-            
-            {/* Header */}
-            <div className="flex justify-between items-center pb-3 border-b border-[#E8E2DA] mb-4">
-              <div className="flex items-center gap-2 text-[#8C6D46]">
-                <span className="text-xl">🌟</span>
-                <h2 className="font-sans font-bold text-lg uppercase tracking-wider">Gestión de Ediciones & Reinicio</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowEditionsModal(false)}
-                className="w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-1 space-y-6 text-sm">
-              {/* Active Edition Info */}
-              <div className="bg-white border border-[#E8E2DA] rounded-2xl p-4 space-y-2">
-                <span className="block text-[11px] font-bold text-[#7A6F5E] uppercase tracking-wider">Edición Activa en la Web</span>
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold text-[#231E1A]">{activeEdition?.name || 'Entre Soles'}</span>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 border border-green-300 rounded-full font-bold text-xs uppercase">
-                    Recibiendo Ventas
-                  </span>
-                </div>
-              </div>
-
-              {/* List of Registered Editions */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider border-l-2 border-[#686A54] pl-2">
-                  Ediciones Registradas
-                </h3>
-                <div className="bg-white border border-[#E8E2DA] rounded-2xl overflow-hidden divide-y divide-[#FAF8F5]">
-                  {editions.map((ed) => (
-                    <div key={ed.slug} className="p-3.5 flex justify-between items-center hover:bg-[#FAF8F5]/50 transition-colors">
-                      <div>
-                        <span className="font-semibold text-[#231E1A] block">{ed.name}</span>
-                        <span className="text-[11px] text-[#7A6F5E] font-mono">slug: {ed.slug}</span>
-                      </div>
-
-                      {ed.is_active ? (
-                        <span className="px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-[11px] font-bold uppercase">
-                          ★ Activa Actual
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleSetActiveEdition(ed.slug)}
-                          className="px-3 py-1.5 bg-[#FAF8F5] border border-[#E0D9D0] text-[#686A54] hover:bg-[#686A54] hover:text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-                        >
-                          Activar Esta Edición
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Form to Create New Edition */}
-              <form onSubmit={handleCreateEdition} className="bg-white border border-[#E8E2DA] rounded-2xl p-4 space-y-3">
-                <h3 className="text-xs font-bold text-[#686A54] uppercase tracking-wider">Crear Nueva Edición de Evento</h3>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newEditionName}
-                    onChange={(e) => setNewEditionName(e.target.value)}
-                    placeholder="Ej. Sunset Edition 2026..."
-                    className="flex-1 bg-[#FAF8F5] border border-[#E0D9D0] rounded-xl px-3 py-2 text-xs text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54]"
-                  />
-                  <button
-                    type="submit"
-                    disabled={creatingEdition || !newEditionName.trim()}
-                    className="px-4 py-2 bg-[#686A54] text-[#F4EFE9] rounded-xl text-xs font-bold uppercase hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
-                  >
-                    {creatingEdition ? 'Creando...' : 'Crear'}
-                  </button>
-                </div>
-              </form>
-
-              {/* Action Box: Reiniciar Aforo para Nueva Edición */}
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
-                  <span>🔄</span>
-                  <span>Reiniciar Disponibilidad para Nueva Edición</span>
-                </div>
-                <p className="text-xs text-amber-800 leading-relaxed">
-                  Esta acción actualizará las mesas a <strong>Disponible</strong> y restablecerá el stock de boletería individual para que la web venda la edición <strong>{activeEdition?.name || 'Entre Soles'}</strong>.
-                  <br />
-                  <span className="text-[11px] text-green-700 font-semibold block mt-1">
-                    ✓ Ninguna venta pasadas (como Colombiamoda) ni datos de clientes serán eliminados.
-                  </span>
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResetInventory}
-                  disabled={resettingInventory}
-                  className="w-full py-3 bg-[#8C6D46] text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:opacity-95 disabled:opacity-50 transition-opacity shadow-sm cursor-pointer"
-                >
-                  {resettingInventory ? 'Reiniciando disponibilidad...' : 'REINICIAR DISPONIBILIDAD E INVENTARIO'}
+                  Descargar QR
                 </button>
               </div>
 
-            </div>
-
-            {/* Footer */}
-            <div className="pt-3 border-t border-[#E8E2DA] mt-3 flex justify-end">
               <button
                 type="button"
-                onClick={() => setShowEditionsModal(false)}
-                className="px-4 py-2 bg-white border border-[#E0D9D0] text-[#7A6F5E] hover:bg-[#FAF8F5] rounded-xl text-xs font-bold uppercase transition-colors"
+                className="btn btn-ghost"
+                style={{ marginTop: '4px' }}
+                onClick={handleResetForm}
               >
-                Cerrar
+                Registrar Otra Venta
               </button>
             </div>
-
           </div>
         </div>
       )}
-
-    </div>
+    </>
   );
 }
 
-// ── AdminPrefixDropdown component ─────────────────────────────────────────────
+// ── AdminPrefixDropdown Component ─────────────────────────────────────────────
 function AdminPrefixDropdown({
   value,
   onChange,
@@ -2046,9 +2581,7 @@ function AdminPrefixDropdown({
   }, [open]);
 
   useEffect(() => {
-    if (!open) {
-      setFilterText('');
-    }
+    if (!open) setFilterText('');
   }, [open]);
 
   const selectedCountry = sortedCountries.find((c) => `+${c.phoneCode.replace(/\s+/g, '')}` === value) || sortedCountries[0];
@@ -2064,71 +2597,97 @@ function AdminPrefixDropdown({
   });
 
   return (
-    <div className="relative">
+    <div style={{ position: 'relative' }}>
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           setOpen(!open);
         }}
-        className="w-full bg-white border border-[#E0D9D0] rounded-xl px-4 py-3 text-sm text-[#231E1A] focus:outline-none focus:ring-1 focus:ring-[#686A54] focus:border-[#686A54] flex justify-between items-center cursor-pointer text-left"
+        style={{
+          width: '100%',
+          padding: '9px 11px',
+          background: '#fff',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--r-control)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: '13.5px',
+          color: 'var(--ink)',
+          cursor: 'pointer',
+        }}
       >
         <span>
           {selectedEmoji} {currentLocale === 'en' ? selectedCountry.nameEN : selectedCountry.nameES} ({value})
         </span>
-        <svg
-          className={`w-2.5 h-2 text-[#7A6F5E] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 10 6"
-        >
-          <path d="M1 1L5 5L9 1" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <span style={{ fontSize: '10px', color: 'var(--ink-3)' }}>▼</span>
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-full bg-white border border-[#E0D9D0] rounded-xl shadow-lg z-50 overflow-hidden flex flex-col max-h-64">
-          <div className="p-2 border-b border-[#E0D9D0] bg-[#F9F7F5] sticky top-0 z-10">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: '4px',
+            background: '#fff',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--r-control)',
+            boxShadow: 'var(--shadow)',
+            zIndex: 50,
+            maxHeight: '220px',
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{ padding: '6px', borderBottom: '1px solid var(--line-soft)', position: 'sticky', top: 0, background: '#fff' }}>
             <input
               type="text"
-              placeholder="Buscar país o indicativo..."
+              placeholder="Buscar país..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full px-3 py-2 rounded-lg border border-[#E0D9D0] text-xs focus:outline-none focus:ring-1 text-[#231E1A]  focus:ring-[#686A54] focus:border-[#686A54] bg-white placeholder:text-[#231E1A]"
+              style={{ fontSize: '12px', padding: '6px 8px' }}
               autoFocus
             />
           </div>
-          <div className="overflow-y-auto flex-1">
-            {filteredCountries.length > 0 ? (
-              filteredCountries.map((c) => {
-                const emoji = getFlagEmoji(c.iso2);
-                const code = `+${c.phoneCode.replace(/\s+/g, '')}`;
-                const name = currentLocale === 'en' ? c.nameEN : c.nameES;
-                return (
-                  <button
-                    key={c.iso2}
-                    type="button"
-                    onClick={() => {
-                      onChange(code);
-                      setOpen(false);
-                    }}
-                    className="w-full px-4 py-2.5 hover:bg-[#F9F7F5] text-left text-xs text-[#231E1A] transition-colors cursor-pointer block"
-                  >
-                    {emoji} {name} ({code})
-                  </button>
-                );
-              })
-            ) : (
-              <div className="px-4 py-3 text-center text-xs text-[#231E1A]">
-                No se encontraron resultados
-              </div>
-            )}
-          </div>
+          {filteredCountries.length > 0 ? (
+            filteredCountries.map((c) => {
+              const emoji = getFlagEmoji(c.iso2);
+              const code = `+${c.phoneCode.replace(/\s+/g, '')}`;
+              const name = currentLocale === 'en' ? c.nameEN : c.nameES;
+              return (
+                <button
+                  key={c.iso2}
+                  type="button"
+                  onClick={() => {
+                    onChange(code);
+                    setOpen(false);
+                  }}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '8px 12px',
+                    textAlign: 'left',
+                    fontSize: '12.5px',
+                    border: 0,
+                    background: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--ink)',
+                  }}
+                >
+                  {emoji} {name} ({code})
+                </button>
+              );
+            })
+          ) : (
+            <div style={{ padding: '10px', textAlign: 'center', fontSize: '12px', color: 'var(--ink-3)' }}>
+              Sin resultados
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
-
