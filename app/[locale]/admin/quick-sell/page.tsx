@@ -1421,6 +1421,9 @@ export default function QuickSellPage() {
           grid-template-columns: 1fr;
           gap: 20px;
           align-items: start;
+          max-width: 820px;
+          margin: 0 auto;
+          width: 100%;
         }
 
         /* ---------- Tabla ---------- */
@@ -2175,7 +2178,7 @@ export default function QuickSellPage() {
             </header>
 
             <div className="map-shell">
-              <div className="card" style={{ overflow: 'hidden', padding: '16px' }}>
+              <div className="card" style={{ overflow: 'hidden', padding: '8px' }}>
                 <AdminEventMap
                   onSelectTicketForSale={(ticketId) => {
                     setSelectedTicketId(ticketId);
