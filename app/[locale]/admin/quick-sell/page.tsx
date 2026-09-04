@@ -1417,13 +1417,9 @@ export default function QuickSellPage() {
 
         /* ---------- Mapa ---------- */
         .map-shell {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 20px;
-          align-items: start;
-          max-width: 820px;
-          margin: 0 auto;
           width: 100%;
+          max-width: 1200px;
+          margin: 0 auto;
         }
 
         /* ---------- Tabla ---------- */
@@ -2178,19 +2174,22 @@ export default function QuickSellPage() {
             </header>
 
             <div className="map-shell">
-              <div className="card" style={{ overflow: 'hidden', padding: '8px' }}>
-                <AdminEventMap
-                  onSelectTicketForSale={(ticketId) => {
-                    setSelectedTicketId(ticketId);
-                    setActiveView('venta');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  onRefreshStats={() => {
-                    fetchResumenData();
-                    fetchPurchasedTickets();
-                  }}
-                />
-              </div>
+              <AdminEventMap
+                onSelectTicketForSale={(ticketId) => {
+                  setSelectedTicketId(ticketId);
+                  setActiveView('venta');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onViewPurchase={(orderId) => {
+                  setPurchasedSearch(orderId);
+                  setActiveView('compras');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onRefreshStats={() => {
+                  fetchResumenData();
+                  fetchPurchasedTickets();
+                }}
+              />
             </div>
           </div>
 
