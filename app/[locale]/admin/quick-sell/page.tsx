@@ -221,7 +221,7 @@ input:focus,select:focus{border-color:var(--olive-500) !important;box-shadow:0 0
 .note{background:var(--bronze-soft) !important;border:1px solid #EADCC0 !important;border-radius:var(--r-control) !important;padding:10px 12px !important;font-size:12.5px !important;color:#6E5623 !important;margin-top:14px !important}
 
 /* ---------- Mapa ---------- */
-.map-shell{display:grid !important;grid-template-columns:1fr 300px !important;gap:20px !important;align-items:start !important;max-width:950px !important;margin:0 auto !important}
+.map-shell{display:grid !important;grid-template-columns:1fr 300px !important;gap:20px !important;align-items:start !important;max-width:1600px !important;margin:0 auto !important}
 .map-toolbar{display:flex !important;align-items:center !important;gap:10px !important;flex-wrap:wrap !important;padding:12px 20px !important;border-bottom:1px solid var(--line-soft) !important}
 .chip{padding:5px 12px !important;border:1px solid var(--line) !important;border-radius:99px !important;font-size:12.5px !important;color:var(--ink-2) !important;background:#fff !important}
 .chip[aria-pressed="true"]{background:var(--olive-700) !important;border-color:var(--olive-700) !important;color:#fff !important;font-weight:500 !important}
@@ -1718,7 +1718,7 @@ export default function QuickSellPage() {
               </div>
             </header>
 
-            <div className="map-shell" style={{ maxWidth: '950px', margin: '0 auto' }}>
+            <div className="map-shell" style={{ maxWidth: '1600px', margin: '0 auto' }}>
               <AdminEventMap
                 onSelectTicketForSale={(ticketId) => {
                   setSelectedTicketId(ticketId);
