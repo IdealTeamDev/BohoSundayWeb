@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
 
@@ -116,8 +117,38 @@ export default function AdminEventMap({ onSelectTicketForSale, onRefreshStats, o
 
   useEffect(() => {
     fetchTicketsAndStatuses();
-    const interval = setInterval(fetchTicketsAndStatuses, 4000);
-    return () => clearInterval(interval);
+
+    // Suscripción Realtime a cambios en ticket_locks y purchased_tickets
+    const channel = supabase
+      .channel('admin_event_map_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ticket_locks' },
+        () => {
+          fetchTicketsAndStatuses();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'purchased_tickets' },
+        () => {
+          fetchTicketsAndStatuses();
+        }
+      )
+      .subscribe();
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchTicketsAndStatuses();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {

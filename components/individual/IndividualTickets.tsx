@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
 import CardTicketIndividual from '@/components/cardticket/CardTicketIndividual';
@@ -41,9 +42,39 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
         console.error('Error fetching ticket statuses:', error);
       }
     }
+
     fetchStatuses();
-    const interval = setInterval(fetchStatuses, 5000);
-    return () => clearInterval(interval);
+
+    const channel = supabase
+      .channel('individual_tickets_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ticket_locks' },
+        () => {
+          fetchStatuses();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'purchased_tickets' },
+        () => {
+          fetchStatuses();
+        }
+      )
+      .subscribe();
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchStatuses();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const earlyRemaining = earlyTicket ? (ticketStatuses['early']?.remaining ?? earlyTicket.stock ?? 0) : 0;

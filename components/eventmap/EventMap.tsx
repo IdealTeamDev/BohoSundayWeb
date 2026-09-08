@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
 import { zoneConfig } from '@/data/zoneConfig';
@@ -81,9 +82,39 @@ export default function EventMap({ onClose }: EventMapProps) {
         console.error('Error fetching tickets and statuses:', error);
       }
     }
+
     fetchTicketsAndStatuses();
-    const interval = setInterval(fetchTicketsAndStatuses, 5000);
-    return () => clearInterval(interval);
+
+    const channel = supabase
+      .channel('public_event_map_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ticket_locks' },
+        () => {
+          fetchTicketsAndStatuses();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'purchased_tickets' },
+        () => {
+          fetchTicketsAndStatuses();
+        }
+      )
+      .subscribe();
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchTicketsAndStatuses();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
-'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import type { Ticket } from '@/types';
 import { jsPDF } from 'jspdf';
@@ -462,13 +463,29 @@ export default function QuickSellPage() {
         fetchPreRegisterData(preRegisterPage, preRegisterSearch, preRegisterLimit);
       }, 300);
 
-      const interval = setInterval(() => {
-        fetchPreRegisterData(preRegisterPage, preRegisterSearch, preRegisterLimit);
-      }, 4000);
+      const channel = supabase
+        .channel('preregistro_realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'pre_register' },
+          () => {
+            fetchPreRegisterData(preRegisterPage, preRegisterSearch, preRegisterLimit);
+          }
+        )
+        .subscribe();
+
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          fetchPreRegisterData(preRegisterPage, preRegisterSearch, preRegisterLimit);
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
 
       return () => {
         clearTimeout(delayDebounceFn);
-        clearInterval(interval);
+        supabase.removeChannel(channel);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
       };
     }
   }, [activeView, preRegisterPage, preRegisterSearch, preRegisterLimit, fetchPreRegisterData]);
