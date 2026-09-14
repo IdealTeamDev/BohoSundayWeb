@@ -1,5 +1,5 @@
 import type { BuyerInfo } from '@/types/checkout';
-import { decreaseWordPressStock, decreaseDatabaseStock } from './tickets';
+import { decreaseDatabaseStock } from './tickets';
 import { sendAdminNotificationEmail } from './emailService';
 import { getDynamicTickets } from './tickets';
 import { supabase } from './supabase';
@@ -243,11 +243,6 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
   } catch (dbErr) {
     console.error('[OrderStore] 🚨 Exception saving to purchased_tickets in Supabase:', dbErr);
   }
-
-  // Decrease stock in WordPress
-  await decreaseWordPressStock(order.ticketId, order.quantity).catch((err) => {
-    console.error('[OrderStore] Error calling decreaseWordPressStock:', err);
-  });
 
   // Decrease stock/mark unavailable in database
   await decreaseDatabaseStock(order.ticketId).catch((err) => {

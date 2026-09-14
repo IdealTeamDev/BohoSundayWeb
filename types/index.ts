@@ -34,6 +34,4 @@ export interface Ticket{
     disabled?: boolean; // Para inhabilitar tickets sin mostrarlos en el mapa
     position: { x:number; y:number}; //posicion del mapa
     stock?: number;
-    wpPostId?: number;
-
 }

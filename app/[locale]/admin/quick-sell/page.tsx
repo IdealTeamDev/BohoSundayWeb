@@ -8,6 +8,7 @@ import { jsPDF } from 'jspdf';
 import { sortedCountries, getFlagEmoji } from '@/data/countries';
 import AdminEventMap from '@/components/eventmap/AdminEventMap';
 import * as XLSX from 'xlsx';
+import { ZoneCategoryConfig } from '@/data/zones';
 
 const customAdminCSS = `
 :root{
@@ -308,8 +309,8 @@ export default function QuickSellPage() {
   const params = useParams();
   const currentLocale = (params?.locale as 'es' | 'en') || 'es';
 
-  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas'
-  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas'>('resumen');
+  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas'
+  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas'>('resumen');
 
   // Authentication State
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
@@ -358,6 +359,13 @@ export default function QuickSellPage() {
   const [stages, setStages] = useState<any[]>([]);
   const [selectedStageId, setSelectedStageId] = useState<string>('');
   const [activeStageId, setActiveStageId] = useState<string | null>(null);
+
+  // Zone Attribute Manager State
+  const [zonesList, setZonesList] = useState<ZoneCategoryConfig[]>([]);
+  const [zonesLoading, setZonesLoading] = useState<boolean>(false);
+  const [updatingZoneKey, setUpdatingZoneKey] = useState<string | null>(null);
+  const [editingZoneData, setEditingZoneData] = useState<Record<string, { licor: string; agua: number; redbull: number; persons: number; description: string }>>({});
+  const [zoneSuccessMsg, setZoneSuccessMsg] = useState<string | null>(null);
   const [fetchingStages, setFetchingStages] = useState<boolean>(true);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -715,6 +723,73 @@ export default function QuickSellPage() {
     }
   }, [selectedStageId, activeStageId, selectedTicketId]);
 
+  const fetchZonesData = useCallback(async () => {
+    setZonesLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/zones', {
+        headers: { 'x-admin-token': token },
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.zones)) {
+        setZonesList(data.zones);
+        const initialMap: Record<string, any> = {};
+        data.zones.forEach((z: ZoneCategoryConfig) => {
+          initialMap[z.key] = {
+            licor: z.licor || '',
+            agua: z.agua || 0,
+            redbull: z.redbull || 0,
+            persons: z.persons || 1,
+            description: z.description || '',
+          };
+        });
+        setEditingZoneData(initialMap);
+      }
+    } catch (err) {
+      console.error('Error fetching zone attributes:', err);
+    } finally {
+      setZonesLoading(false);
+    }
+  }, []);
+
+  const handleSaveZoneAttributes = async (zoneKey: string) => {
+    setUpdatingZoneKey(zoneKey);
+    setZoneSuccessMsg(null);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const zoneState = editingZoneData[zoneKey];
+      if (!zoneState) return;
+
+      const res = await fetch('/api/admin/zones', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({
+          zone: zoneKey,
+          licor: zoneState.licor,
+          agua: zoneState.agua,
+          redbull: zoneState.redbull,
+          persons: zoneState.persons,
+          description: zoneState.description,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setZoneSuccessMsg(`¡Atributos de ${zoneKey.toUpperCase()} actualizados exitosamente en todas las mesas!`);
+        await fetchZonesData();
+        await fetchTicketsData();
+      } else {
+        alert(`Error al actualizar zona: ${data.error}`);
+      }
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setUpdatingZoneKey(null);
+    }
+  };
+
   useEffect(() => {
     fetchStagesData();
   }, [fetchStagesData]);
@@ -724,8 +799,10 @@ export default function QuickSellPage() {
       fetchStagesData();
     } else if (activeView === 'venta') {
       fetchStagesData().then(() => fetchTicketsData());
+    } else if (activeView === 'zonas') {
+      fetchZonesData();
     }
-  }, [activeView, fetchStagesData, fetchTicketsData]);
+  }, [activeView, fetchStagesData, fetchTicketsData, fetchZonesData]);
 
   const handleActivateStage = async (stageId: string, updatedPrices?: Record<string, number>) => {
     setActivatingStageId(stageId);
@@ -1498,6 +1575,16 @@ export default function QuickSellPage() {
             >
               <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
               Etapas y Precios
+            </button>
+
+            <button
+              type="button"
+              data-view="zonas"
+              aria-current={activeView === 'zonas' ? 'page' : undefined}
+              onClick={() => setActiveView('zonas')}
+            >
+              <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+              Atributos de Zonas
             </button>
           </nav>
 
@@ -2593,6 +2680,147 @@ export default function QuickSellPage() {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* ---------- 7. ATRIBUTOS DE ZONAS VIEW ---------- */}
+          <div className={`view ${activeView === 'zonas' ? 'is-active' : ''}`} id="v-zonas">
+            <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
+              <div>
+                <h2>Atributos por Zona (Licores, Bebidas y Aforo)</h2>
+                <div className="sub">
+                  Edita en 1 clic los licores, redbulls, aguas y aforo por categoría de zona. Se actualizarán automáticamente todas las mesas de esa categoría.
+                </div>
+              </div>
+              <div className="actions">
+                <button type="button" className="btn btn-ghost" onClick={fetchZonesData}>
+                  Actualizar lista
+                </button>
+              </div>
+            </header>
+
+            {zoneSuccessMsg && (
+              <div style={{ padding: '12px 16px', borderRadius: 'var(--r-control)', background: 'var(--ok-soft)', color: 'var(--ok)', fontWeight: 600, marginBottom: '20px', border: '1px solid var(--ok)' }}>
+                {zoneSuccessMsg}
+              </div>
+            )}
+
+            <div className="stack">
+              {zonesLoading ? (
+                <div className="card" style={{ padding: '30px', textAlign: 'center', color: 'var(--ink-2)' }}>
+                  Cargando categorías de zonas...
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
+                  {zonesList.map((z) => {
+                    const form = editingZoneData[z.key] || { licor: z.licor, agua: z.agua, redbull: z.redbull, persons: z.persons, description: z.description };
+                    const isSaving = updatingZoneKey === z.key;
+                    return (
+                      <div key={z.key} className="card" style={{ padding: '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                          {z.iconCard && <img src={z.iconCard} alt={z.name} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />}
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--olive-900)' }}>{z.name}</h3>
+                            <span style={{ fontSize: '11px', color: 'var(--ink-3)', textTransform: 'uppercase' }}>Zona ID: {z.key}</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '4px' }}>
+                              Botella de Licor Incluida:
+                            </label>
+                            <input
+                              type="text"
+                              value={form.licor}
+                              onChange={(e) => setEditingZoneData(prev => ({
+                                ...prev,
+                                [z.key]: { ...prev[z.key], licor: e.target.value }
+                              }))}
+                              style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--r-control)', border: '1px solid var(--line)', fontSize: '13px' }}
+                            />
+                          </div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '4px' }}>
+                                Aguas:
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={form.agua}
+                                onChange={(e) => setEditingZoneData(prev => ({
+                                  ...prev,
+                                  [z.key]: { ...prev[z.key], agua: parseInt(e.target.value) || 0 }
+                                }))}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--r-control)', border: '1px solid var(--line)', fontSize: '13px' }}
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '4px' }}>
+                                RedBull:
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={form.redbull}
+                                onChange={(e) => setEditingZoneData(prev => ({
+                                  ...prev,
+                                  [z.key]: { ...prev[z.key], redbull: parseInt(e.target.value) || 0 }
+                                }))}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--r-control)', border: '1px solid var(--line)', fontSize: '13px' }}
+                              />
+                            </div>
+
+                            <div>
+                              <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '4px' }}>
+                                Aforo (Pers):
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={form.persons}
+                                onChange={(e) => setEditingZoneData(prev => ({
+                                  ...prev,
+                                  [z.key]: { ...prev[z.key], persons: parseInt(e.target.value) || 1 }
+                                }))}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--r-control)', border: '1px solid var(--line)', fontSize: '13px' }}
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '4px' }}>
+                              Descripción de la zona:
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={form.description}
+                              onChange={(e) => setEditingZoneData(prev => ({
+                                ...prev,
+                                [z.key]: { ...prev[z.key], description: e.target.value }
+                              }))}
+                              style={{ width: '100%', padding: '8px 10px', borderRadius: 'var(--r-control)', border: '1px solid var(--line)', fontSize: '12.5px', fontFamily: 'inherit' }}
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={isSaving}
+                            onClick={() => handleSaveZoneAttributes(z.key)}
+                            style={{ marginTop: '4px', justifyContent: 'center' }}
+                          >
+                            {isSaving ? 'Guardando...' : `Guardar Atributos de ${z.key.toUpperCase()}`}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
