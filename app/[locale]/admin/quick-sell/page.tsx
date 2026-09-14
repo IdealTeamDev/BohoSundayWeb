@@ -2477,22 +2477,32 @@ export default function QuickSellPage() {
             <div className="stack">
               {/* Active Stage Card Banner */}
               {stagesList.find(s => s.id === activeStageId) && (
-                <div className="card" style={{ background: 'linear-gradient(135deg, #454A34 0%, #333726 100%)', color: '#fff', padding: '24px' }}>
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #454A34 0%, #333726 100%)',
+                    color: '#FFFFFF',
+                    padding: '24px',
+                    borderRadius: 'var(--r-surface)',
+                    border: '1px solid #333726',
+                    boxShadow: 'var(--shadow)',
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FC28A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FC28A', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span className="dot" style={{ background: '#8FC28A' }} /> ETAPA ACTIVA ACTUALMENTE
                       </div>
-                      <h3 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: '28px', margin: '4px 0 0', color: '#fff' }}>
+                      <h3 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: '28px', margin: '6px 0 2px', color: '#FFFFFF' }}>
                         {stagesList.find(s => s.id === activeStageId)?.name}
                       </h3>
-                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(237,235,224,0.75)' }}>
+                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#EFEADC', opacity: 0.9 }}>
                         Esta etapa controla los precios activos en la Web y en la App móvil.
                       </p>
                     </div>
                     <button
                       type="button"
                       className="btn btn-bronze"
+                      style={{ padding: '10px 18px', fontSize: '13.5px', fontWeight: 600 }}
                       onClick={() => openStagePriceEditor(stagesList.find(s => s.id === activeStageId))}
                     >
                       Editar precios activos
@@ -3050,6 +3060,179 @@ export default function QuickSellPage() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ---------- MODAL EDITAR / PRE-CONFIGURAR PRECIOS DE ETAPA ---------- */}
+      {editingStage && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(38, 38, 31, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px',
+          }}
+          onClick={() => setEditingStage(null)}
+        >
+          <div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '12px',
+              maxWidth: '640px',
+              width: '100%',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '90vh',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                padding: '18px 24px',
+                borderBottom: '1px solid var(--line-soft)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'var(--cream)',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--ink)' }}>
+                  Pre-configurar Precios: {editingStage.name}
+                </h3>
+                <span style={{ fontSize: '12.5px', color: 'var(--ink-2)' }}>
+                  Ajusta los precios de esta etapa. Puedes guardarlos para el futuro o activar la etapa ahora.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingStage(null)}
+                style={{ fontSize: '20px', color: 'var(--ink-3)', padding: '4px 8px', cursor: 'pointer', border: 0, background: 'none' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: '24px', overflowY: 'auto' }}>
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '14px', color: 'var(--olive-800)' }}>
+                Boletería Individual
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Early ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.early || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, early: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Anytime ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.anytime || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, anytime: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>General ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.general || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, general: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '14px', color: 'var(--olive-800)' }}>
+                Mesas y Camas
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Oasis ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.oasis || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, oasis: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Bohemian ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.bohemian || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, bohemian: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Primitivo ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.primitivo || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, primitivo: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>VIP ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.vip || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, vip: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Candela ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.candela || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, candela: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Backstage ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices.backstage || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, backstage: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--line-soft)' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setEditingStage(null)}
+                  disabled={savingPrices}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ border: '1px solid var(--bronze)', color: 'var(--bronze)' }}
+                  onClick={() => handleSaveStagePrices(false)}
+                  disabled={savingPrices}
+                >
+                  {savingPrices ? 'Guardando...' : 'Guardar Precios (Pre-configurar)'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handleSaveStagePrices(true)}
+                  disabled={savingPrices}
+                >
+                  {savingPrices ? 'Guardando...' : 'Guardar y Activar Ahora'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
