@@ -308,8 +308,8 @@ export default function QuickSellPage() {
   const params = useParams();
   const currentLocale = (params?.locale as 'es' | 'en') || 'es';
 
-  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro'
-  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro'>('resumen');
+  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas'
+  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas'>('resumen');
 
   // Authentication State
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
@@ -418,6 +418,14 @@ export default function QuickSellPage() {
   const [preRegisterLimit, setPreRegisterLimit] = useState<number>(10);
   const [preRegisterTotal, setPreRegisterTotal] = useState<number>(0);
   const [preRegisterTotalPages, setPreRegisterTotalPages] = useState<number>(1);
+
+  // Stages Module State
+  const [stagesList, setStagesList] = useState<any[]>([]);
+  const [stagesLoading, setStagesLoading] = useState<boolean>(false);
+  const [activatingStageId, setActivatingStageId] = useState<string | null>(null);
+  const [editingStage, setEditingStage] = useState<any | null>(null);
+  const [editingPrices, setEditingPrices] = useState<Record<string, number>>({});
+  const [savingPrices, setSavingPrices] = useState<boolean>(false);
 
   // Modal de Agregar Pre-registros State
   const [showAddPreRegisterModal, setShowAddPreRegisterModal] = useState<boolean>(false);
@@ -639,6 +647,115 @@ export default function QuickSellPage() {
       };
     }
   }, [activeView, preRegisterPage, preRegisterSearch, preRegisterLimit, fetchPreRegisterData]);
+
+  // Fetch Event Stages
+  const fetchStagesData = useCallback(async () => {
+    setStagesLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/stages', {
+        headers: { 'x-admin-token': token },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setStagesList(data.stages || []);
+          setActiveStageId(data.activeStageId || null);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching stages:', err);
+    } finally {
+      setStagesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStagesData();
+  }, [fetchStagesData]);
+
+  useEffect(() => {
+    if (activeView === 'etapas') {
+      fetchStagesData();
+    }
+  }, [activeView, fetchStagesData]);
+
+  const handleActivateStage = async (stageId: string, updatedPrices?: Record<string, number>) => {
+    setActivatingStageId(stageId);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/stages/activate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({ stageId, updatedPrices }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('¡Etapa activada con éxito!');
+        await fetchStagesData();
+      } else {
+        alert(data.error || 'Error al activar la etapa');
+      }
+    } catch (err) {
+      alert('Error de red al activar la etapa');
+    } finally {
+      setActivatingStageId(null);
+    }
+  };
+
+  const openStagePriceEditor = (stage: any) => {
+    setEditingStage(stage);
+    const existingPrices = stage.prices || {};
+    setEditingPrices({
+      early: Number(existingPrices.early ?? 250000),
+      anytime: Number(existingPrices.anytime ?? 250000),
+      general: Number(existingPrices.general ?? 250000),
+      oasis: Number(existingPrices.oasis ?? 2650000),
+      bohemian: Number(existingPrices.bohemian ?? 4800000),
+      primitivo: Number(existingPrices.primitivo ?? 5500000),
+      vip: Number(existingPrices.vip ?? 6000000),
+      candela: Number(existingPrices.candela ?? 3400000),
+      backstage: Number(existingPrices.backstage ?? 9000000),
+    });
+  };
+
+  const handleSaveStagePrices = async (activateNow = false) => {
+    if (!editingStage) return;
+    setSavingPrices(true);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/stages/prices', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({
+          stageId: editingStage.id,
+          prices: editingPrices,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (activateNow) {
+          await handleActivateStage(editingStage.id, editingPrices);
+        } else {
+          alert('Precios pre-configurados guardados con éxito.');
+          await fetchStagesData();
+        }
+        setEditingStage(null);
+      } else {
+        alert(data.error || 'Error al guardar los precios');
+      }
+    } catch (err) {
+      alert('Error de red al guardar los precios');
+    } finally {
+      setSavingPrices(false);
+    }
+  };
 
   function exportPreRegisterCSV() {
     if (preRegisterList.length === 0) {
@@ -1385,6 +1502,16 @@ export default function QuickSellPage() {
             >
               <svg className="ic" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
               Pre-registros <span className="count">{preRegisterTotal > 0 ? preRegisterTotal : ''}</span>
+            </button>
+
+            <button
+              type="button"
+              data-view="etapas"
+              aria-current={activeView === 'etapas' ? 'page' : undefined}
+              onClick={() => setActiveView('etapas')}
+            >
+              <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Etapas y Precios
             </button>
           </nav>
 
@@ -2327,6 +2454,144 @@ export default function QuickSellPage() {
                     </button>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* ---------- 6. ETAPAS Y PRECIOS VIEW ---------- */}
+          <div className={`view ${activeView === 'etapas' ? 'is-active' : ''}`} id="v-etapas">
+            <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
+              <div>
+                <h2>Activador de Etapas y Precios</h2>
+                <div className="sub">
+                  Selecciona la etapa activa en vivo o pre-configura los precios para las siguientes etapas.
+                </div>
+              </div>
+              <div className="actions">
+                <button type="button" className="btn btn-ghost" onClick={fetchStagesData}>
+                  Actualizar lista
+                </button>
+              </div>
+            </header>
+
+            <div className="stack">
+              {/* Active Stage Card Banner */}
+              {stagesList.find(s => s.id === activeStageId) && (
+                <div className="card" style={{ background: 'linear-gradient(135deg, #454A34 0%, #333726 100%)', color: '#fff', padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8FC28A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="dot" style={{ background: '#8FC28A' }} /> ETAPA ACTIVA ACTUALMENTE
+                      </div>
+                      <h3 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: '28px', margin: '4px 0 0', color: '#fff' }}>
+                        {stagesList.find(s => s.id === activeStageId)?.name}
+                      </h3>
+                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'rgba(237,235,224,0.75)' }}>
+                        Esta etapa controla los precios activos en la Web y en la App móvil.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-bronze"
+                      onClick={() => openStagePriceEditor(stagesList.find(s => s.id === activeStageId))}
+                    >
+                      Editar precios activos
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* All Stages Grid */}
+              <div className="card">
+                <div className="card-head">
+                  <div>
+                    <h3>Etapas del Evento</h3>
+                    <p>Puedes activar una etapa en 1 clic o pre-configurar sus precios con anticipación.</p>
+                  </div>
+                </div>
+
+                <div className="card-body" style={{ padding: 0 }}>
+                  {stagesLoading ? (
+                    <div style={{ padding: '30px', textAlign: 'center', color: 'var(--ink-2)' }}>
+                      Cargando etapas...
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', padding: '20px' }}>
+                      {stagesList.map((stg) => {
+                        const isActive = stg.id === activeStageId;
+                        const prices = stg.prices || {};
+
+                        return (
+                          <div
+                            key={stg.id}
+                            style={{
+                              border: isActive ? '2px solid var(--bronze)' : '1px solid var(--line)',
+                              borderRadius: 'var(--r-surface)',
+                              background: isActive ? 'var(--bronze-soft)' : '#FFF',
+                              padding: '20px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <h4 style={{ fontFamily: 'Fraunces, serif', fontSize: '20px', margin: 0, color: 'var(--ink)' }}>
+                                  {stg.name}
+                                </h4>
+                                {isActive ? (
+                                  <span style={{ background: '#8FC28A', color: '#233821', fontWeight: 600, fontSize: '11px', padding: '4px 10px', borderRadius: '99px' }}>
+                                    ✓ ACTIVA
+                                  </span>
+                                ) : (
+                                  <span style={{ background: 'var(--cream-deep)', color: 'var(--ink-2)', fontSize: '11px', padding: '4px 10px', borderRadius: '99px' }}>
+                                    INACTIVA
+                                  </span>
+                                )}
+                              </div>
+
+                              <div style={{ fontSize: '12px', color: 'var(--ink-2)', marginBottom: '14px' }}>
+                                <strong>Precios configurados:</strong>
+                                <ul style={{ margin: '6px 0 0', paddingLeft: '18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                                  <li>Early: ${Number(prices.early || 0).toLocaleString('es-CO')}</li>
+                                  <li>Anytime: ${Number(prices.anytime || 0).toLocaleString('es-CO')}</li>
+                                  {stg.name?.toLowerCase().includes('believer') && (
+                                    <li>General: ${Number(prices.general || 0).toLocaleString('es-CO')}</li>
+                                  )}
+                                  <li>Oasis: ${Number(prices.oasis || 0).toLocaleString('es-CO')}</li>
+                                  <li>Bohemian: ${Number(prices.bohemian || 0).toLocaleString('es-CO')}</li>
+                                  <li>Primitivo: ${Number(prices.primitivo || 0).toLocaleString('es-CO')}</li>
+                                </ul>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--line-soft)' }}>
+                              <button
+                                type="button"
+                                className="btn btn-ghost"
+                                style={{ flex: 1, justifyContent: 'center' }}
+                                onClick={() => openStagePriceEditor(stg)}
+                              >
+                                Pre-configurar precios
+                              </button>
+                              {!isActive && (
+                                <button
+                                  type="button"
+                                  className="btn btn-primary"
+                                  style={{ flex: 1, justifyContent: 'center' }}
+                                  disabled={activatingStageId === stg.id}
+                                  onClick={() => handleActivateStage(stg.id)}
+                                >
+                                  {activatingStageId === stg.id ? 'Activando...' : 'Activar Etapa'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
