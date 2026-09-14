@@ -305,16 +305,31 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
   if (activeStage && activeStage.prices && typeof activeStage.prices === 'object') {
     const overrides = activeStage.prices as Record<string, any>;
     combined = combined.map((t) => {
+      const zoneKey = (t.zone || '').toLowerCase();
+      const idPrefix = (t.id || '').split('-')[0].toLowerCase();
+      const nameLower = (t.name || '').toLowerCase();
+
+      let overridePrice: number | undefined = undefined;
+
       if (overrides[t.id] !== undefined) {
-        return {
-          ...t,
-          price: Number(overrides[t.id])
-        };
+        overridePrice = Number(overrides[t.id]);
+      } else if (zoneKey && overrides[zoneKey] !== undefined) {
+        overridePrice = Number(overrides[zoneKey]);
+      } else if (idPrefix && overrides[idPrefix] !== undefined) {
+        overridePrice = Number(overrides[idPrefix]);
+      } else {
+        for (const k of Object.keys(overrides)) {
+          if (k && nameLower.includes(k.toLowerCase())) {
+            overridePrice = Number(overrides[k]);
+            break;
+          }
+        }
       }
-      if (t.zone && overrides[t.zone] !== undefined) {
+
+      if (overridePrice !== undefined && !isNaN(overridePrice)) {
         return {
           ...t,
-          price: Number(overrides[t.zone])
+          price: overridePrice,
         };
       }
       return t;

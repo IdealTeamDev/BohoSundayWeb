@@ -651,6 +651,7 @@ export default function QuickSellPage() {
   // Fetch Event Stages
   const fetchStagesData = useCallback(async () => {
     setStagesLoading(true);
+    setFetchingStages(true);
     try {
       const token = localStorage.getItem('admin_token') || '';
       const res = await fetch('/api/admin/stages', {
@@ -659,16 +660,60 @@ export default function QuickSellPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setStagesList(data.stages || []);
-          setActiveStageId(data.activeStageId || null);
+          const stgs = data.stages || [];
+          setStagesList(stgs);
+          setStages(stgs);
+          const actId = data.activeStageId || (stgs.length > 0 ? stgs[0].id : null);
+          setActiveStageId(actId);
+          if (actId) {
+            setSelectedStageId(actId);
+          }
         }
       }
     } catch (err) {
       console.error('Error fetching stages:', err);
     } finally {
       setStagesLoading(false);
+      setFetchingStages(false);
     }
   }, []);
+
+  const fetchTicketsData = useCallback(async (stageIdToUse?: string) => {
+    setFetchingTickets(true);
+    try {
+      const stgId = stageIdToUse !== undefined ? stageIdToUse : (selectedStageId || activeStageId || '');
+      const url = stgId ? `/api/tickets?stageId=${stgId}&nocache=${Date.now()}` : `/api/tickets?nocache=${Date.now()}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const sorted = [...data].sort((a: any, b: any) => {
+          const isIndivA = a.stock !== undefined;
+          const isIndivB = b.stock !== undefined;
+          if (isIndivA && !isIndivB) return -1;
+          if (!isIndivA && isIndivB) return 1;
+          if (isIndivA && isIndivB) {
+            return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+          }
+          const nameCompare = a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+          if (nameCompare !== 0) return nameCompare;
+          return (a.number || 0) - (b.number || 0);
+        });
+        setTickets(sorted);
+        if (sorted.length > 0) {
+          const stillValid = sorted.some((t: any) => t.id === selectedTicketId);
+          if (!stillValid) {
+            setSelectedTicketId(sorted[0].id);
+          }
+        } else {
+          setSelectedTicketId('');
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching tickets:', err);
+    } finally {
+      setFetchingTickets(false);
+    }
+  }, [selectedStageId, activeStageId, selectedTicketId]);
 
   useEffect(() => {
     fetchStagesData();
@@ -677,8 +722,10 @@ export default function QuickSellPage() {
   useEffect(() => {
     if (activeView === 'etapas') {
       fetchStagesData();
+    } else if (activeView === 'venta') {
+      fetchStagesData().then(() => fetchTicketsData());
     }
-  }, [activeView, fetchStagesData]);
+  }, [activeView, fetchStagesData, fetchTicketsData]);
 
   const handleActivateStage = async (stageId: string, updatedPrices?: Record<string, number>) => {
     setActivatingStageId(stageId);
@@ -695,7 +742,9 @@ export default function QuickSellPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         alert('¡Etapa activada con éxito!');
+        setSelectedStageId(stageId);
         await fetchStagesData();
+        await fetchTicketsData(stageId);
       } else {
         alert(data.error || 'Error al activar la etapa');
       }
@@ -745,6 +794,7 @@ export default function QuickSellPage() {
         } else {
           alert('Precios pre-configurados guardados con éxito.');
           await fetchStagesData();
+          await fetchTicketsData(editingStage.id);
         }
         setEditingStage(null);
       } else {
@@ -896,74 +946,10 @@ export default function QuickSellPage() {
 
   // Fetch Stages & Tickets for Sales Form
   useEffect(() => {
-    async function fetchStages() {
-      try {
-        const token = localStorage.getItem('admin_token') || '';
-        const res = await fetch('/api/admin/stages', {
-          headers: { 'x-admin-token': token }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success) {
-            setStages(data.stages);
-            if (data.activeStageId) {
-              setActiveStageId(data.activeStageId);
-              setSelectedStageId(data.activeStageId);
-            } else if (data.stages.length > 0) {
-              setSelectedStageId(data.stages[0].id);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching stages:', err);
-      } finally {
-        setFetchingStages(false);
-      }
-    }
-    fetchStages();
-  }, []);
-
-  useEffect(() => {
-    async function fetchTickets() {
-      setFetchingTickets(true);
-      try {
-        const url = selectedStageId ? `/api/tickets?stageId=${selectedStageId}` : '/api/tickets';
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          const sorted = [...data].sort((a: any, b: any) => {
-            const isIndivA = a.stock !== undefined;
-            const isIndivB = b.stock !== undefined;
-            if (isIndivA && !isIndivB) return -1;
-            if (!isIndivA && isIndivB) return 1;
-            if (isIndivA && isIndivB) {
-              return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
-            }
-            const nameCompare = a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
-            if (nameCompare !== 0) return nameCompare;
-            return (a.number || 0) - (b.number || 0);
-          });
-          setTickets(sorted);
-          if (sorted.length > 0) {
-            const stillValid = sorted.some((t: any) => t.id === selectedTicketId);
-            if (!stillValid) {
-              setSelectedTicketId(sorted[0].id);
-            }
-          } else {
-            setSelectedTicketId('');
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching tickets:', err);
-      } finally {
-        setFetchingTickets(false);
-      }
-    }
-
     if (!fetchingStages) {
-      fetchTickets();
+      fetchTicketsData();
     }
-  }, [selectedStageId, fetchingStages, selectedTicketId]);
+  }, [selectedStageId, fetchingStages, fetchTicketsData]);
 
   // Fetch Purchased Tickets Table
   const fetchPurchasedTickets = useCallback(async (
@@ -1694,7 +1680,11 @@ export default function QuickSellPage() {
                       <select
                         id="etapa"
                         value={selectedStageId}
-                        onChange={(e) => setSelectedStageId(e.target.value)}
+                        onChange={(e) => {
+                          const newStageId = e.target.value;
+                          setSelectedStageId(newStageId);
+                          fetchTicketsData(newStageId);
+                        }}
                       >
                         <option value="">Precios Base (Sin Etapa)</option>
                         {stages.map((s) => (
