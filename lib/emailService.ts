@@ -1748,3 +1748,88 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
     console.error(`[Admin Notification] ❌ Error sending admin notification email:`, error);
   }
 }
+
+/**
+ * Sends a security alert email when admin login attempts exceed limit and get locked out.
+ */
+export async function sendSecurityAlertEmail({
+  username,
+  ip,
+  attemptsCount,
+}: {
+  username: string;
+  ip?: string;
+  attemptsCount: number;
+}) {
+  try {
+    const transport = createTransport();
+    const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday Security" <reservas@bohosunday.com>';
+    const recipients = [
+      'alejandra@idealteamcolombia.com',
+      'idealdeveloperweb@gmail.com',
+      'idealteamcolombia@gmail.com',
+      'elizabeth@idealteamcolombia.com',
+    ];
+
+    const timestamp = new Date().toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      dateStyle: 'full',
+      timeStyle: 'medium',
+    });
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff; color: #111827;">
+        <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #ef4444;">
+          <h1 style="color: #dc2626; margin: 0; font-size: 22px;">🚨 Alerta de Seguridad: Bloqueo de Inicios de Sesión</h1>
+          <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">Panel de Administración - Boho Sunday Web</p>
+        </div>
+
+        <div style="padding: 20px 0;">
+          <p style="font-size: 15px; line-height: 1.5; color: #374151;">
+            Se han detectado múltiples intentos fallidos de inicio de sesión en el sistema administrativo de Boho Sunday. El acceso ha sido <strong>bloqueado por 5 minutos</strong> de manera preventiva.
+          </p>
+
+          <table style="width: 100%; margin: 20px 0; border-collapse: collapse; background-color: #f9fafb; border-radius: 8px; overflow: hidden;">
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+              <td style="padding: 12px 16px; font-weight: 600; color: #4b5563; width: 40%;">Usuario Intentado:</td>
+              <td style="padding: 12px 16px; font-weight: bold; color: #111827;">${username}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+              <td style="padding: 12px 16px; font-weight: 600; color: #4b5563;">Intentos Fallidos:</td>
+              <td style="padding: 12px 16px; color: #dc2626; font-weight: bold;">${attemptsCount} intentos consecutivo(s)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+              <td style="padding: 12px 16px; font-weight: 600; color: #4b5563;">Dirección IP:</td>
+              <td style="padding: 12px 16px; font-family: monospace; color: #111827;">${ip || 'No disponible'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 16px; font-weight: 600; color: #4b5563;">Fecha y Hora:</td>
+              <td style="padding: 12px 16px; color: #111827;">${timestamp}</td>
+            </tr>
+          </table>
+
+          <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 16px; border-radius: 4px; margin-top: 20px;">
+            <p style="margin: 0; font-size: 13px; color: #991b1b;">
+              <strong>Acción tomada:</strong> Los intentos de inicio de sesión con este usuario/IP quedan suspendidos durante 5 minutos.
+            </p>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; text-align: center; color: #9ca3af; font-size: 12px;">
+          Este es un correo automático del sistema de monitoreo de seguridad de Boho Sunday Web.
+        </div>
+      </div>
+    `;
+
+    await transport.sendMail({
+      from: fromAddress,
+      to: recipients.join(', '),
+      subject: `🚨 ALERTA DE SEGURIDAD: Bloqueo de inicio de sesión (${username})`,
+      html,
+    });
+
+    console.log(`[Security Alert] Security alert email successfully sent to ${recipients.join(', ')} for user: ${username}`);
+  } catch (error) {
+    console.error(`[Security Alert] ❌ Error sending security alert email:`, error);
+  }
+}

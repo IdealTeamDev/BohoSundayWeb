@@ -7,6 +7,7 @@ import type { Ticket } from '@/types';
 import { jsPDF } from 'jspdf';
 import { sortedCountries, getFlagEmoji } from '@/data/countries';
 import AdminEventMap from '@/components/eventmap/AdminEventMap';
+import * as XLSX from 'xlsx';
 
 const customAdminCSS = `
 :root{
@@ -417,6 +418,155 @@ export default function QuickSellPage() {
   const [preRegisterLimit, setPreRegisterLimit] = useState<number>(10);
   const [preRegisterTotal, setPreRegisterTotal] = useState<number>(0);
   const [preRegisterTotalPages, setPreRegisterTotalPages] = useState<number>(1);
+
+  // Modal de Agregar Pre-registros State
+  const [showAddPreRegisterModal, setShowAddPreRegisterModal] = useState<boolean>(false);
+  const [preRegisterModalTab, setPreRegisterModalTab] = useState<'manual' | 'excel'>('manual');
+  const [manualNombre, setManualNombre] = useState<string>('');
+  const [manualEmail, setManualEmail] = useState<string>('');
+  const [excelFileName, setExcelFileName] = useState<string>('');
+  const [parsedExcelRows, setParsedExcelRows] = useState<Array<{ nombre_completo: string; email: string }>>([]);
+  const [excelParseError, setExcelParseError] = useState<string>('');
+  const [submittingPreRegister, setSubmittingPreRegister] = useState<boolean>(false);
+  const [preRegisterModalMessage, setPreRegisterModalMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  // Cargar y procesar Excel/CSV
+  const handleExcelFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setExcelFileName(file.name);
+    setExcelParseError('');
+    setParsedExcelRows([]);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json<any>(ws, { header: 1 });
+
+        if (!data || data.length < 2) {
+          setExcelParseError('El archivo está vacío o no contiene filas de datos.');
+          return;
+        }
+
+        const headers: string[] = (data[0] || []).map((h: any) => String(h || '').trim().toLowerCase());
+        
+        let nameIdx = headers.findIndex(h => h.includes('nomb') || h.includes('name') || h.includes('interesado') || h.includes('persona'));
+        let emailIdx = headers.findIndex(h => h.includes('mail') || h.includes('correo') || h.includes('email'));
+
+        if (nameIdx === -1) nameIdx = 0;
+        if (emailIdx === -1) emailIdx = 1;
+
+        const rows: Array<{ nombre_completo: string; email: string }> = [];
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        for (let i = 1; i < data.length; i++) {
+          const row = data[i];
+          if (!row || !Array.isArray(row)) continue;
+          
+          const rawName = String(row[nameIdx] || '').trim();
+          const rawEmail = String(row[emailIdx] || '').trim();
+
+          if (rawName && rawEmail && emailRegex.test(rawEmail)) {
+            rows.push({ nombre_completo: rawName, email: rawEmail });
+          }
+        }
+
+        if (rows.length === 0) {
+          setExcelParseError('No se encontraron filas con nombre y correo electrónico válidos.');
+        } else {
+          setParsedExcelRows(rows);
+        }
+      } catch (err: any) {
+        console.error('Error leyendo archivo Excel:', err);
+        setExcelParseError('Error al leer el archivo Excel/CSV. Verifica que sea un archivo válido.');
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  // Enviar formulario manual o masivo
+  const handleSavePreRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPreRegisterModalMessage(null);
+
+    const token = localStorage.getItem('admin_token') || '';
+
+    if (preRegisterModalTab === 'manual') {
+      if (!manualNombre.trim() || !manualEmail.trim()) {
+        setPreRegisterModalMessage({ type: 'error', text: 'Por favor completa el nombre y el correo electrónico.' });
+        return;
+      }
+
+      setSubmittingPreRegister(true);
+      try {
+        const res = await fetch('/api/admin/pre-register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': token,
+          },
+          body: JSON.stringify({
+            mode: 'single',
+            nombre_completo: manualNombre,
+            email: manualEmail,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setPreRegisterModalMessage({ type: 'success', text: data.message || 'Pre-registro guardado con éxito.' });
+          setManualNombre('');
+          setManualEmail('');
+          fetchPreRegisterData(preRegisterPage, preRegisterSearch, preRegisterLimit);
+        } else {
+          setPreRegisterModalMessage({ type: 'error', text: data.error || 'Error al guardar pre-registro.' });
+        }
+      } catch (err) {
+        setPreRegisterModalMessage({ type: 'error', text: 'Error de red al conectar con el servidor.' });
+      } finally {
+        setSubmittingPreRegister(false);
+      }
+    } else {
+      if (parsedExcelRows.length === 0) {
+        setPreRegisterModalMessage({ type: 'error', text: 'Primero debes seleccionar un archivo Excel o CSV válido.' });
+        return;
+      }
+
+      setSubmittingPreRegister(true);
+      try {
+        const res = await fetch('/api/admin/pre-register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': token,
+          },
+          body: JSON.stringify({
+            mode: 'bulk',
+            items: parsedExcelRows,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setPreRegisterModalMessage({ type: 'success', text: data.message || 'Proceso completado.' });
+          setParsedExcelRows([]);
+          setExcelFileName('');
+          fetchPreRegisterData(preRegisterPage, preRegisterSearch, preRegisterLimit);
+        } else {
+          setPreRegisterModalMessage({ type: 'error', text: data.error || 'Error al importar archivo.' });
+        }
+      } catch (err) {
+        setPreRegisterModalMessage({ type: 'error', text: 'Error de red al conectar con el servidor.' });
+      } finally {
+        setSubmittingPreRegister(false);
+      }
+    }
+  };
 
   const fetchPreRegisterData = useCallback(async (
     page = preRegisterPage,
@@ -1081,7 +1231,7 @@ export default function QuickSellPage() {
         buyerName: buyerInfo.name,
         buyerEmail: buyerInfo.email,
         ticketName: selectedTicket?.stock === undefined
-          ? `${selectedTicket?.name || 'Mesa'} #${selectedTicket?.number}`
+          ? `${selectedTicket?.name || 'Mesa'} - ${selectedTicket?.number}`
           : selectedTicket?.name || 'Boleta',
         qrUrl,
         qrImageUrl,
@@ -1443,7 +1593,9 @@ export default function QuickSellPage() {
                           <option value="">Cargando boletería...</option>
                         ) : tickets.map((t) => (
                           <option key={t.id} value={t.id}>
-                            {t.name} — ${t.price.toLocaleString('es-CO')} {t.stock !== undefined ? `· ${(t as any).remaining ?? t.stock} disponibles` : `(Cama #${t.number})`}
+                            {t.stock !== undefined
+                              ? `${t.name} — $${t.price.toLocaleString('es-CO')} · ${(t as any).remaining ?? t.stock} disponibles`
+                              : `${t.name} - ${t.number} — $${t.price.toLocaleString('es-CO')}`}
                           </option>
                         ))}
                       </select>
@@ -1967,6 +2119,17 @@ export default function QuickSellPage() {
                 <div className="sub">{preRegisterTotal} personas interesadas registradas en la web · actualización en vivo</div>
               </div>
               <div className="actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ background: 'var(--olive-700)', color: '#fff' }}
+                  onClick={() => {
+                    setShowAddPreRegisterModal(true);
+                    setPreRegisterModalMessage(null);
+                  }}
+                >
+                  + Agregar Pre-registro
+                </button>
                 <button type="button" className="btn btn-ghost" onClick={exportPreRegisterCSV}>Exportar CSV</button>
               </div>
             </header>
@@ -1984,6 +2147,31 @@ export default function QuickSellPage() {
                     }}
                   />
                 </div>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '13px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--olive-700)',
+                    color: '#fff',
+                    borderRadius: 'var(--r-control)',
+                    fontWeight: 500,
+                  }}
+                  onClick={() => {
+                    setShowAddPreRegisterModal(true);
+                    setPreRegisterModalMessage(null);
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Agregar Pre-registro
+                </button>
 
                 {/* Limit Selector */}
                 <select
@@ -2299,6 +2487,304 @@ export default function QuickSellPage() {
               >
                 Registrar Otra Venta
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- MODAL AGREGAR PRE-REGISTRO ---------- */}
+      {showAddPreRegisterModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(38, 38, 31, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px',
+          }}
+          onClick={() => setShowAddPreRegisterModal(false)}
+        >
+          <div
+            style={{
+              background: '#FFFFFF',
+              borderRadius: '12px',
+              maxWidth: '540px',
+              width: '100%',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '90vh',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '18px 24px',
+                borderBottom: '1px solid var(--line-soft)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: 'var(--cream)',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: 'var(--ink)' }}>
+                  Agregar Pre-registros
+                </h3>
+                <span style={{ fontSize: '12.5px', color: 'var(--ink-2)' }}>
+                  Agrega contactos sin requerir teléfono (manual o masivo)
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddPreRegisterModal(false)}
+                style={{
+                  fontSize: '20px',
+                  color: 'var(--ink-3)',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  borderRadius: '4px',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div style={{ padding: '24px', overflowY: 'auto' }}>
+              {/* Segmented control for tabs */}
+              <div
+                className="seg"
+                style={{
+                  display: 'flex',
+                  width: '100%',
+                  marginBottom: '20px',
+                }}
+              >
+                <button
+                  type="button"
+                  style={{ flex: 1, textAlign: 'center' }}
+                  aria-pressed={preRegisterModalTab === 'manual'}
+                  onClick={() => {
+                    setPreRegisterModalTab('manual');
+                    setPreRegisterModalMessage(null);
+                  }}
+                >
+                  Ingreso Manual
+                </button>
+                <button
+                  type="button"
+                  style={{ flex: 1, textAlign: 'center' }}
+                  aria-pressed={preRegisterModalTab === 'excel'}
+                  onClick={() => {
+                    setPreRegisterModalTab('excel');
+                    setPreRegisterModalMessage(null);
+                  }}
+                >
+                  Cargar Excel / CSV
+                </button>
+              </div>
+
+              {/* Feedback messages */}
+              {preRegisterModalMessage && (
+                <div
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    marginBottom: '16px',
+                    background:
+                      preRegisterModalMessage.type === 'success' ? 'var(--ok-soft)' : 'var(--sold-soft)',
+                    color:
+                      preRegisterModalMessage.type === 'success' ? 'var(--ok)' : 'var(--sold)',
+                    border: `1px solid ${
+                      preRegisterModalMessage.type === 'success' ? '#C3E0C4' : '#F0B8AE'
+                    }`,
+                  }}
+                >
+                  {preRegisterModalMessage.text}
+                </div>
+              )}
+
+              {/* Tab 1: Manual Form */}
+              {preRegisterModalTab === 'manual' ? (
+                <form onSubmit={handleSavePreRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px', color: 'var(--ink)' }}>
+                      Nombre Completo <span style={{ color: 'var(--sold)' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ej: Juan Pérez"
+                      value={manualNombre}
+                      onChange={(e) => setManualNombre(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, marginBottom: '6px', color: 'var(--ink)' }}>
+                      Correo Electrónico <span style={{ color: 'var(--sold)' }}>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="Ej: juan@ejemplo.com"
+                      value={manualEmail}
+                      onChange={(e) => setManualEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <p style={{ fontSize: '12px', color: 'var(--ink-3)', margin: 0 }}>
+                    ℹ️ Nota: Este registro se guardará sin teléfono. El correo será analizado para evitar registros duplicados.
+                  </p>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => setShowAddPreRegisterModal(false)}
+                      disabled={submittingPreRegister}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      style={{ background: 'var(--olive-700)', color: '#fff', padding: '10px 20px' }}
+                      disabled={submittingPreRegister}
+                    >
+                      {submittingPreRegister ? 'Guardando...' : 'Guardar Pre-registro'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* Tab 2: Excel / CSV Upload */
+                <form onSubmit={handleSavePreRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div
+                    style={{
+                      border: '2px dashed var(--line)',
+                      borderRadius: '8px',
+                      padding: '24px 16px',
+                      textAlign: 'center',
+                      background: 'var(--cream)',
+                      cursor: 'pointer',
+                      position: 'relative',
+                    }}
+                  >
+                    <input
+                      type="file"
+                      accept=".xlsx, .xls, .csv"
+                      onChange={handleExcelFileUpload}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: 0,
+                        cursor: 'pointer',
+                        width: '100%',
+                        height: '100%',
+                      }}
+                    />
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="36"
+                      height="36"
+                      stroke="var(--olive-500)"
+                      strokeWidth="1.5"
+                      fill="none"
+                      style={{ margin: '0 auto 8px', display: 'block' }}
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                    </svg>
+                    <div style={{ fontWeight: 500, color: 'var(--ink)' }}>
+                      {excelFileName ? excelFileName : 'Haz clic o arrastra un archivo Excel (.xlsx, .csv)'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--ink-3)', marginTop: '4px' }}>
+                      Columnas requeridas: <b>Nombre</b> (o Nombre Completo) y <b>Correo</b> (o Email)
+                    </div>
+                  </div>
+
+                  {excelParseError && (
+                    <div style={{ fontSize: '13px', color: 'var(--sold)' }}>{excelParseError}</div>
+                  )}
+
+                  {parsedExcelRows.length > 0 && (
+                    <div>
+                      <div
+                        style={{
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          color: 'var(--ok)',
+                          marginBottom: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        ✓ {parsedExcelRows.length} registro(s) válido(s) listo(s) para procesar
+                      </div>
+                      <div
+                        style={{
+                          maxHeight: '140px',
+                          overflowY: 'auto',
+                          border: '1px solid var(--line-soft)',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                        }}
+                      >
+                        <table style={{ margin: 0 }}>
+                          <thead>
+                            <tr style={{ background: 'var(--cream)', borderBottom: '1px solid var(--line-soft)' }}>
+                              <th style={{ padding: '6px 10px', textAlign: 'left' }}>Nombre</th>
+                              <th style={{ padding: '6px 10px', textAlign: 'left' }}>Correo</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {parsedExcelRows.slice(0, 5).map((row, idx) => (
+                              <tr key={idx} style={{ borderBottom: '1px solid var(--line-soft)' }}>
+                                <td style={{ padding: '6px 10px' }}>{row.nombre_completo}</td>
+                                <td style={{ padding: '6px 10px', color: 'var(--ink-2)' }}>{row.email}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {parsedExcelRows.length > 5 && (
+                          <div style={{ padding: '6px 10px', color: 'var(--ink-3)', textAlign: 'center', background: '#fafafa' }}>
+                            ... y {parsedExcelRows.length - 5} registro(s) más
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => setShowAddPreRegisterModal(false)}
+                      disabled={submittingPreRegister}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      style={{ background: 'var(--olive-700)', color: '#fff', padding: '10px 20px' }}
+                      disabled={submittingPreRegister || parsedExcelRows.length === 0}
+                    >
+                      {submittingPreRegister
+                        ? 'Importando...'
+                        : `Importar ${parsedExcelRows.length > 0 ? parsedExcelRows.length : ''} Registros`}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
