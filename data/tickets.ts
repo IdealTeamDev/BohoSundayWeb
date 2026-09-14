@@ -31,5 +31,20 @@ export const tickets: Ticket[] = [
     available: true,
     position: { x: 0, y: 0 },
     stock: 100
+  },
+  {
+    id: 'general',
+    zone: 'general',
+    iconCard: 'images/icon/icon-early.png',
+    img: 'images/individual-ticket/card-early.png',
+    name: 'GENERAL',
+    number: 3,
+    persons: 1,
+    price: 250000,
+    currency: 'COP',
+    includes: { licor: 'Acceso General Believers', agua: 0, redBull: 0 },
+    available: true,
+    position: { x: 0, y: 0 },
+    stock: 100
   }
 ];

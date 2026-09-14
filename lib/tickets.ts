@@ -236,7 +236,7 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
           iconCard: staticInfo.iconCard,
           img: staticInfo.img,
           name: row.name,
-          number: row.id === 'early' ? 1 : 2,
+          number: row.id === 'early' ? 1 : (row.id === 'general' ? 3 : 2),
           persons: 1,
           price: Number(row.price),
           currency: 'COP',
@@ -262,8 +262,6 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
     ? staticTickets.filter(t => t.zone === 'general')
     : wordpressIndividual;
 
-  let combined = [...finalCamas, ...finalIndividual];
-
   // 3. Fetch stage override if applicable
   let activeStage: any = null;
   try {
@@ -283,18 +281,36 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
     console.error('[Tickets Service] Error fetching event stage overrides:', err);
   }
 
-  // 4. Apply stage price overrides
+  // 4. Check if active stage is 'Believers' stage
+  const isBelieversStage = Boolean(
+    activeStage &&
+    (
+      (activeStage.id && String(activeStage.id).toLowerCase().includes('believer')) ||
+      (activeStage.name && String(activeStage.name).toLowerCase().includes('believer')) ||
+      (activeStage.slug && String(activeStage.slug).toLowerCase().includes('believer'))
+    )
+  );
+
+  // Filter out 'general' ticket if active stage is not Believers
+  const filteredIndividual = finalIndividual.filter(t => {
+    if (t.id === 'general') {
+      return isBelieversStage;
+    }
+    return true;
+  });
+
+  let combined = [...finalCamas, ...filteredIndividual];
+
+  // 5. Apply stage price overrides
   if (activeStage && activeStage.prices && typeof activeStage.prices === 'object') {
     const overrides = activeStage.prices as Record<string, any>;
     combined = combined.map((t) => {
-      // Check specific ID override first (e.g., 'early' or 'oasis-1')
       if (overrides[t.id] !== undefined) {
         return {
           ...t,
           price: Number(overrides[t.id])
         };
       }
-      // Check zone name override (e.g., 'oasis' or 'bohemian')
       if (t.zone && overrides[t.zone] !== undefined) {
         return {
           ...t,

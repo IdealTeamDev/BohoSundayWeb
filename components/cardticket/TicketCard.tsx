@@ -17,7 +17,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
 
-  const ticketKey = (ticket.id === 'early' || ticket.id === 'anytime') ? ticket.id : ticket.zone;
+  const ticketKey = (ticket.id === 'early' || ticket.id === 'anytime' || ticket.id === 'general') ? ticket.id : ticket.zone;
   const tTicket = t.tickets[ticketKey as keyof typeof t.tickets] as { name: string; description: string; licor: string };
 
   const formattedPrice = new Intl.NumberFormat('es-CO').format(ticket.price);

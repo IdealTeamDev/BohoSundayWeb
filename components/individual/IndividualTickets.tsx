@@ -21,6 +21,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
 
   const earlyTicket = dynamicTickets.find((t) => t.id === 'early');
   const anytimeTicket = dynamicTickets.find((t) => t.id === 'anytime');
+  const generalTicket = dynamicTickets.find((t) => t.id === 'general');
 
   useEffect(() => {
     async function fetchStatuses() {
@@ -79,9 +80,11 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
 
   const earlyRemaining = earlyTicket ? (ticketStatuses['early']?.remaining ?? earlyTicket.stock ?? 0) : 0;
   const anytimeRemaining = anytimeTicket ? (ticketStatuses['anytime']?.remaining ?? anytimeTicket.stock ?? 0) : 0;
+  const generalRemaining = generalTicket ? (ticketStatuses['general']?.remaining ?? generalTicket.stock ?? 0) : 0;
 
   const isEarlySoldOut = !earlyTicket || earlyRemaining <= 0 || ticketStatuses['early']?.status === 'sold';
   const isAnytimeSoldOut = !anytimeTicket || anytimeRemaining <= 0 || ticketStatuses['anytime']?.status === 'sold';
+  const isGeneralSoldOut = !generalTicket || generalRemaining <= 0 || ticketStatuses['general']?.status === 'sold';
 
   if (dynamicTickets.length === 0) {
     return (
@@ -125,83 +128,127 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
       </h2>
 
       {/* Tickets List */}
-      <div className="w-full flex flex-col lg:flex-row gap-5 max-w-sm lg:max-w-2xl">
+      <div className="w-full flex flex-col lg:flex-row gap-5 max-w-sm lg:max-w-3xl justify-center">
         
         {/* ENTRADA EARLY */}
-        <button
-          onClick={() => !isEarlySoldOut && earlyTicket && setSelectedTicket(earlyTicket)}
-          disabled={isEarlySoldOut}
-          className={`w-full h-36 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
-            isEarlySoldOut
-              ? 'cursor-not-allowed'
-              : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
-          }`}
-          style={{
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundImage: 'url("/images/individual-ticket/early.png")',
-            backgroundColor: '#4E4F44',
-          }}
-        >
-          {isEarlySoldOut && (
-            <>
-              {/* Dark overlay */}
-              <div className="absolute inset-0 bg-black/60 z-10" />
-              {/* Sold out badge */}
-              <div className="absolute top-3 right-3 z-20 border-2 border-[#D0803E] bg-[#F2DCC4] text-[#CF6E19] text-[12px] font-medium pt-1.5 pb-1 px-3 rounded-xl font-nunito">
-                SOLD OUT
-              </div>
-            </>
-          )}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-            <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
-              {t.generalModal.entrada}
-            </span>
-            <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
-              {t.generalModal.early}
-            </span>
-            <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
-            </span>
-          </div>
-        </button>
+        {earlyTicket && (
+          <button
+            onClick={() => !isEarlySoldOut && setSelectedTicket(earlyTicket)}
+            disabled={isEarlySoldOut}
+            className={`w-full h-36 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
+              isEarlySoldOut
+                ? 'cursor-not-allowed'
+                : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
+            }`}
+            style={{
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundImage: 'url("/images/individual-ticket/early.png")',
+              backgroundColor: '#4E4F44',
+            }}
+          >
+            {isEarlySoldOut && (
+              <>
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-black/60 z-10" />
+                {/* Sold out badge */}
+                <div className="absolute top-3 right-3 z-20 border-2 border-[#D0803E] bg-[#F2DCC4] text-[#CF6E19] text-[12px] font-medium pt-1.5 pb-1 px-3 rounded-xl font-nunito">
+                  SOLD OUT
+                </div>
+              </>
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+              <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
+                {t.generalModal.entrada}
+              </span>
+              <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+                {t.generalModal.early}
+              </span>
+              <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
+              </span>
+            </div>
+          </button>
+        )}
 
         {/* ENTRADA ANYTIME */}
-        <button
-          onClick={() => !isAnytimeSoldOut && anytimeTicket && setSelectedTicket(anytimeTicket)}
-          disabled={isAnytimeSoldOut}
-          className={`w-full h-36 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
-            isAnytimeSoldOut
-              ? 'cursor-not-allowed'
-              : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
-          }`}
-          style={{
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundImage: 'url("/images/individual-ticket/anytime.png")',
-            backgroundColor: '#45463C',
-          }}
-        >
-          {isAnytimeSoldOut && (
-            <>
-              {/* Dark overlay */}
-              <div className="absolute inset-0 bg-black/60 z-10" />
-              {/* Sold out badge */}
-              <div className="absolute top-3 right-3 z-20 border-2 border-[#D0803E] bg-[#F2DCC4] text-[#D0803E] text-[11px] font-extrabold tracking-wider px-2.5 py-0.5 rounded-xl font-sans">
-                SOLD OUT
-              </div>
-            </>
-          )}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-            <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
-              {t.generalModal.entrada}
-            </span>
-            <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
-              {t.generalModal.anytime}
-            </span>
-            <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
-            </span>
-          </div>
-        </button>
+        {anytimeTicket && (
+          <button
+            onClick={() => !isAnytimeSoldOut && setSelectedTicket(anytimeTicket)}
+            disabled={isAnytimeSoldOut}
+            className={`w-full h-36 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
+              isAnytimeSoldOut
+                ? 'cursor-not-allowed'
+                : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
+            }`}
+            style={{
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundImage: 'url("/images/individual-ticket/anytime.png")',
+              backgroundColor: '#45463C',
+            }}
+          >
+            {isAnytimeSoldOut && (
+              <>
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-black/60 z-10" />
+                {/* Sold out badge */}
+                <div className="absolute top-3 right-3 z-20 border-2 border-[#D0803E] bg-[#F2DCC4] text-[#D0803E] text-[11px] font-extrabold tracking-wider px-2.5 py-0.5 rounded-xl font-sans">
+                  SOLD OUT
+                </div>
+              </>
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+              <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
+                {t.generalModal.entrada}
+              </span>
+              <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+                {t.generalModal.anytime}
+              </span>
+              <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
+              </span>
+            </div>
+          </button>
+        )}
+
+        {/* ENTRADA GENERAL */}
+        {generalTicket && (
+          <button
+            onClick={() => !isGeneralSoldOut && setSelectedTicket(generalTicket)}
+            disabled={isGeneralSoldOut}
+            className={`w-full h-36 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
+              isGeneralSoldOut
+                ? 'cursor-not-allowed'
+                : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
+            }`}
+            style={{
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundImage: 'url("/images/individual-ticket/general.png"), url("/images/individual-ticket/anytime.png")',
+              backgroundColor: '#45463C',
+            }}
+          >
+            {isGeneralSoldOut && (
+              <>
+                {/* Dark overlay */}
+                <div className="absolute inset-0 bg-black/60 z-10" />
+                {/* Sold out badge */}
+                <div className="absolute top-3 right-3 z-20 border-2 border-[#D0803E] bg-[#F2DCC4] text-[#D0803E] text-[11px] font-extrabold tracking-wider px-2.5 py-0.5 rounded-xl font-sans">
+                  SOLD OUT
+                </div>
+              </>
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+              <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
+                {t.generalModal.entrada}
+              </span>
+              <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+                {t.generalModal.general || 'GENERAL'}
+              </span>
+              <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
+              </span>
+            </div>
+          </button>
+        )}
 
       </div>
 

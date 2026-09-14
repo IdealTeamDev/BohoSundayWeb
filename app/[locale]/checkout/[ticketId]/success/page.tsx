@@ -170,7 +170,7 @@ export default function SuccessPage() {
   }, [ticketId, searchParams, router]);
 
   function handleShare(method: 'copy' | 'whatsapp' | 'instagram' | 'facebook') {
-    const ticketKey = (ticket?.id === 'early' || ticket?.id === 'anytime') ? ticket?.id : ticket?.zone;
+    const ticketKey = (ticket?.id === 'early' || ticket?.id === 'anytime' || ticket?.id === 'general') ? ticket?.id : ticket?.zone;
     const tTicketName = ticketKey ? (t.tickets[ticketKey as keyof typeof t.tickets] as { name: string }).name : ticket?.name;
 
     const baseMsg = ticket?.stock === undefined ? t.success.shareMessageTable : t.success.shareMessageTicket;

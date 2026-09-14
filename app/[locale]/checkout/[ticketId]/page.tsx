@@ -209,7 +209,7 @@ export default function CheckoutPage() {
 
   if (!ticket || ticket.disabled) return null;
 
-  const ticketKey = (ticket.id === 'early' || ticket.id === 'anytime') ? ticket.id : ticket.zone;
+  const ticketKey = (ticket.id === 'early' || ticket.id === 'anytime' || ticket.id === 'general') ? ticket.id : ticket.zone;
   const tTicket = t.tickets[ticketKey as keyof typeof t.tickets] as { name: string; description: string; licor: string };
 
   const totalPrice = ticket.stock !== undefined ? ticket.price * quantity : ticket.price;

@@ -28,7 +28,8 @@ export const translations = {
       title: 'GENERAL',
       entrada: 'ENTRADA',
       early: 'EARLY',
-      anytime: 'ANYTIME'
+      anytime: 'ANYTIME',
+      general: 'GENERAL'
     },
     policy: {
       title: 'Políticas de Reserva',
@@ -154,6 +155,10 @@ export const translations = {
         name: 'ANYTIME',
         licor: 'Ingresa en cualquier horario',
       },
+      general: {
+        name: 'GENERAL',
+        licor: 'Ingreso Believers',
+      },
       people: 'Personas',
       water: 'Agua',
       waters: 'Aguas',
@@ -224,7 +229,8 @@ export const translations = {
       title: 'GENERAL',
       entrada: 'TICKET',
       early: 'EARLY',
-      anytime: 'ANYTIME'
+      anytime: 'ANYTIME',
+      general: 'GENERAL'
     },
     policy: {
       title: 'Booking Policies',
@@ -349,6 +355,10 @@ export const translations = {
       anytime: {
         name: 'ANYTIME',
         licor: 'Enter at any time',
+      },
+      general: {
+        name: 'GENERAL',
+        licor: 'Believers Access',
       },
       people: 'People',
       water: 'Water',
