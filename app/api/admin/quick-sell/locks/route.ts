@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { validateSession } from '@/lib/authStore';
 import { getDynamicTickets } from '@/lib/tickets';
-import { getActiveEdition } from '@/lib/editions';
+import { getActiveEdition, getEditionLockExpiration } from '@/lib/editions';
 
 export const revalidate = 0;
 
@@ -130,8 +130,8 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const defaultJuly27Exp = new Date('2026-07-27T23:59:59-05:00').toISOString();
-      const expiresAt = body.expiresAtISO || defaultJuly27Exp;
+      const dynamicExp = getEditionLockExpiration(activeEdition);
+      const expiresAt = body.expiresAtISO || dynamicExp;
 
       const { error: upsertError } = await supabase
         .from('ticket_locks')

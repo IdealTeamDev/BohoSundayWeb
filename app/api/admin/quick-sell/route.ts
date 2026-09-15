@@ -58,13 +58,17 @@ export async function POST(req: NextRequest) {
     // Immediately approve the order (handles stock reduction and admin notification email)
     await approveOrder(orderId, 'manual-sale');
 
-    // Queue client email confirmation containing QR code
-    await addEmailToQueue({
-      ticketId,
-      orderId,
-      buyerInfo,
-      quantity: Number(quantity),
-    });
+    // Queue client email confirmation containing QR code (handled safely so SMTP errors do not break sale completion)
+    try {
+      await addEmailToQueue({
+        ticketId,
+        orderId,
+        buyerInfo,
+        quantity: Number(quantity),
+      });
+    } catch (emailErr) {
+      console.warn(`[Quick Sell] ⚠️ Sale ${orderId} was recorded in DB, but email dispatch failed:`, emailErr);
+    }
 
     console.log(`[Quick Sell] ✅ Manual sale successfully registered for Order ${orderId}`);
 

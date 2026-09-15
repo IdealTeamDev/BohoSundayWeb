@@ -15,7 +15,29 @@ const DEFAULT_ACTIVE_EDITION: EventEdition = {
   slug: 'entre-soles',
   name: 'Entre Soles',
   is_active: true,
+  start_date: '2026-10-18',
 };
+
+/**
+ * Calculates lock expiration date as 1 day after event start_date at 23:59:59.
+ * If start_date is "2026-10-18", expiration is "2026-10-19T23:59:59-05:00".
+ */
+export function getEditionLockExpiration(edition?: EventEdition | null): string {
+  const dateStr = edition?.start_date || '2026-10-18';
+  const cleanDate = dateStr.split('T')[0];
+  const parts = cleanDate.split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // 0-indexed
+    const day = parseInt(parts[2], 10);
+    const expDate = new Date(year, month, day + 1);
+    const expYear = expDate.getFullYear();
+    const expMonth = String(expDate.getMonth() + 1).padStart(2, '0');
+    const expDay = String(expDate.getDate()).padStart(2, '0');
+    return `${expYear}-${expMonth}-${expDay}T23:59:59-05:00`;
+  }
+  return '2026-10-19T23:59:59-05:00';
+}
 
 /**
  * Fetch all registered event editions from Supabase
@@ -31,7 +53,7 @@ export async function getAllEditions(): Promise<EventEdition[]> {
       console.warn('[Editions Service] Error or no editions found in DB, returning defaults:', error);
       return [
         DEFAULT_ACTIVE_EDITION,
-        { id: 'colombiamoda', slug: 'colombiamoda', name: 'Colombiamoda', is_active: false }
+        { id: 'colombiamoda', slug: 'colombiamoda', name: 'Colombiamoda', is_active: false, start_date: '2026-07-26' }
       ];
     }
 
@@ -40,7 +62,7 @@ export async function getAllEditions(): Promise<EventEdition[]> {
       slug: item.slug || item.id,
       name: item.name,
       is_active: Boolean(item.is_active),
-      start_date: item.start_date || null,
+      start_date: item.start_date || (item.slug === 'entre-soles' ? '2026-10-18' : null),
       end_date: item.end_date || null,
       created_at: item.created_at || null,
     }));
@@ -48,7 +70,7 @@ export async function getAllEditions(): Promise<EventEdition[]> {
     console.error('[Editions Service] Exception fetching editions:', err);
     return [
       DEFAULT_ACTIVE_EDITION,
-      { id: 'colombiamoda', slug: 'colombiamoda', name: 'Colombiamoda', is_active: false }
+      { id: 'colombiamoda', slug: 'colombiamoda', name: 'Colombiamoda', is_active: false, start_date: '2026-07-26' }
     ];
   }
 }
@@ -74,7 +96,7 @@ export async function getActiveEdition(): Promise<EventEdition> {
       slug: data.slug || data.id,
       name: data.name,
       is_active: true,
-      start_date: data.start_date || null,
+      start_date: data.start_date || DEFAULT_ACTIVE_EDITION.start_date,
       end_date: data.end_date || null,
       created_at: data.created_at || null,
     };
@@ -115,20 +137,23 @@ export async function setActiveEdition(slug: string): Promise<boolean> {
 }
 
 /**
- * Create a new event edition
+ * Create a new event edition with optional start_date
  */
-export async function createEdition(name: string, slug?: string): Promise<EventEdition | null> {
+export async function createEdition(name: string, slug?: string, startDate?: string | null): Promise<EventEdition | null> {
   const generatedSlug = (slug || name)
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+  const cleanStartDate = startDate && startDate.trim() ? startDate.trim() : null;
+
   const newEdition: EventEdition = {
     id: generatedSlug,
     slug: generatedSlug,
     name: name.trim(),
     is_active: false,
+    start_date: cleanStartDate,
   };
 
   try {
@@ -139,6 +164,7 @@ export async function createEdition(name: string, slug?: string): Promise<EventE
         slug: generatedSlug,
         name: name.trim(),
         is_active: false,
+        start_date: cleanStartDate,
       }]);
 
     if (error) {

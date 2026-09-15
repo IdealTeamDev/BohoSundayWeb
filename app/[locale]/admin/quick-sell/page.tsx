@@ -321,6 +321,7 @@ export default function QuickSellPage() {
   const [selectedEditionFilter, setSelectedEditionFilter] = useState<string>('all');
   const [showEditionsModal, setShowEditionsModal] = useState<boolean>(false);
   const [newEditionName, setNewEditionName] = useState<string>('');
+  const [newEditionDate, setNewEditionDate] = useState<string>('2026-10-18');
   const [creatingEdition, setCreatingEdition] = useState<boolean>(false);
   const [resettingInventory, setResettingInventory] = useState<boolean>(false);
 
@@ -1118,11 +1119,16 @@ export default function QuickSellPage() {
           'Content-Type': 'application/json',
           'x-admin-token': token
         },
-        body: JSON.stringify({ action: 'create', name: newEditionName })
+        body: JSON.stringify({ 
+          action: 'create', 
+          name: newEditionName,
+          startDate: newEditionDate 
+        })
       });
       const data = await res.json();
       if (res.ok && data.success) {
         setNewEditionName('');
+        setNewEditionDate('2026-10-18');
         fetchEditions();
         alert(`Nueva edición "${data.edition.name}" creada exitosamente.`);
       } else {
@@ -2852,47 +2858,83 @@ export default function QuickSellPage() {
 
             <div className="field" style={{ marginBottom: '16px' }}>
               <label>Todas las ediciones registradas</label>
-              {editions.map((ed) => (
-                <div key={ed.slug} className={`ed-row ${ed.is_active ? 'active' : ''}`}>
-                  <div>
-                    <div className="nm">{ed.name}</div>
-                    <div className="sl">{ed.slug}</div>
+              {editions.map((ed) => {
+                const eventDate = ed.start_date || (ed.slug === 'entre-soles' ? '2026-10-18' : 'Sin fecha');
+                let lockExp = 'Sin fecha';
+                if (ed.start_date || ed.slug === 'entre-soles') {
+                  const cleanDate = (ed.start_date || '2026-10-18').split('T')[0];
+                  const parts = cleanDate.split('-');
+                  if (parts.length === 3) {
+                    const year = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    const day = parseInt(parts[2], 10);
+                    const exp = new Date(year, month, day + 1);
+                    const yyyy = exp.getFullYear();
+                    const mm = String(exp.getMonth() + 1).padStart(2, '0');
+                    const dd = String(exp.getDate()).padStart(2, '0');
+                    lockExp = `${yyyy}-${mm}-${dd}`;
+                  }
+                }
+                return (
+                  <div key={ed.slug} className={`ed-row ${ed.is_active ? 'active' : ''}`} style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                      <div>
+                        <div className="nm">{ed.name}</div>
+                        <div className="sl">slug: {ed.slug}</div>
+                      </div>
+                      <div className="rt">
+                        {ed.is_active ? (
+                          <span className="pill pill-bronze">En venta</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-ghost"
+                            style={{ padding: '6px 12px' }}
+                            onClick={() => handleSetActiveEdition(ed.slug)}
+                          >
+                            Poner en venta
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--ink-2)', display: 'flex', gap: '16px', borderTop: '1px dashed var(--line-soft)', paddingTop: '4px', width: '100%' }}>
+                      <span>📅 <strong>Fecha Evento:</strong> {eventDate}</span>
+                      <span>🔒 <strong>Bloqueos y QRs expiran (+1 día):</strong> {lockExp} (23:59:59)</span>
+                    </div>
                   </div>
-                  <div className="rt">
-                    {ed.is_active ? (
-                      <span className="pill pill-bronze">En venta</span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        style={{ padding: '6px 12px' }}
-                        onClick={() => handleSetActiveEdition(ed.slug)}
-                      >
-                        Poner en venta
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <form onSubmit={handleCreateEdition} className="field" style={{ marginTop: '18px' }}>
               <label htmlFor="nueva">Crear una nueva edición</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input
                   id="nueva"
-                  placeholder="Ej. Sunset Edition 2026"
+                  placeholder="Nombre de la edición (Ej. Sunset Edition 2026)"
                   value={newEditionName}
                   onChange={(e) => setNewEditionName(e.target.value)}
+                  required
                 />
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  style={{ flex: 'none' }}
-                  disabled={creatingEdition || !newEditionName.trim()}
-                >
-                  {creatingEdition ? 'Creando...' : 'Crear'}
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '11px', color: 'var(--ink-2)', display: 'block', marginBottom: '2px' }}>Fecha del evento</label>
+                    <input
+                      type="date"
+                      value={newEditionDate}
+                      onChange={(e) => setNewEditionDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{ flex: 'none', alignSelf: 'flex-end', height: '42px' }}
+                    disabled={creatingEdition || !newEditionName.trim()}
+                  >
+                    {creatingEdition ? 'Creando...' : 'Crear Edición'}
+                  </button>
+                </div>
               </div>
             </form>
 

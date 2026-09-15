@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 export const Marquee = () => {
 
-    const eventDate = new Date("2026-07-26T00:00:00");
+    const eventDate = new Date("2026-10-18T00:00:00");
     
       const [timeLeft, setTimeLeft] = useState({
         dias: 0,

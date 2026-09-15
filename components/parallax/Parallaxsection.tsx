@@ -8,7 +8,7 @@ export default function ParallaxSection() {
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
 
-  const eventDate = new Date("2026-07-26T00:00:00");
+  const eventDate = new Date("2026-10-18T00:00:00");
 
   const [timeLeft, setTimeLeft] = useState({
     dias: 0,

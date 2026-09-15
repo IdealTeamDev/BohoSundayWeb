@@ -390,7 +390,7 @@ img { background-color: transparent !important; }
 <tbody>
 <tr>
 <td align="center" class="x t n" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:500;line-height:150%;text-align:center;text-transform:uppercase;color:#676a52;"><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Location: </span>Casa Candela</p><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Date: </span>July 26th <span style="font-weight:800;"> </span><span style="font-size:10px;mso-line-height-alt:15px;">|</span><span style="font-size:10px;font-weight:800;mso-line-height-alt:15px;"> </span><span style="font-weight:800;"> Time: </span>10 a.m.</p></div>
+<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:500;line-height:150%;text-align:center;text-transform:uppercase;color:#676a52;"><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Location: </span>Casa Candela</p><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Date: </span>October 18th <span style="font-weight:800;"> </span><span style="font-size:10px;mso-line-height-alt:15px;">|</span><span style="font-size:10px;font-weight:800;mso-line-height-alt:15px;"> </span><span style="font-weight:800;"> Time: </span>10 a.m.</p></div>
 </td>
 </tr>
 </tbody>
@@ -1234,7 +1234,7 @@ img { background-color: transparent !important; }
 <tbody>
 <tr>
 <td align="center" class="x t n" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:500;line-height:150%;text-align:center;text-transform:uppercase;color:#676a52;"><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Lugar:</span><span style="font-weight:700;"> </span>Casa Candela</p><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Fecha:</span><span style="font-weight:700;"> </span>26 de julio | <span style="font-weight:800;">Hora:</span> 10 a.m.</p></div>
+<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:500;line-height:150%;text-align:center;text-transform:uppercase;color:#676a52;"><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Lugar:</span><span style="font-weight:700;"> </span>Casa Candela</p><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Fecha:</span><span style="font-weight:700;"> </span>18 de octubre | <span style="font-weight:800;">Hora:</span> 10 a.m.</p></div>
 </td>
 </tr>
 </tbody>

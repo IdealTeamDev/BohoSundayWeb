@@ -47,13 +47,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, name, slug } = body;
+    const { action, name, slug, start_date, startDate } = body;
+    const eventStartDate = start_date || startDate;
 
     if (action === 'create') {
       if (!name) {
         return NextResponse.json({ error: 'Nombre de la edición es requerido' }, { status: 400 });
       }
-      const newEdition = await createEdition(name, slug);
+      const newEdition = await createEdition(name, slug, eventStartDate);
       if (!newEdition) {
         return NextResponse.json({ error: 'No se pudo crear la edición' }, { status: 500 });
       }
