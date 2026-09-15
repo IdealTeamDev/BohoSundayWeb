@@ -54,11 +54,16 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
         const zoneKey = (row.zone || '').toLowerCase();
         const def = ZONE_DEFAULTS[zoneKey] || {};
 
+        const rawIcon = row.icon_card || def.iconCard || undefined;
+        const rawImg = row.img || def.img || '';
+
+        const formatPath = (p?: string) => p ? (p.startsWith('/') ? p : `/${p}`) : p;
+
         return {
           id: row.id,
           zone: (row.zone || 'general') as ZoneType,
-          iconCard: row.icon_card || def.iconCard || undefined,
-          img: row.img || def.img || '',
+          iconCard: formatPath(rawIcon),
+          img: formatPath(rawImg) || '',
           name: row.name || def.name || row.id,
           description: row.description || def.description || undefined,
           number: Number(row.number) || 0,
@@ -97,15 +102,16 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
       dbIndividualMapped = dbTickets.map((row: any) => {
         const staticInfo = staticTickets.find((s) => s.id === row.id) || {
           zone: 'general',
-          iconCard: `images/icon/icon-${row.id}.png`,
-          img: `images/individual-ticket/card-${row.id}.png`,
+          iconCard: `/images/icon/icon-${row.id}.png`,
+          img: `/images/individual-ticket/card-${row.id}.png`,
           includes: { licor: '', agua: 0, redBull: 0 }
         };
+        const formatPath = (p?: string) => p ? (p.startsWith('/') ? p : `/${p}`) : p;
         return {
           id: row.id,
           zone: 'general' as const,
-          iconCard: staticInfo.iconCard,
-          img: staticInfo.img,
+          iconCard: formatPath(staticInfo.iconCard),
+          img: formatPath(staticInfo.img) || '',
           name: row.name,
           number: row.id === 'early' ? 1 : (row.id === 'general' ? 3 : 2),
           persons: 1,

@@ -8,6 +8,7 @@ import { jsPDF } from 'jspdf';
 import { sortedCountries, getFlagEmoji } from '@/data/countries';
 import AdminEventMap from '@/components/eventmap/AdminEventMap';
 import EventMap from '@/components/eventmap/EventMap';
+import BottomBar from '@/components/bottombar/BottomBar';
 import * as XLSX from 'xlsx';
 import { ZoneCategoryConfig } from '@/data/zones';
 
@@ -312,6 +313,7 @@ export default function QuickSellPage() {
 
   // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas' | 'mapa_cliente'
   const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas' | 'mapa_cliente'>('resumen');
+  const [openMapClient, setOpenMapClient] = useState<boolean>(true);
 
   // Authentication State
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
@@ -2128,21 +2130,24 @@ export default function QuickSellPage() {
             </div>
           </div>
 
-          {/* ---------- 3.5. MAPA DE CLIENTES (VISTA WEB CLIENTE) ---------- */}
+          {/* ---------- 3.5. BOLETERÍA & MAPA DE CLIENTES (VISTA WEB CLIENTE) ---------- */}
           <div className={`view ${activeView === 'mapa_cliente' ? 'is-active' : ''}`} id="v-mapa-cliente">
             <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
               <div>
-                <h2>Mapa interactivo de clientes (Vista Web)</h2>
-                <div className="sub">Modo de revisión de diseño, animaciones e interactividad tal como lo experimentan los clientes en la web</div>
+                <h2>Experiencia de Boletería y Mapa de Clientes (Vista Web)</h2>
+                <div className="sub">Barra de botones (MAPA DE MESAS / BOLETERÍA INDIVIDUAL), cajones interactivos y tarjetas de compra como las ve el cliente</div>
               </div>
               <div className="actions">
                 <button type="button" className="btn btn-ghost" onClick={() => setActiveView('resumen')}>Volver al resumen</button>
               </div>
             </header>
 
-            <div style={{ position: 'relative', width: '100%', minHeight: '680px', background: '#1A1815', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--line)' }}>
-              <EventMap onClose={() => setActiveView('resumen')} />
-            </div>
+            {activeView === 'mapa_cliente' && (
+              <BottomBar
+                openMap={openMapClient}
+                onToggleMap={() => setOpenMapClient(!openMapClient)}
+              />
+            )}
           </div>
 
           {/* ---------- 4. COMPRAS VIEW ---------- */}

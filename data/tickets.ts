@@ -5,8 +5,8 @@ export const tickets: Ticket[] = [
   {
     id: 'early',
     zone: 'general',
-    iconCard: 'images/icon/icon-early.png',
-    img: 'images/individual-ticket/card-early.png',
+    iconCard: '/images/icon/icon-early.png',
+    img: '/images/individual-ticket/card-early.png',
     name: 'EARLY',
     number: 1,
     persons: 1,
@@ -20,8 +20,8 @@ export const tickets: Ticket[] = [
   {
     id: 'anytime',
     zone: 'general',
-    iconCard: 'images/icon/icon-anytime.png',
-    img: 'images/individual-ticket/card-anytime.png',
+    iconCard: '/images/icon/icon-anytime.png',
+    img: '/images/individual-ticket/card-anytime.png',
     name: 'ANYTIME',
     number: 2,
     persons: 1,
@@ -35,8 +35,8 @@ export const tickets: Ticket[] = [
   {
     id: 'general',
     zone: 'general',
-    iconCard: 'images/icon/icon-early.png',
-    img: 'images/individual-ticket/card-early.png',
+    iconCard: '/images/icon/icon-early.png',
+    img: '/images/individual-ticket/card-early.png',
     name: 'GENERAL',
     number: 3,
     persons: 1,

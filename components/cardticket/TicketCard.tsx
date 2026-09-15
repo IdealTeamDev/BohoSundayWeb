@@ -22,9 +22,16 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
 
   const formattedPrice = new Intl.NumberFormat('es-CO').format(ticket.price);
 
+  const formatSrc = (src?: string) => {
+    if (!src) return '';
+    return src.startsWith('/') ? src : `/${src}`;
+  };
+
   const iconSrc = ticket.iconCard
-    ? (ticket.iconCard.startsWith('/') ? ticket.iconCard : `/${ticket.iconCard}`)
-    : `/${cfg.icon}`;
+    ? formatSrc(ticket.iconCard)
+    : formatSrc(cfg?.icon);
+
+  const ticketImgSrc = formatSrc(ticket.img);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -75,7 +82,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
         {/* Image */}
         <div className="w-full rounded-t-2xl overflow-hidden">
           <img
-            src={ticket.img}
+            src={ticketImgSrc}
             alt={ticket.name}
             className="w-full h-auto block"
             width={880}
@@ -163,7 +170,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
         {/* Imagen izquierda */}
         <div className="w-[45%] flex-shrink-0">
           <img
-            src={ticket.img}
+            src={ticketImgSrc}
             alt={ticket.name}
             className="w-full h-full object-cover"
           />

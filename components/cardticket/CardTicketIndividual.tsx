@@ -31,9 +31,16 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
   const maxAllowed = Math.min(10, remainingStock);
   const formattedTotalPrice = new Intl.NumberFormat('es-CO').format(ticket.price * quantity);
 
+  const formatSrc = (src?: string) => {
+    if (!src) return '';
+    return src.startsWith('/') ? src : `/${src}`;
+  };
+
   const iconSrc = ticket.iconCard
-    ? (ticket.iconCard.startsWith('/') ? ticket.iconCard : `/${ticket.iconCard}`)
-    : `/${cfg?.icon}`;
+    ? formatSrc(ticket.iconCard)
+    : formatSrc(cfg?.icon);
+
+  const ticketImgSrc = formatSrc(ticket.img);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -168,7 +175,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
         {/* Image */}
         <div className="w-full rounded-t-2xl overflow-hidden">
           <img
-            src={ticket.img}
+            src={ticketImgSrc}
             alt={ticket.name}
             className="w-full h-auto block"
             width={880}
@@ -197,7 +204,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
         {/* Imagen izquierda */}
         <div className="w-[45%] flex-shrink-0">
           <img
-            src={ticket.img}
+            src={ticketImgSrc}
             alt={ticket.name}
             className="w-full h-full object-cover"
           />
