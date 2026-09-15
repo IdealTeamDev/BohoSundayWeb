@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '.env.local' });
 const { Client } = require('pg');
 const crypto = require('crypto');
 
@@ -5,7 +6,12 @@ function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-const connectionString = 'postgres://postgres.hctdykhdekhwvmhrdrnv:DzmrE1fW55srqlEp@aws-0-us-east-1.pooler.supabase.com:5432/postgres';
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('Error: Variable de entorno DATABASE_URL no configurada.');
+  process.exit(1);
+}
 
 const client = new Client({ 
   connectionString,
@@ -34,12 +40,6 @@ async function run() {
     if (res.rowCount === 0) {
       await client.query(`INSERT INTO staff_users (name, username, pin_hash, role, is_active) VALUES ($1, $2, $3, $4, $5)`, ['Admin', 'admin', hashPassword('password'), 'admin', true]);
       console.log('Admin user created.');
-    }
-    
-    const res2 = await client.query('SELECT * FROM staff_users WHERE username = $1', ['portero1']);
-    if (res2.rowCount === 0) {
-      await client.query(`INSERT INTO staff_users (name, username, pin_hash, role, is_active) VALUES ($1, $2, $3, $4, $5)`, ['Portero 1', 'portero1', hashPassword('portero'), 'bouncer', true]);
-      console.log('Portero 1 user created.');
     }
   } catch (err) {
     console.error(err);

@@ -1,6 +1,12 @@
+require('dotenv').config({ path: '.env.local' });
 const { Client } = require('pg');
 
-const connectionString = 'postgres://postgres.hctdykhdekhwvmhrdrnv:DzmrE1fW55srqlEp@aws-0-us-east-1.pooler.supabase.com:5432/postgres';
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  console.error('Error: Variable de entorno DATABASE_URL no configurada.');
+  process.exit(1);
+}
 
 const client = new Client({ 
   connectionString,
