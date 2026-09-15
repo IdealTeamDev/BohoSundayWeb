@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
       });
 
     } else if (action === 'unlock') {
-      // Delete lock from database
+      // 1. Delete lock from database
       const { error: deleteError } = await supabase
         .from('ticket_locks')
         .delete()
@@ -169,9 +169,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Error al desbloquear la entrada/cama' }, { status: 500 });
       }
 
+      // 2. Reset available = true in boleteria_mesas for table/bed
+      await supabase
+        .from('boleteria_mesas')
+        .update({ available: true })
+        .eq('id', ticketId);
+
+      // 3. Remove purchase record from purchased_tickets for active edition
+      await supabase
+        .from('purchased_tickets')
+        .delete()
+        .eq('ticket_id', ticketId)
+        .eq('edition_slug', activeEdition.slug);
+
+      // 4. Remove order from orders for active edition
+      await supabase
+        .from('orders')
+        .delete()
+        .eq('ticket_id', ticketId)
+        .eq('edition_slug', activeEdition.slug);
+
       return NextResponse.json({
         success: true,
-        message: `La entrada/cama ${ticket?.name || ticketId} ha sido DESBLOQUEADA y vuelve a estar disponible.`,
+        message: `La entrada/cama ${ticket?.name || ticketId} ha sido LIBERADA y vuelve a estar disponible.`,
         ticketId,
       });
 

@@ -121,3 +121,62 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
+// DELETE: Delete an order and restore table availability
+export async function DELETE(req: NextRequest) {
+  try {
+    const token = req.headers.get('x-admin-token');
+    const secret = process.env.ADMIN_SECRET_TOKEN;
+    const isValidLegacy = secret && token === secret;
+    const sessionUser = await validateSession(token);
+
+    if (!isValidLegacy && !sessionUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = req.nextUrl;
+    const orderId = searchParams.get('orderId');
+    const ticketId = searchParams.get('ticketId');
+
+    if (!orderId && !ticketId) {
+      return NextResponse.json({ error: 'Se requiere orderId o ticketId' }, { status: 400 });
+    }
+
+    let targetTicketId = ticketId;
+
+    if (orderId) {
+      const { data: purchase } = await supabase
+        .from('purchased_tickets')
+        .select('ticket_id, edition_slug')
+        .eq('order_id', orderId)
+        .maybeSingle();
+
+      if (purchase) {
+        targetTicketId = purchase.ticket_id;
+      }
+    }
+
+    // 1. Delete from purchased_tickets and orders
+    if (orderId) {
+      await supabase.from('purchased_tickets').delete().eq('order_id', orderId);
+      await supabase.from('orders').delete().eq('order_id', orderId);
+    }
+
+    if (targetTicketId) {
+      // 2. Delete locks from ticket_locks
+      await supabase.from('ticket_locks').delete().or(`lock_key.eq.${targetTicketId},ticket_id.eq.${targetTicketId}`);
+      
+      // 3. Restore table availability in boleteria_mesas
+      await supabase.from('boleteria_mesas').update({ available: true }).eq('id', targetTicketId);
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `La orden/reserva ${orderId || targetTicketId} fue eliminada y la mesa/cama liberada exitosamente.`,
+    });
+  } catch (error) {
+    console.error('[Purchased Tickets API] DELETE Exception:', error);
+    return NextResponse.json({ error: 'Error interno del servidor al eliminar la orden' }, { status: 500 });
+  }
+}
+
