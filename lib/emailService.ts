@@ -788,10 +788,10 @@ How to get there?
  * Creates the Nodemailer transport dynamically from environment variables
  */
 export function createTransport() {
-  const host = process.env.SMTP_HOST;
+  const host = process.env.SMTP_HOST?.trim();
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '').trim() : '';
 
   if (!host || !user || !pass) {
     console.warn('⚠️ SMTP credentials not fully configured in environment variables. Falling back to test logger.');
@@ -830,7 +830,12 @@ async function fetchQrBuffer(orderId: string, ticketId: string, email: string): 
     const qrData = encodeURIComponent(qrUrl);
     const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
     
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       throw new Error(`Failed to fetch QR code image: ${response.statusText}`);
     }
@@ -838,7 +843,7 @@ async function fetchQrBuffer(orderId: string, ticketId: string, email: string): 
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);
   } catch (error) {
-    console.error('Error fetching QR code buffer:', error);
+    console.error('[Email Service] Error fetching QR code buffer:', error);
     return null;
   }
 }
@@ -848,9 +853,23 @@ async function fetchQrBuffer(orderId: string, ticketId: string, email: string): 
  */
 export async function sendConfirmationEmail({ ticketId, orderId, buyerInfo, quantity = 1 }: SendMailParams) {
   const tickets = await getDynamicTickets();
-  const ticket = tickets.find((t) => t.id === ticketId);
+  let ticket = tickets.find((t) => t.id === ticketId || t.id.toLowerCase() === ticketId.toLowerCase());
+  
   if (!ticket) {
-    throw new Error(`Ticket with ID ${ticketId} not found in database.`);
+    console.warn(`[Email Service] ⚠️ Ticket with ID "${ticketId}" not found in dynamic list. Using fallback ticket details.`);
+    ticket = {
+      id: ticketId,
+      name: ticketId.includes('-') ? `Mesa (${ticketId})` : `Entrada (${ticketId})`,
+      price: 0,
+      zone: 'general' as const,
+      number: 0,
+      persons: 1,
+      currency: 'COP',
+      img: '',
+      includes: { licor: '', agua: 0, redBull: 0 },
+      position: { x: 0, y: 0 },
+      available: true
+    };
   }
 
   const qrBuffer = await fetchQrBuffer(orderId, ticketId, buyerInfo.email);

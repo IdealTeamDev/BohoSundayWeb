@@ -7,6 +7,7 @@ import type { Ticket } from '@/types';
 import { jsPDF } from 'jspdf';
 import { sortedCountries, getFlagEmoji } from '@/data/countries';
 import AdminEventMap from '@/components/eventmap/AdminEventMap';
+import EventMap from '@/components/eventmap/EventMap';
 import * as XLSX from 'xlsx';
 import { ZoneCategoryConfig } from '@/data/zones';
 
@@ -309,8 +310,8 @@ export default function QuickSellPage() {
   const params = useParams();
   const currentLocale = (params?.locale as 'es' | 'en') || 'es';
 
-  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas'
-  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas'>('resumen');
+  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas' | 'mapa_cliente'
+  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas' | 'mapa_cliente'>('resumen');
 
   // Authentication State
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
@@ -1592,6 +1593,16 @@ export default function QuickSellPage() {
               <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
               Atributos de Zonas
             </button>
+
+            <button
+              type="button"
+              data-view="mapa_cliente"
+              aria-current={activeView === 'mapa_cliente' ? 'page' : undefined}
+              onClick={() => setActiveView('mapa_cliente')}
+            >
+              <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/></svg>
+              Mapa de Clientes (Web)
+            </button>
           </nav>
 
           <div className="rail-foot">
@@ -2114,6 +2125,23 @@ export default function QuickSellPage() {
                   fetchPurchasedTickets();
                 }}
               />
+            </div>
+          </div>
+
+          {/* ---------- 3.5. MAPA DE CLIENTES (VISTA WEB CLIENTE) ---------- */}
+          <div className={`view ${activeView === 'mapa_cliente' ? 'is-active' : ''}`} id="v-mapa-cliente">
+            <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
+              <div>
+                <h2>Mapa interactivo de clientes (Vista Web)</h2>
+                <div className="sub">Modo de revisión de diseño, animaciones e interactividad tal como lo experimentan los clientes en la web</div>
+              </div>
+              <div className="actions">
+                <button type="button" className="btn btn-ghost" onClick={() => setActiveView('resumen')}>Volver al resumen</button>
+              </div>
+            </header>
+
+            <div style={{ position: 'relative', width: '100%', minHeight: '680px', background: '#1A1815', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--line)' }}>
+              <EventMap onClose={() => setActiveView('resumen')} />
             </div>
           </div>
 

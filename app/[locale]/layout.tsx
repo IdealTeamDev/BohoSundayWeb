@@ -1,12 +1,11 @@
 import { displayFlyer, nunito, agilera, averia } from "../fonts";
 import SplashScreen from '@/components/splash/SplashScreen';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono} from "next/font/google";
 import "../globals.css";
-
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,6 +58,7 @@ export default async function RootLayout({
         {/* <SplashScreen /> */}
         <main>{children}</main>
         <WhatsAppButton />
+        <SpeedInsights />
       </body>
     </html>
   );
