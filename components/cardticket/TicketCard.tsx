@@ -24,7 +24,9 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
 
   const formatSrc = (src?: string) => {
     if (!src) return '';
-    return src.startsWith('/') ? src : `/${src}`;
+    let cleaned = src.replace(/^url\((['"]?)(.*?)\1\)$/, '$2').trim();
+    if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+    return cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
   };
 
   const iconSrc = ticket.iconCard
@@ -68,12 +70,12 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
       {/* ── MÓVIL: drawer desde abajo ── */}
       <div
         className="lg:hidden w-full max-w-md rounded-t-2xl relative overflow-visible animate-slide-up"
-        style={{ background: '#F4EFE9' }}
+        style={{ background: '#EAE0CE' }}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-[-36px] right-4 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] cursor-pointer flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
+          className="absolute top-[-36px] right-4 z-50 w-8 h-8 rounded-full bg-[#EAE0CE] cursor-pointer flex items-center justify-center text-[#231E1A] hover:bg-[#EAE0CE] transition-colors text-sm font-semibold shadow-md"
           aria-label="Cerrar"
         >
           ✕
@@ -92,9 +94,9 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
 
         <div className="p-5">
           {/* Title */}
-          <div className="grid grid-cols-[44px_1fr] items-center gap-1 w-fit mx-auto">
-            <img src={iconSrc} alt="" width={28} height={44} />
-            <h2 className="text-3xl font-displayFlyer tracking-wider uppercase text-[#231E1A] my-4">
+          <div className="items-center gap-1 w-fit mx-auto">
+           {/* <img src={iconSrc} alt="" width={28} height={44} />*/} 
+            <h2 className="text-3xl font-gritor tracking-wider uppercase text-[#231E1A] my-4">
               {tTicket.name} #{ticket.number}
             </h2>
             
@@ -108,11 +110,19 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           
 
           {/* Meta */}
-          <div className="flex items-center justify-center gap-15 mb-3.5 border-t border-b border-[#BDB39B]">
-            <div className="flex flex-col items-center justify-center my-4">
+          <div className="flex items-center justify-center gap-6 sm:gap-10 mb-3.5 border-t border-b border-[#BDB39B] py-3">
+            <div className="flex flex-col items-center justify-center">
               <p className="text-[19px] font-nunito text-[#231E1A]">{ticket.persons}</p>
-              <p className="text-[16px] font-nunito font-extralight text-[#231E1A] mb-1">{t.tickets.people}</p>
+              <p className="text-[15px] font-nunito font-extralight text-[#231E1A]">{t.tickets.people}</p>
             </div>
+            {ticket.chairs !== undefined && ticket.chairs !== null && (
+              <div className="flex flex-col items-center justify-center">
+                <p className="text-[19px] font-nunito text-[#231E1A]">{ticket.chairs}</p>
+                <p className="text-[15px] font-nunito font-extralight text-[#231E1A] text-center whitespace-nowrap">
+                  {ticket.chairsLabel || 'Sillas altas'}
+                </p>
+              </div>
+            )}
             <div className="flex flex-col justify-center">
               {[
                 tTicket.licor,
@@ -120,7 +130,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
                 `${ticket.includes.redBull} ${t.tickets.redbull}`,
               ].map((item) => (
                 <div key={item} className="flex items-center gap-2">
-                  <span className="text-[15px] font-extralight font-nunito text-[#231E1A]">{item}</span>
+                  <span className="text-[14px] sm:text-[15px] font-extralight font-nunito text-[#231E1A]">{item}</span>
                 </div>
               ))}
             </div>
@@ -138,8 +148,8 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           {ticket.available ? (
             <div className="flex justify-center mb-4 mt-4">
               <button
-                className="w-55 py-2.5 rounded-lg text-[15px] cursor-pointer font-semibold font-nunito uppercase text-[#F4EFE9] hover:opacity-88 transition-opacity"
-                style={{ background: '#686A54' }}
+                className="w-55 py-2.5 rounded-lg text-[15px] cursor-pointer font-semibold font-nunito uppercase text-[#231E1A] hover:opacity-88 transition-opacity"
+                style={{ background: '#F7963F' }}
                 onClick={handleReserve}
               >
                 {t.tickets.reserve}
@@ -156,19 +166,19 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
       {/* ── DESKTOP: modal centrado horizontal ── */}
       <div
         className="hidden lg:flex w-full max-w-2xl rounded-2xl relative overflow-hidden shadow-2xl"
-        style={{ background: '#F4EFE9' }}
+        style={{ background: '#EAE0CE' }}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-4 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
+          className="absolute top-3 right-4 z-50 w-8 h-8 rounded-full bg-[#EAE0CE] flex items-center justify-center text-[#231E1A] hover:bg-[#EAE0CE] transition-colors text-sm font-semibold shadow-md"
           aria-label="Cerrar"
         >
           ✕
         </button>
 
         {/* Imagen izquierda */}
-        <div className="w-[45%] flex-shrink-0">
+        <div className="w-[40%] flex-shrink-0">
           <img
             src={ticketImgSrc}
             alt={ticket.name}
@@ -181,26 +191,34 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
 
           {/* Title */}
           <div className="flex items-center gap-3 mb-2">
-            <img src={iconSrc} alt="" width={28} height={28} />
-            <h2 className="text-3xl font-displayFlyer tracking-wider uppercase text-[#231E1A]">
+            {/*<img src={iconSrc} alt="" width={28} height={28} />*/}
+            <h2 className="text-3xl font-gritor tracking-wider uppercase text-[#231E1A]">
               {tTicket.name} #{ticket.number}
             </h2>
           </div>
 
           {/* Description si existe */}
           {tTicket.description && (
-            <p className="text-[14px] text-center leading-[1.2] font-nunito font-light text-[#7A6F5E] mb-4">
+            <p className="text-[14px] text-left leading-[1.2] font-nunito font-light text-[#7A6F5E] mb-4">
               {tTicket.description}
             </p>
           )}
 
           {/* Meta */}
-          <div className="flex items-start gap-10 mb-4 border-t border-b border-[#BDB39B] py-4">
-            <div className="flex flex-col items-center">
+          <div className="flex items-center gap-6 xl:gap-8 mb-4 border-t border-b border-[#BDB39B] py-4">
+            <div className="flex flex-col items-center justify-center">
               <p className="text-[22px] font-nunito text-[#231E1A]">{ticket.persons}</p>
               <p className="text-[14px] font-nunito font-extralight text-[#231E1A]">{t.tickets.people}</p>
             </div>
-            <div className="flex flex-col gap-1">
+            {ticket.chairs !== undefined && ticket.chairs !== null && (
+              <div className="flex flex-col items-center justify-center">
+                <p className="text-[22px] font-nunito text-[#231E1A]">{ticket.chairs}</p>
+                <p className="text-[14px] font-nunito font-extralight text-[#231E1A] text-center whitespace-nowrap">
+                  {ticket.chairsLabel || 'Sillas altas'}
+                </p>
+              </div>
+            )}
+            <div className="flex flex-col gap-0">
               {[
                 tTicket.licor,
                 `${ticket.includes.agua} ${ticket.includes.agua === 1 ? t.tickets.water : t.tickets.waters}`,
@@ -224,8 +242,8 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           {/* CTA */}
           {ticket.available ? (
             <button
-              className="w-full py-3 rounded-lg text-[15px] font-semibold font-nunito uppercase text-[#F4EFE9] hover:opacity-90 transition-opacity"
-              style={{ background: '#686A54' }}
+              className="w-full py-3 rounded-lg text-[15px] font-semibold font-nunito uppercase text-[#231E1A] hover:opacity-90 transition-opacity"
+              style={{ background: '#F7963F' }}
               onClick={handleReserve}
             >
               {t.tickets.reserve}

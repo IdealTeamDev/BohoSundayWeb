@@ -33,7 +33,9 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
 
   const formatSrc = (src?: string) => {
     if (!src) return '';
-    return src.startsWith('/') ? src : `/${src}`;
+    let cleaned = src.replace(/^url\((['"]?)(.*?)\1\)$/, '$2').trim();
+    if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+    return cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
   };
 
   const iconSrc = ticket.iconCard
@@ -76,22 +78,22 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
   const CardContent = () => (
     <>
       {/* Title & Icon */}
-      <div className="flex items-center justify-center  gap-2 mb-1">
-        <img src={iconSrc} alt="" width={28} height={28} />
-        <h2 className="text-3xl font-displayFlyer uppercase text-[#231E1A]">
+      <div className="flex items-center justify-left  gap-2 mb-1">
+        {/*<img src={iconSrc} alt="" width={28} height={28} />*/}
+        <h2 className="text-3xl font-gritor uppercase text-[#231E1A]">
           {tTicket.name}
         </h2>
       </div>
 
       {/* Subtitle */}
-      <p className="font-nunito text-center  font-light text-[14px] text-[#231E1A] mb-3">
+      <p className="font-nunito text-left font-light text-[14px] text-[#231E1A] mb-3">
         {tTicket.licor}
       </p>
 
       <div className="h-px bg-[#BDB39B]/50 mb-4" />
 
       {/* Availability notice */}
-      <p className="text-[13px] font-nunito font-light text-[#7A6F5E] mb-3 text-center">
+      <p className="text-[13px] font-nunito font-light text-[#7A6F5E] mb-3 text-left">
         {t.tickets.only10}
       </p>
 
@@ -105,7 +107,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
         <button
           onClick={() => setQuantity((q) => Math.max(1, q - 1))}
           disabled={quantity <= 1 || remainingStock <= 0}
-          className="w-9 h-9 rounded-full border border-[#BDB39B] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+          className="w-9 h-9 rounded-full border border-[#F7963F] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
         >
           <DashIcon size={16} />
         </button>
@@ -127,7 +129,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
         <button
           onClick={() => setQuantity((q) => Math.min(maxAllowed, q + 1))}
           disabled={quantity >= maxAllowed || remainingStock <= 0}
-          className="w-9 h-9 rounded-full border border-[#BDB39B] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+          className="w-9 h-9 rounded-full border border-[#F7963F] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
         >
           <PlusIcon size={16} />
         </button>
@@ -137,8 +139,8 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
       {remainingStock > 0 ? (
         <div className="flex justify-center mb-2">
           <button
-            className="w-55 py-2.5 rounded-lg text-[15px] font-semibold font-nunito uppercase text-[#F4EFE9] hover:opacity-88 transition-opacity cursor-pointer disabled:opacity-50"
-            style={{ background: '#686A54' }}
+            className="w-55 py-2.5 rounded-lg text-[15px] font-semibold font-nunito uppercase text-[#231E1A] hover:opacity-88 transition-opacity cursor-pointer disabled:opacity-50"
+            style={{ background: '#F7963F' }}
             onClick={handleReserve}
             disabled={loading}
           >
@@ -155,14 +157,14 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center lg:items-center pointer-events-auto"
+      className="fixed inset-0 bg-black/10 z-50 flex items-end justify-center lg:items-center pointer-events-auto"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
 
       {/* ── MÓVIL: drawer desde abajo ── */}
       <div
         className="lg:hidden w-full max-w-md rounded-t-2xl relative overflow-visible animate-slide-up"
-        style={{ background: '#F4EFE9' }}
+        style={{ background: '#EAE0CE' }}
       >
         <button
           onClick={onClose}
@@ -191,7 +193,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
       {/* ── DESKTOP: modal horizontal centrado ── */}
       <div
         className="hidden lg:flex w-full max-w-2xl rounded-2xl relative overflow-hidden shadow-2xl"
-        style={{ background: '#F4EFE9' }}
+        style={{ background: '#EAE0CE' }}
       >
         <button
           onClick={onClose}

@@ -54,10 +54,15 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
         const zoneKey = (row.zone || '').toLowerCase();
         const def = ZONE_DEFAULTS[zoneKey] || {};
 
-        const rawIcon = row.icon_card || def.iconCard || undefined;
-        const rawImg = row.img || def.img || '';
+        const rawIcon = (row.icon_card && (row.icon_card.startsWith('http') || row.icon_card.startsWith('url('))) ? row.icon_card : (def.iconCard || row.icon_card || undefined);
+        const rawImg = (row.img && (row.img.startsWith('http') || row.img.startsWith('url('))) ? row.img : (def.img || row.img || '');
 
-        const formatPath = (p?: string) => p ? (p.startsWith('/') ? p : `/${p}`) : p;
+        const formatPath = (p?: string) => {
+          if (!p) return p;
+          let cleaned = p.replace(/^url\((['"]?)(.*?)\1\)$/, '$2').trim();
+          if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+          return cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+        };
 
         return {
           id: row.id,
@@ -68,6 +73,12 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
           description: row.description || def.description || undefined,
           number: Number(row.number) || 0,
           persons: row.persons ? Number(row.persons) : (def.persons || 10),
+          chairs: row.chairs !== undefined && row.chairs !== null
+            ? Number(row.chairs)
+            : (row.sillas_altas !== undefined && row.sillas_altas !== null
+              ? Number(row.sillas_altas)
+              : def.chairs),
+          chairsLabel: row.chairs_label || row.sillas_altas_label || def.chairsLabel,
           price: Number(row.price) || 0,
           currency: row.currency || 'COP',
           includes: {
@@ -106,12 +117,22 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
           img: `/images/individual-ticket/card-${row.id}.png`,
           includes: { licor: '', agua: 0, redBull: 0 }
         };
-        const formatPath = (p?: string) => p ? (p.startsWith('/') ? p : `/${p}`) : p;
+
+        const formatPath = (p?: string) => {
+          if (!p) return p;
+          let cleaned = p.replace(/^url\((['"]?)(.*?)\1\)$/, '$2').trim();
+          if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+          return cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+        };
+
+        const rawIcon = (row.icon_card && (row.icon_card.startsWith('http') || row.icon_card.startsWith('url('))) ? row.icon_card : (staticInfo.iconCard || row.icon_card || undefined);
+        const rawImg = (row.img && (row.img.startsWith('http') || row.img.startsWith('url('))) ? row.img : (staticInfo.img || row.img || '');
+
         return {
           id: row.id,
           zone: 'general' as const,
-          iconCard: formatPath(staticInfo.iconCard),
-          img: formatPath(staticInfo.img) || '',
+          iconCard: formatPath(rawIcon),
+          img: formatPath(rawImg) || '',
           name: row.name,
           number: row.id === 'early' ? 1 : (row.id === 'general' ? 3 : 2),
           persons: 1,
@@ -157,25 +178,38 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
     console.error('[Tickets Service] Error fetching event stage overrides:', err);
   }
 
-  // 4. Check if active stage is 'Believers' stage
-  const isBelieversStage = Boolean(
-    activeStage &&
-    (
-      (activeStage.id && String(activeStage.id).toLowerCase().includes('believer')) ||
-      (activeStage.name && String(activeStage.name).toLowerCase().includes('believer')) ||
-      (activeStage.slug && String(activeStage.slug).toLowerCase().includes('believer'))
-    )
+  // 4. Check if active stage is 'Believers' stage (or default to true if no stage is active yet)
+  const isBelieversStage = !activeStage || Boolean(
+    (activeStage.id && String(activeStage.id).toLowerCase().includes('believer')) ||
+    (activeStage.name && String(activeStage.name).toLowerCase().includes('believer')) ||
+    (activeStage.slug && String(activeStage.slug).toLowerCase().includes('believer'))
   );
 
-  // Filter out 'general' ticket if active stage is not Believers
+  // 5. Filter individual tickets according to active stage:
+  // - En Believers: solo la entrada 'general' está activa (early y anytime INACTIVAS)
+  // - En otras etapas: 'early' y 'anytime' activas ('general' INACTIVA, ya que es única de Believers)
   const filteredIndividual = finalIndividual.filter(t => {
-    if (t.id === 'general') {
-      return isBelieversStage;
+    if (isBelieversStage) {
+      return t.id === 'general';
+    } else {
+      return t.id === 'early' || t.id === 'anytime';
+    }
+  });
+
+  // 6. Filter camas/mesas according to active stage:
+  // - En Believers: zonas 'vip' y 'candela' INACTIVAS
+  // - En otras etapas: todas las zonas de camas activas
+  const filteredCamas = finalCamas.filter(t => {
+    const zoneLower = (t.zone || '').toLowerCase();
+    if (isBelieversStage) {
+      if (zoneLower === 'vip' || zoneLower === 'candela') {
+        return false;
+      }
     }
     return true;
   });
 
-  let combined = [...finalCamas, ...filteredIndividual];
+  let combined = [...filteredCamas, ...filteredIndividual];
 
   // 5. Apply stage price overrides
   if (activeStage && activeStage.prices && typeof activeStage.prices === 'object') {

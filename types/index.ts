@@ -27,6 +27,8 @@ export interface Ticket{
     description?:string;
     number: number;
     persons: number;
+    chairs?: number;
+    chairsLabel?: string;
     price: number;
     currency: string;
     includes: TicketIncluides;

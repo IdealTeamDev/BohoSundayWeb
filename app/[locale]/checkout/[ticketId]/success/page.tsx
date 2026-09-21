@@ -257,7 +257,7 @@ export default function SuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center">
+    <div className="min-h-screen bg-[#EAE0CE] flex flex-col items-center">
 
       {/* ============================================================ */}
       {/* ============   MÓVIL  (sin cambios)   ====================== */}
@@ -267,26 +267,26 @@ export default function SuccessPage() {
         {/* Hero image */}
         {ticket.img && (
           <div className="w-full h-50 overflow-hidden relative">
-            <img src="/images/background/Banner pago exitoso-movil.png" alt={ticket.name} className="w-full h-full object-cover" />
+            <img src="https://res.cloudinary.com/dow0dxajr/image/upload/v1790014711/image_4_1_pgip4u.webp" alt={ticket.name} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/30" />
           </div>
         )}
 
-        <div className="px-5 py-5 text-center bg-[#F4EFE9]">
+        <div className="px-5 py-5 text-center bg-[#EAE0CE]">
             <div className='flex justify-center'>
-              <img src="/images/icon/Íconos WEB 1.png" alt="Colombia Moda" width={100} className="rounded-lg" />
+              {/*<img src="/images/icon/Íconos WEB 1.png" alt="Colombia Moda" width={100} className="rounded-lg" />*/}
             </div>
-            <h2 className="font-displayFlyer font-medium text-[26px] text-[#231E1A] leading-tight mb-1">
+            <h2 className="font-nunito uppercase font-medium text-[28px] text-[#231E1A] leading-tight mb-1">
               {t.success.successTitle}
             </h2>
           {/* Success icon */}
-          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 bg-[#5A8A3A] rounded-full flex items-center justify-center mx-auto mb-3">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <path d="M4 11L8.5 15.5L18 6" stroke="#22c55e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M4 11L8.5 15.5L18 6" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
 
-          <div className="bg-[#686A54]/8 border border-[#686A54]/20 rounded-xl px-4 py-3 mb-4 mx-2">
+          <div className="bg-[#EAE0CE]/8 border border-[#686A54]/20 rounded-xl px-4 py-3 mb-4 mx-2">
             <p className="font-nunito text-[12px] text-[#231E1A] leading-relaxed text-center">
               {t.success.sentEmail}<br />
               <strong className="text-[#231E1A]">{buyerInfo.email}</strong>
@@ -295,7 +295,7 @@ export default function SuccessPage() {
 
           {/* QR */}
           {qrUrl && (
-            <div className="bg-[#D9D1C0] rounded-2xl p-5 mx-auto w-fit mb-3">
+            <div className="bg-[#F0EEE9] rounded-2xl p-5 mx-auto w-fit mb-3">
               <img src={qrUrl} alt="QR de acceso" width={160} height={160} className="rounded-lg" />
             </div>
           )}
@@ -333,7 +333,7 @@ export default function SuccessPage() {
 
           <button
             onClick={() => router.replace(locale === 'en' ? '/en' : '/')}
-            className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[15px] bg-[#686A54] text-[#F4EFE9]  uppercase font-semibold hover:bg-[#FAF8F5] transition-colors"
+            className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[15px] bg-[#F7963F] text-[#231E1A]  uppercase font-semibold hover:bg-[#F7963F] transition-colors"
           >
             {t.success.close}
           </button>
@@ -344,12 +344,12 @@ export default function SuccessPage() {
       {/* ============   DESKTOP  (nuevo)   ========================== */}
       {/* ============================================================ */}
       <div className="hidden lg:flex w-full justify-center">
-        <div className="w-full  bg-white shadow-sm overflow-hidden">
+        <div className="w-full  bg-[#EAE0CE] shadow-sm overflow-hidden">
 
           {/* Banner desktop — pon aquí tu imagen exclusiva de desktop */}
           <div className="w-full overflow-hidden relative">
             <img
-              src="/images/background/banner-pago-exitoso-desk.svg"
+              src="https://res.cloudinary.com/dow0dxajr/image/upload/v1790014711/image_4_1_pgip4u.webp"
               alt={ticket.name}
               className="w-full h-auto object-cover"
             />
@@ -357,16 +357,16 @@ export default function SuccessPage() {
           </div>
 
           {/* Contenido en dos columnas */}
-          <div className="bg-[#F4EFE9] px-60 py-8">
+          <div className="bg-[#EAE0CE] px-60 py-8">
             <div className="flex gap-2  items-center">
 
               {/* ---------- Columna izquierda ---------- */}
               <div className="flex-1 justify-center items-center pt-2">
-                <div className="flex justify-center items-center mb-5">
+                {/*<div className="flex justify-center items-center mb-5">
                   <img src="/images/icon/Íconos WEB 1.png" alt="Colombia Moda" width={130} />
-                </div>
+                </div>*/}
 
-                <h2 className="font-displayFlyer text-center font-medium text-[48px] text-[#231E1A] leading-[1.05] mb-5">
+                <h2 className="font-nunito uppercase text-center font-medium text-[48px] text-[#231E1A] leading-[1.05] mb-5">
                   {t.success.successTitle}
                 </h2>
                 <div className="flex justify-center items-center">
@@ -426,7 +426,7 @@ export default function SuccessPage() {
 
                 {/* QR */}
                 {qrUrl && (
-                  <div className="bg-[#D9D1C0] rounded-2xl p-7">
+                  <div className="bg-[#F0EEE9] rounded-2xl p-7">
                     <img src={qrUrl} alt="QR de acceso" width={250} height={250} className="rounded-lg" />
                   </div>
                 )}
@@ -437,7 +437,7 @@ export default function SuccessPage() {
             <div className="flex justify-center mt-10">
               <button
                 onClick={() => router.replace('/')}
-                className="px-24 py-3 rounded-xl bg-[#686A54] text-[#F4EFE9] uppercase font-semibold font-nunito text-[15px] hover:opacity-90 transition-opacity"
+                className="px-24 py-3 rounded-xl bg-[#F7963F] text-[#231E1A] uppercase font-semibold font-nunito text-[15px] hover:opacity-90 transition-opacity"
               >
                 Cerrar
               </button>

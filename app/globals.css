@@ -18,6 +18,7 @@
   --font-nunito: var(--font-nunito);
   --font-agilera: var(--font-agilera);
   --font-averia: var(--font-averia);
+  --font-gritor: var(--font-gritor);
 
 
 }
@@ -42,3 +43,8 @@ body {
 .font-nunito {
   font-family: var(--font-nunito), sans-serif;
 }
+
+.font-gritor {
+  font-family: var(--font-gritor), sans-serif;
+}
+

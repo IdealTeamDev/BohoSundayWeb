@@ -5,12 +5,12 @@ import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
  
 const djs = [
-  { id: 1, name: 'MALÓNE MOREZ', photo: '/images/lineup/malone-morez.png' },
-  { id: 2, name: 'BARON (FR)',   photo: '/images/lineup/baron.png' },
-  { id: 3, name: 'SEVENKEY', photo: '/images/lineup/sevenkey.png' },
-  { id: 4, name: 'BENJP',     photo: '/images/lineup/benjp.png' },
-  { id: 5, name: 'VLAIR',        photo: '/images/lineup/vlair.png' },
-  { id: 6, name: 'ELISABETH MOON',       photo: '/images/lineup/elisabetn.png' },
+  { id: 1, name: 'JOEZI', photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_vfepqt.webp' },
+  { id: 2, name: 'GAIA',   photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790003384/Propiedad_1_hover_2_jrxy7m.webp' },
+  { id: 3, name: '2 NOMADS', photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_4_dyxqpf.webp' },
+  { id: 4, name: 'SPUKER',     photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_Mask_group_cflhjv.webp' },
+  { id: 5, name: 'GAIA',        photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_1_mdi7ay.png' },
+  { id: 6, name: 'DUM K',       photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_3_m9wms5.webp' },
 ];
  
 export default function LineUp() {
@@ -28,11 +28,8 @@ export default function LineUp() {
  
       {/* Title */}
       <div className="text-center mb-6">
-        <p className="font-nunito text-[18px] uppercase text-[#000000]">
-          {t.lineup.title}
-        </p>
-        <p className="font-displayFlyer text-[34px] text-[#000000] leading-tight">
-          Line Up
+        <p className="font-nunito text-[32px] uppercase text-[#000000]">
+          {t.lineup.title} Line Up
         </p>
       </div>
  
@@ -49,7 +46,7 @@ export default function LineUp() {
               onKeyDown={(e) => e.key === 'Enter' && toggle(dj.id)}
               className="relative w-full rounded-xl overflow-hidden cursor-pointer select-none"
               style={{
-                height: isActive ? '220px' : '56px',
+                height: isActive ? '350px' : '56px',
                 transition: 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
               }}
             >

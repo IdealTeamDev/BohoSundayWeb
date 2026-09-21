@@ -74,7 +74,7 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
               }}
               className="text-[14px] font-semibold font-nunito py-2.5 px-4 rounded-lg transition-colors duration-300 cursor-pointer"
               style={{
-                backgroundColor: openMap ? '#47311F' : '#686A54',
+                backgroundColor: openMap ? '#A94A34' : '#A94A34',
                 color: '#F4EFE9',
               }}
             >
@@ -89,8 +89,8 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
               }}
               className="text-[14px] font-semibold font-nunito py-2.5 px-4 rounded-lg transition-colors duration-300 cursor-pointer"
               style={{
-                backgroundColor: openIndividual ? '#47311F' : '#686A54',
-                color: '#F4EFE9',
+                backgroundColor: openIndividual ? '#F7963F' : '#F7963F',
+                color: '#231E1A',
               }}            >
               {t.bottomBar.individual}
             </button>

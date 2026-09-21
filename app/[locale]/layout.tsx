@@ -1,4 +1,4 @@
-import { displayFlyer, nunito, agilera, averia } from "../fonts";
+import { displayFlyer, nunito, agilera, averia, gritor } from "../fonts";
 import SplashScreen from '@/components/splash/SplashScreen';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -16,6 +16,8 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+import { Providers } from "@/app/providers";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -50,13 +52,15 @@ export default async function RootLayout({
   return (
     <html
       lang={locale || "es"}
-      className={`${displayFlyer.variable} ${nunito.variable} ${agilera.variable} ${averia.variable}`}
+      className={`${displayFlyer.variable} ${nunito.variable} ${agilera.variable} ${averia.variable} ${gritor.variable}`}
       suppressHydrationWarning
     >
       <body>
         {/* Se oculta la animación de precarga (SplashScreen) al iniciar la web */}
-        {/* <SplashScreen /> */}
-        <main>{children}</main>
+        <SplashScreen /> 
+        <Providers>
+          <main>{children}</main>
+        </Providers>
         <WhatsAppButton />
         <SpeedInsights />
       </body>

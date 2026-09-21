@@ -23,3 +23,10 @@ export const averia = localFont({
   variable: "--font-averia",
   display: "swap",
 });
+
+export const gritor = localFont({
+  src: "./fonts/gritor.otf",
+  variable: "--font-gritor",
+  display: "swap",
+});
+

@@ -6,10 +6,10 @@ import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
 
 const allies = [
-  { id: 1, name: 'Ubari', logo: '/images/allies/logo-ubari2.png' },
-  { id: 2, name: '3NomadsX', logo: '/images/allies/Group.png' },
-  { id: 3, name: 'Salón Amador', logo: '/images/allies/logo-salon-amador.png' },
-  { id: 4, name: 'Don Julio', logo: '/images/allies/Group 1.png' },
+  { id: 1, name: 'Ubari', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790018434/logo-ubari_1_eujoak.png' },
+  { id: 2, name: '3NomadsX', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790018421/3nomads_1_v0gxim.webp' },
+  { id: 3, name: 'Salón Amador', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790018422/salon-amador_1_wpznsv.webp' },
+
 ];
 
 // Dots always show 3 — maps current index to one of 3 dot positions
@@ -64,10 +64,10 @@ export default function AlliesCarousel() {
     <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 py-6">
 
       {/* ── MOBILE: Carousel Slider (hidden on lg+) ── */}
-      <div className="block lg:hidden relative rounded-xl overflow-hidden bg-[#EDE8E0] py-4">
+      <div className="block lg:hidden relative rounded-xl overflow-hidden bg-[#CBB093] py-4">
         {/* Titulo */}
         <div className="text-center mt-2">
-          <p className="font-averia text-[#231E1A] text-[15px] font-bold uppercase tracking-widest">
+          <p className="font-nunito text-[#F3E5C8] text-[20px] font-light uppercase tracking-widest">
             {t.allies.title}
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function AlliesCarousel() {
           aria-label="Anterior aliado"
         >
           <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
-            <path d="M9 1L1 9L9 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M9 1L1 9L9 17" stroke="#F4EFE9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
 
@@ -99,7 +99,7 @@ export default function AlliesCarousel() {
           <img
             src={ally.logo}
             alt={ally.name}
-            className="max-h-11 max-w-[150px] w-auto h-auto object-contain"
+            className="max-h-50 max-w-[150px] w-auto h-auto object-contain"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = 'none';
               const fallback = e.currentTarget.nextSibling as HTMLElement;
@@ -115,7 +115,7 @@ export default function AlliesCarousel() {
           aria-label="Siguiente aliado"
         >
           <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
-            <path d="M1 1L9 9L1 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M1 1L9 9L1 17" stroke="#F4EFE9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
 
@@ -128,7 +128,7 @@ export default function AlliesCarousel() {
               style={{
                 width: dot === dotIndex ? '8px' : '6px',
                 height: dot === dotIndex ? '8px' : '6px',
-                background: dot === dotIndex ? '#231E1A' : '#C1BBAF',
+                background: dot === dotIndex ? '#F4EFE9' : '#F4EFE9',
               }}
             />
           ))}
@@ -136,10 +136,10 @@ export default function AlliesCarousel() {
       </div>
 
       {/* ── DESKTOP: All Allies in a row (hidden on mobile/tablet) ── */}
-      <div className="hidden lg:block rounded-2xl overflow-hidden bg-[#EDE8E0] py-6 px-10">
+      <div className="hidden lg:block rounded-2xl overflow-hidden bg-[#CBB093] py-6 px-10">
         {/* Titulo */}
         <div className="text-center mb-6 select-none">
-          <p className="font-averia text-[#231E1A] text-[15px] font-bold uppercase tracking-widest">
+          <p className="font-nunito text-[#F3E5C8] text-[20px] font-light uppercase tracking-widest">
             {t.allies.title}
           </p>
         </div>
@@ -150,7 +150,7 @@ export default function AlliesCarousel() {
               <img
                 src={a.logo}
                 alt={a.name}
-                className="max-h-10 max-w-full w-auto h-auto object-contain opacity-95 hover:opacity-100 transition-opacity duration-300"
+                className="max-h-70 max-w-full w-auto h-auto object-contain opacity-95 hover:opacity-100 transition-opacity duration-300"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = 'none';
                   const fallback = e.currentTarget.nextSibling as HTMLElement;

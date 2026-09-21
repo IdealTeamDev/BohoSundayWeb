@@ -11,9 +11,9 @@ export const translations = {
     },
     home: {
       title: 'BOHO SUNDAY',
-      desc1: 'Es un ritual, un punto de encuentro y una escapada de lo cotidiano. Es el lugar donde el sol, la música, el baile y la energía bohemia se fusionan para crear el mejor día de la semana.',
-      desc2: 'Cada edición es completamente diferente, combinando una cuidada selección de DJs internacionales, shows en vivo y performances impactantes.',
-      desc3: 'Siente el ritmo, vive el ritual y reserva tu lugar para la próxima edición.',
+      desc1: 'Una experiencia para disfrutar el sol, la música y la buena energía. Un domingo para bailar, compartir y dejarse llevar por el ritmo de Boho Sunday.',
+      desc2: 'No te pierdas la oportunidad de formar parte de la mejor fiesta de Sopetrán.',
+    
       location: 'LUGAR:',
       address: 'Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia',
       // Imágenes (si cambian en inglés, se pueden definir aquí)
@@ -183,7 +183,7 @@ export const translations = {
       seconds: 'Segundos',
     },
     allies: {
-      title: 'Aliados',
+      title: 'PATROCINADORES',
     },
     map: {
       runway: 'PASARELA'
@@ -212,9 +212,8 @@ export const translations = {
     },
     home: {
       title: 'BOHO SUNDAY',
-      desc1: 'It’s a ritual, a meeting point, and an escape from the everyday. It’s where the sun, music, dancing, and bohemian energy come together to create the best day of the week.',
-      desc2: 'Each edition is completely different, bringing together a carefully curated selection of international DJs, live shows, and captivating performances.',
-      desc3: 'Feel the rhythm, live the ritual, and reserve your spot for the next edition.',
+      desc1: 'An experience to enjoy the sun, music, and good energy. A Sunday to dance, share, and get carried away by the rhythm of Boho Sunday.',
+      desc2: 'Don\'t miss the opportunity to be part of the best party in Sopetrán.',
       location: 'LOCATION:',
       address: 'Vereda Tafetanes Route 429180 Old Way to Sopetrán, Antioquia',
       // English logos (placeholder if you want to use the same or different files)
@@ -361,10 +360,11 @@ export const translations = {
         licor: 'Believers Access',
       },
       people: 'People',
+      chairs: 'High chairs',
       water: 'Water',
       waters: 'Water',
       redbull: 'Red Bull',
-      reserve: 'Reserve this table',
+      reserve: 'Buy here',
       soldout: 'Sold out',
       processingAlert: 'This table is currently being processed. Please try again in a few minutes.',
       qtyAlert: 'The selected quantity is no longer available. Please try again.',

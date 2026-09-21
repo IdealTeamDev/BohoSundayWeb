@@ -7,76 +7,31 @@ import { translations } from '@/data/translations';
 import CardTicketIndividual from '@/components/cardticket/CardTicketIndividual';
 import type { Ticket } from '@/types';
 
+import { useTickets } from '@/lib/TicketsContext';
+
 interface IndividualTicketsProps {
   onClose: () => void;
 }
 
 export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
-  const [ticketStatuses, setTicketStatuses] = useState<Record<string, { status: string; remaining: number }>>({});
-  const [dynamicTickets, setDynamicTickets] = useState<Ticket[]>([]);
   const params = useParams();
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
 
+  const { tickets: dynamicTickets, ticketStatuses: globalStatuses } = useTickets();
+
+  const ticketStatuses: Record<string, { status: string; remaining: number }> = {};
+  Object.keys(globalStatuses).forEach((key) => {
+    ticketStatuses[key] = {
+      status: globalStatuses[key].status,
+      remaining: globalStatuses[key].remaining ?? 1,
+    };
+  });
+
   const earlyTicket = dynamicTickets.find((t) => t.id === 'early');
   const anytimeTicket = dynamicTickets.find((t) => t.id === 'anytime');
   const generalTicket = dynamicTickets.find((t) => t.id === 'general');
-
-  useEffect(() => {
-    async function fetchStatuses() {
-      try {
-        const res = await fetch('/api/tickets');
-        if (res.ok) {
-          const data = await res.json();
-          setDynamicTickets(data);
-          const mapping: Record<string, { status: string; remaining: number }> = {};
-          data.forEach((item: { id: string; status: string; remaining?: number }) => {
-            mapping[item.id] = {
-              status: item.status,
-              remaining: item.remaining ?? 1,
-            };
-          });
-          setTicketStatuses(mapping);
-        }
-      } catch (error) {
-        console.error('Error fetching ticket statuses:', error);
-      }
-    }
-
-    fetchStatuses();
-
-    const channel = supabase
-      .channel('individual_tickets_realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'ticket_locks' },
-        () => {
-          fetchStatuses();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'purchased_tickets' },
-        () => {
-          fetchStatuses();
-        }
-      )
-      .subscribe();
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchStatuses();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      supabase.removeChannel(channel);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
 
   const earlyRemaining = earlyTicket ? (ticketStatuses['early']?.remaining ?? earlyTicket.stock ?? 0) : 0;
   const anytimeRemaining = anytimeTicket ? (ticketStatuses['anytime']?.remaining ?? anytimeTicket.stock ?? 0) : 0;
@@ -103,7 +58,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
   }
 
   return (
-    <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center">
+    <div className="w-full bg-[#EAE0CE] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center">
       {/* Close button */}
       <button
         onClick={onClose}
@@ -123,7 +78,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
       />
 
       {/* Title */}
-      <h2 className="font-displayFlyer text-center text-4xl lg:text-5xl uppercase text-[#231E1A] mt-3 mb-8">
+      <h2 className="font-gritor text-center text-4xl lg:text-4xl uppercase text-[#231E1A] mt-3 mb-8">
         {t.generalModal.title}
       </h2>
 
@@ -161,7 +116,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
               <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
                 {t.generalModal.entrada}
               </span>
-              <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+              <span className="font-gritor text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
                 {t.generalModal.early}
               </span>
               <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
@@ -201,7 +156,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
               <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
                 {t.generalModal.entrada}
               </span>
-              <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+              <span className="font-gritorr text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
                 {t.generalModal.anytime}
               </span>
               <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
@@ -215,7 +170,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
           <button
             onClick={() => !isGeneralSoldOut && setSelectedTicket(generalTicket)}
             disabled={isGeneralSoldOut}
-            className={`w-full h-36 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
+            className={`w-90 h-46 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
               isGeneralSoldOut
                 ? 'cursor-not-allowed'
                 : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
@@ -223,7 +178,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
             style={{
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundImage: 'url("/images/individual-ticket/general.png"), url("/images/individual-ticket/anytime.png")',
+              backgroundImage: 'url("https://res.cloudinary.com/dow0dxajr/image/upload/v1790013241/Mask_group_5_1_vebgp5.webp")',
               backgroundColor: '#45463C',
             }}
           >
@@ -241,7 +196,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
               <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
                 {t.generalModal.entrada}
               </span>
-              <span className="font-displayFlyer text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+              <span className="font-gritor text-3xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
                 {t.generalModal.general || 'GENERAL'}
               </span>
               <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">

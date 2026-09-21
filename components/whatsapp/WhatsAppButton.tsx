@@ -12,7 +12,7 @@ export default function WhatsAppButton() {
       href="https://api.whatsapp.com/send?phone=573233114995"
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-5 lg:bottom-10 right-5 lg:right-10 z-[9980] flex items-center justify-center group"
+      className="fixed bottom-5 lg:bottom-25 right-5 lg:right-5 z-[9980] flex items-center justify-center group"
       aria-label="WhatsApp"
     >
       {/* Tooltip */}
@@ -21,7 +21,7 @@ export default function WhatsAppButton() {
       </span>
 
       {/* Pulsing Outer Ring */}
-      <span className="absolute inset-0 rounded-full bg-[#25D366]/40 animate-ping duration-1000 pointer-events-none" />
+      <span className="absolute inset-0 rounded-full bg-[#25D366]/5 animate-ping duration-200 pointer-events-none" />
 
       {/* Main Button */}
       <div className="relative w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white flex items-center justify-center shadow-[0_4px_16px_rgba(37,211,102,0.4)] hover:shadow-[0_6px_20px_rgba(37,211,102,0.6)] transition-all duration-300 hover:scale-110 active:scale-95">

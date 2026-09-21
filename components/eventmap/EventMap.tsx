@@ -8,25 +8,27 @@ import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
 import TicketCard from '@/components/cardticket/TicketCard';
 
+import { useTickets } from '@/lib/TicketsContext';
+
 interface EventMapProps {
   onClose: () => void;
 }
 
 // Zonas informativas — sin interacción
 const infoZones = [
-  {
+  /*{
     id: 'pasarela',
     label: 'PASARELA',
     left: '6%', top: '45.5%', width: '30%', height: '7%',
     bg: 'white',
     textColor: '#231E1A',
     vertical: false,
-  },
+  },*/
   {
     id: 'dancefloor',
     label: 'DANCE FLOOR',
     left: '72.5%', top: '37.5%', width: '7%', height: '20.5%',
-    bg: '#F4EFE9',
+    bg: '#EAE0CE',
     border: 'rgba(255,255,255,0.25)',
     textColor: '#231E1A',
     vertical: true,
@@ -44,7 +46,7 @@ const infoZones = [
     id: 'backstage',
     label: 'BACKSTAGE',
     left: '86.5%', top: '36%', width: '8%', height: '26%',
-    bg: '#9797FF',
+    bg: '#74AFAE',
     border: 'rgba(96,165,250,0.5)',
     textColor: '#FFF8D5',
     vertical: true,
@@ -58,64 +60,17 @@ export default function EventMap({ onClose }: EventMapProps) {
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
 
+  const { tickets: allTickets, ticketStatuses: globalStatuses } = useTickets();
+
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
-  const [ticketStatuses, setTicketStatuses] = useState<Record<string, 'available' | 'locked' | 'sold'>>({});
-  const [allTickets, setAllTickets] = useState<Ticket[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dotSize, setDotSize] = useState(DOT_PX);
 
-  useEffect(() => {
-    async function fetchTicketsAndStatuses() {
-      try {
-        const res = await fetch(`/api/tickets?nocache=${Date.now()}`);
-        if (res.ok) {
-          const data: Ticket[] = await res.json();
-          setAllTickets(data);
-          const mapping: Record<string, 'available' | 'locked' | 'sold'> = {};
-          data.forEach((item: any) => {
-            mapping[item.id] = item.status;
-          });
-          setTicketStatuses(mapping);
-        }
-      } catch (error) {
-        console.error('Error fetching tickets and statuses:', error);
-      }
-    }
-
-    fetchTicketsAndStatuses();
-
-    const channel = supabase
-      .channel('public_event_map_realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'ticket_locks' },
-        () => {
-          fetchTicketsAndStatuses();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'purchased_tickets' },
-        () => {
-          fetchTicketsAndStatuses();
-        }
-      )
-      .subscribe();
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchTicketsAndStatuses();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      supabase.removeChannel(channel);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
+  const ticketStatuses: Record<string, 'available' | 'locked' | 'sold'> = {};
+  Object.keys(globalStatuses).forEach((key) => {
+    ticketStatuses[key] = globalStatuses[key].status;
+  });
 
   useEffect(() => {
     function updateDotSize() {
@@ -139,7 +94,7 @@ export default function EventMap({ onClose }: EventMapProps) {
   };
 
   return (
-    <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-visible select-none relative">
+    <div className="w-full bg-[#EAE0CE] shadow-lg rounded-2xl overflow-visible select-none relative">
         <button
           onClick={onClose}
           className="absolute top-[-36px] right-2 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
@@ -151,19 +106,20 @@ export default function EventMap({ onClose }: EventMapProps) {
       <div className="relative grid grid-cols-2 lg:grid-cols-2 lg:px-18 gap-2 justify-items-left px-4 pt-3 pb-2">
         
 
-        {Object.entries(zoneConfig).filter(([zone]) => zone !== 'general').map(([zone, cfg]) => {
+        {Object.entries(zoneConfig).filter(([zone]) => zone !== 'general' && allTickets.some(t => t.zone === zone)).map(([zone, cfg]) => {
           const isSelected = selectedZone === zone;
           return (
             <button
               key={zone}
               onClick={() => setSelectedZone(isSelected ? null : zone)}
-              className="flex gap-2 items-center text-[#7A6F5E] font-nunito font-light text-sm border rounded-full px-3 py-1.5 border-[#BDB39B] cursor-pointer hover:bg-[#E8E2DA] transition-all"
+              className="flex gap-2 items-center text-[#CBB093] font-nunito font-medium text-sm border rounded-full px-3 py-1.5 border-[#BDB39B] cursor-pointer hover:bg-[#F3E5C8] transition-all"
               style={
                 isSelected
                   ? {
                       borderColor: '#231E1A',
                       color: '#231E1A',
                       fontWeight: '600',
+                      background: '#F3E5C8',
                     }
                   : {}
               }
@@ -228,7 +184,7 @@ export default function EventMap({ onClose }: EventMapProps) {
           const isInteractive = isAvailable && isSelectedZone;
           const opacity = isSelectedZone
             ? (isAvailable ? 1 : 0.38)
-            : 0.15;
+            : 0.35;
 
           return (
             <button
@@ -246,7 +202,7 @@ export default function EventMap({ onClose }: EventMapProps) {
                 background: cfg.dotColor,
                 opacity: opacity,
                 borderRadius: '50%',
-                border: '1.5px solid white',
+                border: '1.5px solid white `${cfg.dotColor}`',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -256,9 +212,9 @@ export default function EventMap({ onClose }: EventMapProps) {
                 transition: 'transform 0.15s ease, opacity 0.2s ease',
                 fontSize: `${Math.max(6, dotSize * 0.42)}px`,
                 fontWeight: '700',
-                color: ticket.zone === 'bohemian' || ticket.zone === 'oasis'
-                  ? 'rgba(0,0,0,0.8)'
-                  : 'rgba(255,255,255,0.95)',
+                color: ticket.zone === 'bohemian' || ticket.zone === 'vip' || ticket.zone === 'candela'
+                  ? '#EAE0CE'
+                  : '#231E1A',
                 fontFamily: 'var(--font-nunito, sans-serif)',
                 lineHeight: 1,
               }}

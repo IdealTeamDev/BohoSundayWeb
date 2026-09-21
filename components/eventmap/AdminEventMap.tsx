@@ -13,19 +13,19 @@ interface AdminEventMapProps {
 
 // Zonas informativas — sin interacción
 const infoZones = [
-  {
+  /*{
     id: 'pasarela',
     label: 'PASARELA',
     left: '6%', top: '45.5%', width: '30%', height: '7%',
     bg: 'white',
     textColor: '#231E1A',
     vertical: false,
-  },
+  },*/
   {
     id: 'dancefloor',
     label: 'DANCE FLOOR',
     left: '72.5%', top: '37.5%', width: '7%', height: '20.5%',
-    bg: '#F4EFE9',
+    bg: '#EAE0CE',
     border: 'rgba(255,255,255,0.25)',
     textColor: '#231E1A',
     vertical: true,
@@ -43,7 +43,7 @@ const infoZones = [
     id: 'backstage',
     label: 'BACKSTAGE',
     left: '86.5%', top: '36%', width: '8%', height: '26%',
-    bg: '#9797FF',
+    bg: '#74AFAE',
     border: 'rgba(96,165,250,0.5)',
     textColor: '#FFF8D5',
     vertical: true,
@@ -118,9 +118,23 @@ export default function AdminEventMap({ onSelectTicketForSale, onRefreshStats, o
   useEffect(() => {
     fetchTicketsAndStatuses();
 
-    // Suscripción Realtime a cambios en ticket_locks y purchased_tickets
+    // Suscripción Realtime a cambios en ticket_locks, purchased_tickets, boleteria_mesas y boleteria_individual
     const channel = supabase
       .channel('admin_event_map_realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'boleteria_mesas' },
+        () => {
+          fetchTicketsAndStatuses();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'boleteria_individual' },
+        () => {
+          fetchTicketsAndStatuses();
+        }
+      )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'ticket_locks' },
@@ -332,7 +346,9 @@ export default function AdminEventMap({ onSelectTicketForSale, onRefreshStats, o
 
             let dotBg = cfg.dotColor;
             let dotBorder = '2px solid white';
-            let textColor = ticket.zone === 'bohemian' || ticket.zone === 'oasis' ? 'rgba(0,0,0,0.85)' : '#FFFFFF';
+            let textColor = ticket.zone === 'bohemian' || ticket.zone === 'vip' || ticket.zone === 'candela'
+              ? '#EAE0CE'
+              : '#231E1A';
             let dotShadow = 'none';
 
             if (status === 'locked') {
@@ -351,7 +367,9 @@ export default function AdminEventMap({ onSelectTicketForSale, onRefreshStats, o
               dotShadow = '0 0 0 4px rgba(90, 96, 70, 0.6)';
             }
 
-            const opacity = isSelectedZone ? 1 : 0.2;
+            const opacity = isSelectedZone
+              ? (status === 'available' ? 1 : 0.38)
+              : 0.35;
 
             return (
               <button

@@ -1,8 +1,10 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { translations } from "@/data/translations";
+import { translations } from "@/data/translations"; 
 
+
+const DESKTOP_BANNER_URL= 'https://res.cloudinary.com/dow0dxajr/image/upload/v1789755100/time_2_f1tyc4.webp';
 export default function ParallaxSection() {
   const params = useParams();
   const locale = (params?.locale as 'es' | 'en') || 'es';
@@ -41,11 +43,9 @@ export default function ParallaxSection() {
   }, []);
     
   return (
-    <section
-      className="w-full bg-fixed bg-center bg-cover flex items-center justify-center py-8 lg:py-15 mb-5"
-      style={{
-        backgroundImage: "url('/images/background/background-parallax.png')",
-      }}
+    <section style={{ backgroundImage: `url(${DESKTOP_BANNER_URL})` }}
+      className="w-full  bg-fixed bg-center bg-cover flex items-center justify-center py-8 lg:py-15 mb-5"
+     
     >
       <div className="text-white text-center">
         <h2 className="text-md font-nunito font-light tracking-widest mb-6">{t.parallax.title}</h2>
@@ -58,13 +58,13 @@ export default function ParallaxSection() {
           ].map(({ valor, label }, i, arr) => (
             <div key={label} className="flex items-end gap-4 lg:gap-6">
               <div className="flex flex-col items-center">
-                <span className="text-5xl lg:text-6xl font-displayFlyer">
+                <span className="text-5xl text-[#EAE0CE] lg:text-7xl font-gritor">
                   {String(valor).padStart(2, "0")}
                 </span>
-                <span className="font-nunito text-md font-light mt-1">{label}</span>
+                <span className="font-nunito text-[#EAE0CE] text-md font-light mt-1">{label}</span>
               </div>
               {i < arr.length - 1 && (
-                <span className="font-displayFlyer text-md mb-10 lg:mb-10 lg:text-lg">:</span>
+                <span className="font-displayFlyer text-[#EAE0CE] text-md mb-10 lg:mb-13 lg:text-lg">:</span>
               )}
             </div>
           ))}

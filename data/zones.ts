@@ -3,6 +3,8 @@ export interface ZoneCategoryConfig {
   name: string;
   description: string;
   persons: number;
+  chairs?: number;
+  chairsLabel?: string;
   licor: string;
   agua: number;
   redbull: number;
@@ -19,7 +21,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '1 Botella licor premium',
     agua: 4,
     redbull: 4,
-    img: '/images/ticketsimage/BOHEMIAN.png',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790015211/photo_3_avwexi.webp',
     iconCard: '/images/icon/icon-bohemian.png',
   },
   oasis: {
@@ -27,10 +29,12 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     name: 'MESA OASIS',
     description: 'Mesas cocteleras',
     persons: 6,
+    chairs: 4,
+    chairsLabel: 'Sillas altas',
     licor: '1 Botella licor premium',
     agua: 3,
     redbull: 3,
-    img: '/images/ticketsimage/OASIS.png',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790015210/photo_4_dv3lz4.webp',
     iconCard: '/images/icon/icon-oasis.png',
   },
   primitivo: {
@@ -41,7 +45,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '1 Botella licor premium',
     agua: 5,
     redbull: 5,
-    img: '/images/ticketsimage/PRIMITIVO.png',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790016492/photo_9_1_qn0u9v.webp',
     iconCard: '/images/icon/icon-primitivo.png',
   },
   vip: {
@@ -60,6 +64,8 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     name: 'MESA CANDELA',
     description: 'Mesa alta exclusiva',
     persons: 6,
+    chairs: 4,
+    chairsLabel: 'Sillas altas',
     licor: '1 Botella licor premium',
     agua: 3,
     redbull: 3,
@@ -74,7 +80,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '3 Botellas de licor premium',
     agua: 10,
     redbull: 10,
-    img: '/images/ticketsimage/BACKSTAGE.png',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790015214/photo_2_wjhjxx.webp',
     iconCard: '/images/icon/icon-backstage.png',
   },
 };

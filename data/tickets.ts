@@ -36,7 +36,7 @@ export const tickets: Ticket[] = [
     id: 'general',
     zone: 'general',
     iconCard: '/images/icon/icon-early.png',
-    img: '/images/individual-ticket/card-early.png',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790015330/photo_7_woskyn.webp',
     name: 'GENERAL',
     number: 3,
     persons: 1,

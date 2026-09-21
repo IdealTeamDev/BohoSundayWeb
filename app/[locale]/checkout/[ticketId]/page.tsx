@@ -220,25 +220,25 @@ export default function CheckoutPage() {
     : `/${zoneConfig[ticket.zone].icon}`;
 
   return (
-    <div className="w-full bg-[#F4EFE9] flex flex-col items-center">
+    <div className="w-full bg-[#EAE0CE] flex flex-col items-center">
 
       {/* Timer banner */}
       <CountdownTimer seconds={remainingSeconds} ticketName={`${tTicket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} />
 
       {/* Card */}
-      <div className="w-full lg:max-w-3xl bg-[#F4EFE9] overflow-hidden lg:shadow-none shadow-sm">
+      <div className="w-full lg:max-w-3xl bg-[#EAE0CE] overflow-hidden lg:shadow-none shadow-sm">
 
         <div className="px-3 py-4">
           {/* Title with Icon */}
           <div className="flex justify-center items-center gap-3 pb-6 pt-4">
-            <img
+            {/*<img
               src={iconSrc}
               alt="Boho Sunday Colombia Moda Edition"
               width={28}
               height={44}
               className="object-contain"
-            />
-            <h2 className="font-displayFlyer text-3xl uppercase tracking-wider text-[#231E1A]">
+            />*/}
+            <h2 className="font-nunito text-4xl uppercase tracking-wider text-[#231E1A]">
               {tTicket.name}{ticket.stock === undefined ? ` #${ticket.number}` : ''}
             </h2>
           </div>
@@ -327,7 +327,7 @@ export default function CheckoutPage() {
             />
             <div
               className={`w-5 h-5 rounded flex-shrink-0 mt-0.5 border flex items-center justify-center transition-all duration-200
-                ${acceptedTerms ? 'bg-[#686A54] border-[#686A54]' : 'border-[#C4BDB4] bg-white group-hover:border-[#686A54]'}`}
+                ${acceptedTerms ? 'bg-[#EAE0CE] border-[#686A54]' : 'border-[#C4BDB4] bg-white group-hover:border-[#686A54]'}`}
             >
               {acceptedTerms && (
                 <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
@@ -350,7 +350,7 @@ export default function CheckoutPage() {
           <button
             onClick={handleSubmit}
             disabled={loading || !acceptedTerms}
-            className="w-full mt-8 mb-6 py-3 rounded-lg bg-[#686A54] text-white text-[15px] font-semibold font-nunito uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full mt-8 mb-6 py-3 rounded-lg bg-[#F7963F] text-[#231E1A] text-[15px] font-semibold font-nunito uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? t.checkout.loading : t.checkout.finishButton}
           </button>
@@ -413,8 +413,8 @@ function Field({ label, value, onChange, error, placeholder, type = 'text', noPa
         onChange={(e) => onChange(e.target.value)}
         onPaste={noPaste ? (e) => e.preventDefault() : undefined}
         placeholder={placeholder}
-        className={`w-full px-3 py-3 rounded-xl font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#BDB39B] bg-[#D9D1C0] outline-none transition-colors border
-          ${error ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-[#5C9D41]'}`}
+        className={`w-full px-3 py-3  border-[1px] rounded-xl font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#BDB39B] bg-[#EAE0CE] outline-none transition-colors
+          ${error ? 'border-red-400 focus:border-red-500' : 'border-[#231E1A] focus:border-[#5C9D41]'}`}
       />
       {error && (
         <span className="font-nunito text-[13px] text-red-500">{error}</span>
@@ -487,12 +487,12 @@ function DropdownField({
         {label}
       </label>
       <div
-        className={`w-full flex items-center px-3 rounded-xl bg-[#D9D1C0] transition-colors relative border
+        className={`w-full flex items-center px-3 rounded-xl bg-[#EAE0CE] transition-colors relative border
           ${error 
             ? 'border-red-400' 
             : focused 
               ? 'border-[#5C9D41]' 
-              : 'border-transparent'
+              : 'border-[#231E1A]'
           }`}
       >
         {/* Dropdown Selector */}
@@ -519,7 +519,7 @@ function DropdownField({
 
           {/* Dropdown Options Menu */}
           {open && (
-            <div className="absolute top-full left-0 mt-1 bg-[#F4EFE9] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-hidden min-w-[240px] flex flex-col max-h-64">
+            <div className="absolute top-full left-0 mt-1 bg-[#EAE0CE] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-hidden min-w-[240px] flex flex-col max-h-64">
               {showSearch && (
                 <div className="p-2 border-b border-[#BDB39B]/40 bg-[#F4EFE9] sticky top-0 z-10">
                   <input
