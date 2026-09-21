@@ -223,7 +223,7 @@ export default function CheckoutPage() {
     <div className="w-full bg-[#EAE0CE] flex flex-col items-center">
 
       {/* Timer banner */}
-      <CountdownTimer seconds={remainingSeconds} ticketName={`${tTicket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} />
+      <CountdownTimer seconds={remainingSeconds} ticketName={`${tTicket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} ticketId={ticketId} />
 
       {/* Card */}
       <div className="w-full lg:max-w-3xl bg-[#EAE0CE] overflow-hidden lg:shadow-none shadow-sm">

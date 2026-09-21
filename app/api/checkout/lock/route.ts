@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { acquireLock } from '@/lib/lockStore';
+import { acquireLock, releaseLock } from '@/lib/lockStore';
 import { getDynamicTickets } from '@/lib/tickets';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -46,3 +46,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { ticketId } = await req.json();
+    const sessionToken = req.cookies.get(`checkout_token_${ticketId}`)?.value;
+
+    if (ticketId && sessionToken) {
+      const tickets = await getDynamicTickets();
+      await releaseLock(ticketId, sessionToken, tickets);
+    }
+
+    const response = NextResponse.json({ success: true });
+    response.cookies.delete(`checkout_token_${ticketId}`);
+    return response;
+  } catch {
+    return NextResponse.json({ success: true });
+  }
+}

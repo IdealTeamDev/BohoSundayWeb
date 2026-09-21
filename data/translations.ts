@@ -62,6 +62,11 @@ export const translations = {
       rights: '2026 Casa Candela. Todos los derechos reservados.'
     },
     checkout: {
+      backToHome: 'Volver al inicio',
+      exitModalTitle: '¿Salir del proceso de compra?',
+      exitModalMessage: 'Si sales ahora, tu reserva quedará desbloqueada y estará disponible para otros usuarios.',
+      exitModalCancel: 'Cancelar',
+      exitModalConfirm: 'Aceptar / Salir',
       hurryUp: '¡Apúrate!',
       securedTable: '¡MESA ASEGURADA!',
       securedTicket: '¡BOLETO ASEGURADO!',
@@ -262,6 +267,11 @@ export const translations = {
       rights: '2026 Casa Candela. All rights reserved.'
     },
     checkout: {
+      backToHome: 'Back to home',
+      exitModalTitle: 'Leave purchase process?',
+      exitModalMessage: 'If you leave now, your reservation will be unlocked and made available to other users.',
+      exitModalCancel: 'Cancel',
+      exitModalConfirm: 'Accept / Leave',
       hurryUp: 'Hurry up!',
       securedTable: 'TABLE SECURED!',
       securedTicket: 'TICKET SECURED!',
