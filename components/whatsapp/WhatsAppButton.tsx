@@ -1,11 +1,16 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 
 export default function WhatsAppButton() {
   const params = useParams();
+  const pathname = usePathname();
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const tooltipText = locale === 'en' ? 'Chat with us' : 'Chatea con nosotros';
+
+  if (pathname?.includes('/admin')) {
+    return null;
+  }
 
   return (
     <a
