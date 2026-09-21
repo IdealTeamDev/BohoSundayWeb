@@ -7,8 +7,6 @@ import type { Ticket } from '@/types';
 import { jsPDF } from 'jspdf';
 import { sortedCountries, getFlagEmoji } from '@/data/countries';
 import AdminEventMap from '@/components/eventmap/AdminEventMap';
-import EventMap from '@/components/eventmap/EventMap';
-import BottomBar from '@/components/bottombar/BottomBar';
 import * as XLSX from 'xlsx';
 import { ZoneCategoryConfig } from '@/data/zones';
 
@@ -311,9 +309,8 @@ export default function QuickSellPage() {
   const params = useParams();
   const currentLocale = (params?.locale as 'es' | 'en') || 'es';
 
-  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas' | 'mapa_cliente'
-  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas' | 'mapa_cliente'>('resumen');
-  const [openMapClient, setOpenMapClient] = useState<boolean>(true);
+  // Navigation View State: 'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas'
+  const [activeView, setActiveView] = useState<'resumen' | 'venta' | 'mapa' | 'compras' | 'preregistro' | 'etapas' | 'zonas'>('resumen');
 
   // Authentication State
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
@@ -1595,16 +1592,6 @@ export default function QuickSellPage() {
               <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
               Atributos de Zonas
             </button>
-
-            <button
-              type="button"
-              data-view="mapa_cliente"
-              aria-current={activeView === 'mapa_cliente' ? 'page' : undefined}
-              onClick={() => setActiveView('mapa_cliente')}
-            >
-              <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/></svg>
-              Mapa de Clientes (Web)
-            </button>
           </nav>
 
           <div className="rail-foot">
@@ -2128,26 +2115,6 @@ export default function QuickSellPage() {
                 }}
               />
             </div>
-          </div>
-
-          {/* ---------- 3.5. BOLETERÍA & MAPA DE CLIENTES (VISTA WEB CLIENTE) ---------- */}
-          <div className={`view ${activeView === 'mapa_cliente' ? 'is-active' : ''}`} id="v-mapa-cliente">
-            <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
-              <div>
-                <h2>Experiencia de Boletería y Mapa de Clientes (Vista Web)</h2>
-                <div className="sub">Barra de botones (MAPA DE MESAS / BOLETERÍA INDIVIDUAL), cajones interactivos y tarjetas de compra como las ve el cliente</div>
-              </div>
-              <div className="actions">
-                <button type="button" className="btn btn-ghost" onClick={() => setActiveView('resumen')}>Volver al resumen</button>
-              </div>
-            </header>
-
-            {activeView === 'mapa_cliente' && (
-              <BottomBar
-                openMap={openMapClient}
-                onToggleMap={() => setOpenMapClient(!openMapClient)}
-              />
-            )}
           </div>
 
           {/* ---------- 4. COMPRAS VIEW ---------- */}
