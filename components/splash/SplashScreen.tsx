@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 
 // 👇 Ajusta estos dos valores a tu gusto
-const SPLASH_DURATION = 3000; // tiempo visible (ms) -> 3 segundos, ahi le pongo mas o menos
+const SPLASH_DURATION = 2000; // tiempo visible (ms) -> 3 segundos, ahi le pongo mas o menos
 const FADE_DURATION = 600;    // duración del fade-out (ms)
 
 export default function SplashScreen() {

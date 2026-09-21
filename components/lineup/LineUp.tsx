@@ -6,11 +6,10 @@ import { translations } from '@/data/translations';
  
 const djs = [
   { id: 1, name: 'JOEZI', photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_vfepqt.webp' },
-  { id: 2, name: 'GAIA',   photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790003384/Propiedad_1_hover_2_jrxy7m.webp' },
-  { id: 3, name: '2 NOMADS', photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_4_dyxqpf.webp' },
-  { id: 4, name: 'SPUKER',     photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_Mask_group_cflhjv.webp' },
+  { id: 3, name: 'DUM K', photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_4_dyxqpf.webp' },
+  { id: 4, name: 'JAY BROWN',     photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_Mask_group_cflhjv.webp' },
   { id: 5, name: 'GAIA',        photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_1_mdi7ay.png' },
-  { id: 6, name: 'DUM K',       photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_3_m9wms5.webp' },
+  { id: 6, name: 'SPIJKER',       photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_3_m9wms5.webp' },
 ];
  
 export default function LineUp() {
