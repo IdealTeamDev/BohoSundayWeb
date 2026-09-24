@@ -170,7 +170,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
           <button
             onClick={() => !isGeneralSoldOut && setSelectedTicket(generalTicket)}
             disabled={isGeneralSoldOut}
-            className={`flex flex-col lg:flex-row lg:w-90 w-70 h-46 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
+            className={`flex flex-col lg:flex-row lg:w-90 w-full h-46 rounded-2xl overflow-hidden shadow-md relative transition-all duration-200 group border border-[#BDB39B]/30 ${
               isGeneralSoldOut
                 ? 'cursor-not-allowed'
                 : 'hover:scale-[1.02] active:scale-[0.99] cursor-pointer'
