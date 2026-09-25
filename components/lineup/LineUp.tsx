@@ -6,6 +6,7 @@ import { translations } from '@/data/translations';
  
 const djs = [
   { id: 1, name: 'JOEZI', photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_vfepqt.webp' },
+  { id: 2, name: 'MOSKA', photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790365948/Propiedad_1_hover_6_1_vr9ufx.webp' },
   { id: 3, name: 'DUM K', photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_4_dyxqpf.webp' },
   { id: 4, name: 'JAY BROWN',     photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_Mask_group_cflhjv.webp' },
   { id: 5, name: 'GAIA',        photo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790002846/Propiedad_1_hover_1_mdi7ay.png' },

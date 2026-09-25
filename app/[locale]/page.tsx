@@ -48,7 +48,7 @@ export default function Home() {
       </div>
       {/*<Editions />*/}
       {/* Se oculta la sección del Line Up por montaje de Boho Sunday */}
-      {/*<LineUp />*/}
+      <LineUp />
       {/* Se oculta la sección de Parallax (cuenta regresiva) por montaje de Boho Sunday */}
       <Parallaxsection /> 
       {/* Se oculta hasta el reinicio del Boho*/}
