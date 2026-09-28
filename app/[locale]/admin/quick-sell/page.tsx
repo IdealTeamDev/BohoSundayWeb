@@ -708,10 +708,18 @@ export default function QuickSellPage() {
           return (a.number || 0) - (b.number || 0);
         });
         setTickets(sorted);
-        if (sorted.length > 0) {
-          const stillValid = sorted.some((t: any) => t.id === selectedTicketId);
+        const available = sorted.filter((t: any) => {
+          if (t.stock !== undefined) {
+            const rem = t.remaining ?? t.stock;
+            return rem > 0 && t.status !== 'sold';
+          }
+          return t.status !== 'sold';
+        });
+
+        if (available.length > 0) {
+          const stillValid = available.some((t: any) => t.id === selectedTicketId);
           if (!stillValid) {
-            setSelectedTicketId(sorted[0].id);
+            setSelectedTicketId(available[0].id);
           }
         } else {
           setSelectedTicketId('');
@@ -1235,7 +1243,7 @@ export default function QuickSellPage() {
   }
 
   // Download QR Code PNG Image
-  async function downloadQRImage(orderId: string, buyerName: string) {
+  async function downloadQRImage(orderId: string, buyerName: string, ticketName?: string) {
     try {
       const siteUrl = window.location.origin;
       const qrUrl = `${siteUrl}/api/qrs/${orderId}`;
@@ -1248,7 +1256,24 @@ export default function QuickSellPage() {
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `QR_${buyerName.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${orderId}.png`;
+      const cleanBuyer = (buyerName || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+      const cleanTicket = (ticketName || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+      const parts = ['QR', cleanBuyer, cleanTicket, orderId].filter(Boolean);
+      const fileName = `${parts.join('_')}.png`;
+
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1336,6 +1361,13 @@ export default function QuickSellPage() {
   }
 
   // Selected Ticket Info Calculation
+  const availableTickets = tickets.filter((t: any) => {
+    if (t.stock !== undefined) {
+      const rem = (t as any).remaining ?? t.stock;
+      return rem > 0 && t.status !== 'sold';
+    }
+    return t.status !== 'sold';
+  });
   const selectedTicket = tickets.find(t => t.id === selectedTicketId);
   const isIndividual = selectedTicket?.stock !== undefined;
   const unitPrice = selectedTicket?.price || 0;
@@ -1428,6 +1460,7 @@ export default function QuickSellPage() {
       setShowSuccessModal(true);
       setLoadingSale(false);
       fetchResumenData();
+      fetchTicketsData();
 
     } catch (err) {
       console.error('Error submitting quick sell:', err);
@@ -1449,6 +1482,7 @@ export default function QuickSellPage() {
     setShowSuccessModal(false);
     setModalData(null);
     setErrors({});
+    fetchTicketsData();
   }
 
   function handleCopyQR() {
@@ -1801,13 +1835,16 @@ export default function QuickSellPage() {
                       >
                         {fetchingTickets ? (
                           <option value="">Cargando boletería...</option>
-                        ) : tickets.map((t) => (
+                        ) : availableTickets.length === 0 ? (
+                          <option value="">No hay boletería disponible</option>
+                        ) : (
+                          availableTickets.map((t) => (
                           <option key={t.id} value={t.id}>
                             {t.stock !== undefined
                               ? `${t.name} — $${t.price.toLocaleString('es-CO')} · ${(t as any).remaining ?? t.stock} disponibles`
                               : `${t.name} - ${t.number} — $${t.price.toLocaleString('es-CO')}`}
                           </option>
-                        ))}
+                        )))}
                       </select>
                       {errors.ticket && <span className="help" style={{ color: 'var(--sold)' }}>{errors.ticket}</span>}
                     </div>
@@ -2036,7 +2073,7 @@ export default function QuickSellPage() {
                           type="button"
                           className="btn btn-bronze"
                           style={{ flex: 1 }}
-                          onClick={() => downloadQRImage(selectedUser.orderId, selectedUser.buyerName)}
+                          onClick={() => downloadQRImage(selectedUser.orderId, selectedUser.buyerName, selectedUser.ticketName)}
                         >
                           Descargar QR PNG
                         </button>
@@ -2265,7 +2302,7 @@ export default function QuickSellPage() {
                                 type="button"
                                 className="rowact"
                                 title="Descargar imagen QR PNG"
-                                onClick={() => downloadQRImage(item.orderId, item.buyerName)}
+                                onClick={() => downloadQRImage(item.orderId, item.buyerName, item.ticketName)}
                               >
                                 Descargar QR
                               </button>
@@ -3008,7 +3045,7 @@ export default function QuickSellPage() {
                   type="button"
                   className="btn btn-bronze"
                   style={{ flex: 1 }}
-                  onClick={() => downloadQRImage(modalData.orderId, modalData.buyerName)}
+                  onClick={() => downloadQRImage(modalData.orderId, modalData.buyerName, modalData.ticketName)}
                 >
                   Descargar QR
                 </button>

@@ -189,6 +189,44 @@ export default function SuccessPage() {
     }
   }
 
+  async function downloadClientQR() {
+    if (!qrUrl || !buyerInfo || !ticket) return;
+    try {
+      const response = await fetch(qrUrl);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const blob = await response.blob();
+      
+      const cleanBuyer = (buyerInfo.name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+      const cleanTicket = (ticket.name || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+      const parts = ['QR', cleanBuyer, cleanTicket].filter(Boolean);
+      const fileName = `${parts.join('_')}.png`;
+
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Error downloading QR image:', err);
+      window.open(qrUrl, '_blank');
+    }
+  }
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-[#F4EFE9] flex flex-col items-center justify-center p-4">
@@ -295,8 +333,19 @@ export default function SuccessPage() {
 
           {/* QR */}
           {qrUrl && (
-            <div className="bg-[#F0EEE9] rounded-2xl p-5 mx-auto w-fit mb-3">
+            <div className="bg-[#F0EEE9] rounded-2xl p-5 mx-auto w-fit mb-3 flex flex-col items-center gap-2">
               <img src={qrUrl} alt="QR de acceso" width={160} height={160} className="rounded-lg" />
+              <button
+                onClick={downloadClientQR}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E0D9D0] font-nunito text-[12px] text-[#5A5248] hover:bg-[#FAF8F5] transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                {t.success.downloadQR || 'Descargar QR'}
+              </button>
             </div>
           )}
 
@@ -426,8 +475,19 @@ export default function SuccessPage() {
 
                 {/* QR */}
                 {qrUrl && (
-                  <div className="bg-[#F0EEE9] rounded-2xl p-7">
+                  <div className="bg-[#F0EEE9] rounded-2xl p-7 flex flex-col items-center gap-3">
                     <img src={qrUrl} alt="QR de acceso" width={250} height={250} className="rounded-lg" />
+                    <button
+                      onClick={downloadClientQR}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#E0D9D0] font-nunito text-[13px] text-[#5A5248] hover:bg-[#FAF8F5] transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      {t.success.downloadQR || 'Descargar QR'}
+                    </button>
                   </div>
                 )}
               </div>

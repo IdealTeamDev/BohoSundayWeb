@@ -905,7 +905,22 @@ export async function sendConfirmationEmail({ ticketId, orderId, buyerInfo, quan
 
   if (qrBuffer) {
     attachments.push({
-      filename: 'boho-sunday-qr.png',
+      filename: (() => {
+        const cleanBuyer = (buyerInfo.name || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '');
+        const cleanTicket = (ticket?.name || '')
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '');
+        const parts = ['QR', cleanBuyer, cleanTicket].filter(Boolean);
+        return `${parts.join('_')}.png`;
+      })(),
       content: qrBuffer,
     });
   }
@@ -970,7 +985,22 @@ export async function sendAdminNotificationEmail(order: OrderDetail, status: 'ap
     const attachments: any[] = [];
     if (qrBuffer) {
       attachments.push({
-        filename: `qr-${order.orderId}.png`,
+        filename: (() => {
+          const cleanBuyer = (order.buyerInfo.name || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+          const cleanTicket = (ticketName || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+          const parts = ['QR', cleanBuyer, cleanTicket, order.orderId].filter(Boolean);
+          return `${parts.join('_')}.png`;
+        })(),
         content: qrBuffer,
       });
     }
