@@ -851,7 +851,10 @@ export default function QuickSellPage() {
       oasis: Number(existingPrices.oasis ?? 2650000),
       bohemian: Number(existingPrices.bohemian ?? 4800000),
       primitivo: Number(existingPrices.primitivo ?? 5500000),
-      vip: Number(existingPrices.vip ?? 6000000),
+      'vip-1': Number(existingPrices['vip-1'] ?? existingPrices.vip_1 ?? existingPrices.vip ?? 7000000),
+      'vip-2': Number(existingPrices['vip-2'] ?? existingPrices.vip_2 ?? existingPrices.vip ?? 6500000),
+      'vip-3': Number(existingPrices['vip-3'] ?? existingPrices.vip_3 ?? existingPrices.vip ?? 5800000),
+      'vip-4': Number(existingPrices['vip-4'] ?? existingPrices.vip_4 ?? existingPrices.vip ?? 5600000),
       candela: Number(existingPrices.candela ?? 3400000),
       backstage: Number(existingPrices.backstage ?? 9000000),
     });
@@ -862,6 +865,18 @@ export default function QuickSellPage() {
     setSavingPrices(true);
     try {
       const token = localStorage.getItem('admin_token') || '';
+      const payloadPrices = {
+        ...editingPrices,
+        vip_1: Number(editingPrices['vip-1'] ?? editingPrices.vip_1 ?? 7000000),
+        vip_2: Number(editingPrices['vip-2'] ?? editingPrices.vip_2 ?? 6500000),
+        vip_3: Number(editingPrices['vip-3'] ?? editingPrices.vip_3 ?? 5800000),
+        vip_4: Number(editingPrices['vip-4'] ?? editingPrices.vip_4 ?? 5600000),
+        'vip-1': Number(editingPrices['vip-1'] ?? editingPrices.vip_1 ?? 7000000),
+        'vip-2': Number(editingPrices['vip-2'] ?? editingPrices.vip_2 ?? 6500000),
+        'vip-3': Number(editingPrices['vip-3'] ?? editingPrices.vip_3 ?? 5800000),
+        'vip-4': Number(editingPrices['vip-4'] ?? editingPrices.vip_4 ?? 5600000),
+      };
+
       const res = await fetch('/api/admin/stages/prices', {
         method: 'PUT',
         headers: {
@@ -870,13 +885,13 @@ export default function QuickSellPage() {
         },
         body: JSON.stringify({
           stageId: editingStage.id,
-          prices: editingPrices,
+          prices: payloadPrices,
         }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
         if (activateNow) {
-          await handleActivateStage(editingStage.id, editingPrices);
+          await handleActivateStage(editingStage.id, payloadPrices);
         } else {
           alert('Precios pre-configurados guardados con éxito.');
           await fetchStagesData();
@@ -2691,6 +2706,12 @@ export default function QuickSellPage() {
                                   <li>Oasis: ${Number(prices.oasis || 0).toLocaleString('es-CO')}</li>
                                   <li>Bohemian: ${Number(prices.bohemian || 0).toLocaleString('es-CO')}</li>
                                   <li>Primitivo: ${Number(prices.primitivo || 0).toLocaleString('es-CO')}</li>
+                                  <li>VIP 01: ${Number(prices['vip-1'] ?? prices.vip_1 ?? prices.vip ?? 0).toLocaleString('es-CO')}</li>
+                                  <li>VIP 02: ${Number(prices['vip-2'] ?? prices.vip_2 ?? prices.vip ?? 0).toLocaleString('es-CO')}</li>
+                                  <li>VIP 03: ${Number(prices['vip-3'] ?? prices.vip_3 ?? prices.vip ?? 0).toLocaleString('es-CO')}</li>
+                                  <li>VIP 04: ${Number(prices['vip-4'] ?? prices.vip_4 ?? prices.vip ?? 0).toLocaleString('es-CO')}</li>
+                                  <li>Candela: ${Number(prices.candela || 0).toLocaleString('es-CO')}</li>
+                                  <li>Backstage: ${Number(prices.backstage || 0).toLocaleString('es-CO')}</li>
                                 </ul>
                               </div>
                             </div>
@@ -3478,11 +3499,35 @@ export default function QuickSellPage() {
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>VIP ($)</label>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>CAMA VIP 01 ($)</label>
                   <input
                     type="number"
-                    value={editingPrices.vip || ''}
-                    onChange={(e) => setEditingPrices({ ...editingPrices, vip: Number(e.target.value) })}
+                    value={editingPrices['vip-1'] || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, 'vip-1': Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>CAMA VIP 02 ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices['vip-2'] || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, 'vip-2': Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>CAMA VIP 03 ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices['vip-3'] || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, 'vip-3': Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>CAMA VIP 04 ($)</label>
+                  <input
+                    type="number"
+                    value={editingPrices['vip-4'] || ''}
+                    onChange={(e) => setEditingPrices({ ...editingPrices, 'vip-4': Number(e.target.value) })}
                   />
                 </div>
                 <div>

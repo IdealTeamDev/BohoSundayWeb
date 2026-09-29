@@ -221,8 +221,15 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
 
       let overridePrice: number | undefined = undefined;
 
+      const directIdHyphen = (t.id || '').toLowerCase();
+      const directIdUnderscore = directIdHyphen.replace('-', '_');
+
       if (overrides[t.id] !== undefined) {
         overridePrice = Number(overrides[t.id]);
+      } else if (overrides[directIdHyphen] !== undefined) {
+        overridePrice = Number(overrides[directIdHyphen]);
+      } else if (overrides[directIdUnderscore] !== undefined) {
+        overridePrice = Number(overrides[directIdUnderscore]);
       } else if (zoneKey && overrides[zoneKey] !== undefined) {
         overridePrice = Number(overrides[zoneKey]);
       } else if (idPrefix && overrides[idPrefix] !== undefined) {
