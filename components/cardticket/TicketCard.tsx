@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
 import { translations } from '@/data/translations';
+import { event as fbEvent } from '@/lib/fpixel';
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -45,6 +46,13 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
 
   async function handleReserve() {
     try {
+      fbEvent('InitiateCheckout', {
+        content_name: ticket.name,
+        content_category: ticket.zone,
+        content_ids: [ticket.id],
+        value: ticket.price,
+        currency: 'COP',
+      });
       const res = await fetch('/api/checkout/lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -1,6 +1,7 @@
 import { displayFlyer, nunito, agilera, averia, gritor } from "../fonts";
 import SplashScreen from '@/components/splash/SplashScreen';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
+import FacebookPixel from '@/components/FacebookPixel';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import type { Metadata } from "next";
@@ -56,6 +57,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body>
+        <FacebookPixel />
         {/* Se oculta la animación de precarga (SplashScreen) al iniciar la web */}
         <SplashScreen /> 
         <Providers>

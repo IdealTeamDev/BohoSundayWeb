@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { Ticket } from '@/types';
 import { translations } from '@/data/translations';
-import {PlusIcon, DashIcon} from '@primer/octicons-react'
+import { PlusIcon, DashIcon } from '@primer/octicons-react';
+import { event as fbEvent } from '@/lib/fpixel';
 
 interface CardTicketIndividualProps {
   ticket: Ticket;
@@ -56,6 +57,14 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
     if (loading) return;
     setLoading(true);
     try {
+      fbEvent('InitiateCheckout', {
+        content_name: ticket.name,
+        content_category: ticket.zone,
+        content_ids: [ticket.id],
+        num_items: quantity,
+        value: ticket.price * quantity,
+        currency: 'COP',
+      });
       const res = await fetch('/api/checkout/lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

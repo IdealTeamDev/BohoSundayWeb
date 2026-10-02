@@ -6,6 +6,7 @@ import type { BuyerInfo } from '@/types/checkout';
 import type { Ticket } from '@/types';
 import Image from 'next/image';
 import { translations } from '@/data/translations';
+import { event as fbEvent } from '@/lib/fpixel';
 
 export default function SuccessPage() {
   const params = useParams();
@@ -113,6 +114,11 @@ export default function SuccessPage() {
             const qrData = encodeURIComponent(qrUrl);
             setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`);
             setStatus('approved');
+            fbEvent('Purchase', {
+              content_ids: [ticketId],
+              value: ticket?.price ? ticket.price * parseInt(qtyStr, 10) : 0,
+              currency: 'COP',
+            });
             clearInterval(pollInterval);
             return;
           }
@@ -132,6 +138,13 @@ export default function SuccessPage() {
           const qrData = encodeURIComponent(qrUrl);
           setQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${qrData}`);
           setStatus('approved');
+          fbEvent('Purchase', {
+            content_name: data.ticket_name || ticketId,
+            content_ids: [ticketId],
+            num_items: data.quantity,
+            value: data.ticket_price ? data.ticket_price * data.quantity : (ticket?.price ? ticket.price * data.quantity : 0),
+            currency: 'COP',
+          });
           
           // Save back to sessionStorage to persist on refresh
           sessionStorage.setItem(`checkout_buyer_${ticketId}`, JSON.stringify(data.buyerInfo));

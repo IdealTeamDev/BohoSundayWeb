@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { event as fbEvent } from '@/lib/fpixel';
 
 // Lista simplificada de códigos de país de América y Europa para el formulario
 const COUNTRY_CODES = [
@@ -63,6 +64,9 @@ export const PreRegister = ({ t }: PreRegisterProps) => {
       const result = await response.json();
 
       if (response.ok) {
+        fbEvent('Lead', {
+          content_name: 'Pre-Registro Boho Sunday',
+        });
         setStatusMsg({ type: 'success', text: t.successMessage });
         setNombre('');
         setEmail('');
