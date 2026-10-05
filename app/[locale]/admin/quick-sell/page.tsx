@@ -675,7 +675,7 @@ export default function QuickSellPage() {
           const actId = data.activeStageId || (stgs.length > 0 ? stgs[0].id : null);
           setActiveStageId(actId);
           if (actId) {
-            setSelectedStageId(actId);
+            setSelectedStageId((prev) => (prev !== undefined && prev !== '' ? prev : actId));
           }
         }
       }
@@ -804,14 +804,12 @@ export default function QuickSellPage() {
   }, [fetchStagesData]);
 
   useEffect(() => {
-    if (activeView === 'etapas') {
+    if (activeView === 'etapas' || activeView === 'venta') {
       fetchStagesData();
-    } else if (activeView === 'venta') {
-      fetchStagesData().then(() => fetchTicketsData());
     } else if (activeView === 'zonas') {
       fetchZonesData();
     }
-  }, [activeView, fetchStagesData, fetchTicketsData, fetchZonesData]);
+  }, [activeView, fetchStagesData, fetchZonesData]);
 
   const handleActivateStage = async (stageId: string, updatedPrices?: Record<string, number>) => {
     setActivatingStageId(stageId);
