@@ -94,25 +94,23 @@ export default function EventMap({ onClose }: EventMapProps) {
   };
 
   return (
-    <div className="w-full bg-[#EAE0CE] shadow-lg rounded-2xl overflow-visible select-none relative">
-        <button
-          onClick={onClose}
-          className="absolute top-[-36px] right-2 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md"
-          aria-label="Cerrar"
-        >
-          ✕
-        </button>
+    <div className="w-full bg-[#EAE0CE] shadow-lg rounded-2xl overflow-visible select-none relative flex flex-col items-center">
+      <button
+        onClick={onClose}
+        className="absolute top-[-30px] right-2 z-50 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-xs sm:text-sm font-semibold shadow-md cursor-pointer"
+        aria-label="Cerrar"
+      >
+        ✕
+      </button>
       {/* ── Legend ── */}
-      <div className="relative grid grid-cols-2 lg:grid-cols-2 lg:px-18 gap-2 justify-items-left px-4 pt-3 pb-2">
-        
-
+      <div className="w-full relative grid grid-cols-2 gap-1.5 sm:gap-2 justify-items-stretch px-3 sm:px-5 pt-2 pb-1.5">
         {Object.entries(zoneConfig).filter(([zone]) => zone !== 'general' && allTickets.some(t => t.zone === zone)).map(([zone, cfg]) => {
           const isSelected = selectedZone === zone;
           return (
             <button
               key={zone}
               onClick={() => setSelectedZone(isSelected ? null : zone)}
-              className="flex gap-2 items-center text-[#CBB093] font-nunito font-medium text-sm border rounded-full px-3 py-1.5 border-[#BDB39B] cursor-pointer hover:bg-[#F3E5C8] transition-all"
+              className="flex gap-2 items-center justify-start text-[#CBB093] font-nunito font-medium text-xs sm:text-sm border rounded-full px-3 sm:px-4 py-1 border-[#BDB39B] cursor-pointer hover:bg-[#F3E5C8] transition-all whitespace-nowrap"
               style={
                 isSelected
                   ? {
@@ -128,6 +126,7 @@ export default function EventMap({ onClose }: EventMapProps) {
                 src={isSelected ? (cfg.iconActive || cfg.icon.replace('.png', '-active.png')) : cfg.icon}
                 alt="Boho Sunday Colombia Moda Edition"
                 width={cfg.width}
+                className="shrink-0"
               />
               <span>{cfg.label.toUpperCase()}</span>
             </button>
@@ -136,11 +135,18 @@ export default function EventMap({ onClose }: EventMapProps) {
       </div>
 
       {/* ── Map ── */}
-      <div ref={containerRef} className="relative w-full rounded-b-2xl overflow-hidden">
+      <div
+        ref={containerRef}
+        className="relative w-full rounded-b-2xl overflow-hidden"
+        style={{
+          aspectRatio: '744 / 760',
+          maxHeight: 'calc(100dvh - 190px)',
+        }}
+      >
         <img
           src="/images/background/mapaboho.png"
           alt="Mapa del venue Boho Sunday"
-          className="w-full h-auto block"
+          className="w-full h-full block object-contain select-none pointer-events-none"
           draggable={false}
         />
 

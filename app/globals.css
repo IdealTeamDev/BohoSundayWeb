@@ -48,3 +48,27 @@ body {
   font-family: var(--font-gritor), sans-serif;
 }
 
+/* Custom scrollbar for modals & drawers */
+.modal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #BDB39B rgba(234, 224, 206, 0.4);
+}
+
+.modal-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: rgba(234, 224, 206, 0.3);
+  border-radius: 9999px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: #BDB39B;
+  border-radius: 9999px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #A94A34;
+}
+

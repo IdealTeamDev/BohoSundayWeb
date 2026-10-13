@@ -42,13 +42,16 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
         }}
       />
       {/* ── Contenedor fijo que incluye mapa + barra de botones ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-9999 flex flex-col items-center pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-[9999] flex flex-col items-center pointer-events-none">
 
         {/* Drawer del mapa e individual — sale desde abajo hacia arriba */}
         <div
-          className="w-full max-w-lg lg:max-w-2xl px-2 lg:px-0 pt-20 mb-[-25px] lg:mb-[30px] overflow-y-none"
+          className="w-full px-2 sm:px-4 pt-8 pb-1 mb-1.5 sm:mb-2 flex flex-col items-center overflow-visible"
           style={{
-            maxHeight: 'calc(100vh - 80px)',
+            maxWidth: openMap
+              ? 'min(40rem, max(19rem, calc((100dvh - 170px) * 0.98)))'
+              : 'min(52rem, calc(100vw - 1rem))',
+            maxHeight: 'calc(100dvh - 75px)',
             transform: (openMap || openIndividual) ? 'translateY(0)' : 'translateY(100%)',
             opacity: (openMap || openIndividual) ? 1 : 0,
             transition: 'transform 0.35s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease',
@@ -63,8 +66,8 @@ export default function BottomBar({ openMap, onToggleMap }: BottomBarProps) {
         <div className="w-full flex justify-center pointer-events-none relative z-10">
           <div
             className="flex flex-row w-full items-center justify-center gap-4
-              bg-[#F4EFE9] px-4 py-5
-               border-top pointer-events-auto"
+              bg-[#F4EFE9] px-4 py-3 sm:py-4
+              border-t border-[#BDB39B]/30 pointer-events-auto shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
           >
             {/* MAPA DE MESAS */}
             <button

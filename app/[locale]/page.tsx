@@ -83,7 +83,7 @@ export default function Home() {
       <BottomBar
         openMap={openMap}
         onToggleMap={() => setOpenMap(!openMap)}
-      />*
+      />
       <Footer />
     </div>
   );
