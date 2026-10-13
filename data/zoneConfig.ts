@@ -4,8 +4,8 @@ export const zoneConfig = {
     label: "VIP",
     color: "#CC6633",
     dotColor: "#819176",
-    icon: "/images/icon-mapa/icon-vip.png",
-    iconActive: "/images/icon-replace/icon-replace-vip.png", // <- Modifica esta ruta con el icono activo 
+    icon: "https://res.cloudinary.com/dow0dxajr/image/upload/v1791901294/Vector_1_apjr3t.png",
+    iconActive: "https://res.cloudinary.com/dow0dxajr/image/upload/v1791901437/Vector_4_m51gqg.png", // <- Modifica esta ruta con el icono activo 
     glowColor: "rgba(99,102,241,0.5)",
     width:"24",
   },
@@ -41,8 +41,8 @@ export const zoneConfig = {
     label: "Candela",
     color: "#f97316",
     dotColor: "#A591BA",
-    icon: "/images/icon-mapa/icon-candela.png",
-    iconActive: "/images/icon-replace/icon-replace-candela.png",
+    icon: "https://res.cloudinary.com/dow0dxajr/image/upload/v1791901294/Vector_2_e5bnhz.png",
+    iconActive: "https://res.cloudinary.com/dow0dxajr/image/upload/v1791901437/Vector_3_w1lrts.png",
     glowColor: "rgba(234,88,12,0.5)",
     width:"22",
   },
