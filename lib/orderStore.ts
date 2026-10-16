@@ -194,10 +194,11 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
 
   // Save buyer/ticket details to Supabase database (purchased_tickets table)
   try {
-    const tickets = await getDynamicTickets(order.stageId);
+    const tickets = await getDynamicTickets(order.stageId, true);
     const ticket = tickets.find((t) => t.id === order.ticketId);
 
-    const ticketName = ticket?.name || 'Boleto/Cama';
+    const isGuest = order.ticketId === 'invitado_anytime' || order.ticketId === 'invitado-anytime';
+    const ticketName = ticket?.name || (isGuest ? 'Invitado Anytime' : 'Boleto/Cama');
     const ticketNumber = ticket?.number || 0;
     const zone = ticket?.zone || 'general';
 
@@ -211,7 +212,7 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
       .substring(0, 16);
 
     const languageStr = (order.buyerInfo.locale || 'es').toUpperCase() === 'EN' ? 'EN' : 'ES';
-    const ticketPrice = ticket?.price || 0;
+    const ticketPrice = isGuest ? 0 : (ticket?.price || 0);
     const activeEdition = order.editionSlug ? { slug: order.editionSlug, name: order.editionName || 'Colombiamoda' } : await getActiveEdition();
 
     const { error } = await supabase.from('purchased_tickets').insert([{

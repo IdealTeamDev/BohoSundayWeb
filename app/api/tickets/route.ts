@@ -8,8 +8,9 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const stageId = searchParams.get('stageId') || undefined;
+    const admin = searchParams.get('admin') === 'true' || searchParams.get('forAdmin') === 'true';
 
-    const tickets = await getDynamicTickets(stageId);
+    const tickets = await getDynamicTickets(stageId, admin);
     const data = await Promise.all(tickets.map(async (t) => ({
       ...t,
       status: await getTicketStatus(t.id, tickets),

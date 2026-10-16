@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '10', 10)));
     const zone = searchParams.get('zone') || 'all';
     const edition = searchParams.get('edition') || 'all';
+    const typeFilter = searchParams.get('type') || 'all';
     const q = searchParams.get('search') || searchParams.get('q') || '';
 
     // Fetch registered editions for selector
@@ -48,6 +49,15 @@ export async function GET(req: NextRequest) {
     let queryBuilder = supabase
       .from('purchased_tickets')
       .select('*', { count: 'exact' });
+
+    // Filter by Ticket Type (all, paid, guests)
+    if (typeFilter === 'guests') {
+      queryBuilder = queryBuilder.or('ticket_id.eq.invitado_anytime,ticket_id.eq.invitado-anytime,ticket_name.ilike.%invitado%');
+    } else if (typeFilter === 'paid') {
+      queryBuilder = queryBuilder.neq('ticket_id', 'invitado_anytime')
+        .neq('ticket_id', 'invitado-anytime')
+        .not('ticket_name', 'ilike', '%invitado%');
+    }
 
     // Filter by Zone
     if (zone && zone !== 'all') {

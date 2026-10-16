@@ -870,7 +870,7 @@ img { background-color: transparent !important; }
 </html>`;
 
 export async function sendConfirmationEmail({ ticketId, orderId, buyerInfo, quantity = 1 }: SendMailParams) {
-  const tickets = await getDynamicTickets();
+  const tickets = await getDynamicTickets(undefined, true);
   let ticket = tickets.find((t) => t.id === ticketId || t.id.toLowerCase() === ticketId.toLowerCase());
   
   if (!ticket) {
@@ -937,7 +937,7 @@ export async function sendConfirmationEmail({ ticketId, orderId, buyerInfo, quan
 
 export async function sendAdminNotificationEmail(order: OrderDetail, status: 'approved' | 'rejected') {
   try {
-    const tickets = await getDynamicTickets();
+    const tickets = await getDynamicTickets(undefined, true);
     const ticket = tickets.find((t) => t.id === order.ticketId);
 
     const ticketName = ticket?.name || 'Boleto/Cama';

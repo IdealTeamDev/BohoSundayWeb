@@ -46,5 +46,20 @@ export const tickets: Ticket[] = [
     available: true,
     position: { x: 0, y: 0 },
     stock: 100
+  },
+  {
+    id: 'invitado_anytime',
+    zone: 'general',
+    iconCard: '/images/icon/icon-anytime.png',
+    img: '/images/individual-ticket/card-anytime.png',
+    name: 'Invitado Anytime',
+    number: 4,
+    persons: 1,
+    price: 0,
+    currency: 'COP',
+    includes: { licor: 'Acceso Invitado Anytime - Sin costo', agua: 0, redBull: 0 },
+    available: true,
+    position: { x: 0, y: 0 },
+    stock: 5000
   }
 ];

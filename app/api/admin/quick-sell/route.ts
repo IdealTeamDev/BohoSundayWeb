@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
     }
 
-    // 1. Obtener la lista dinámica de tickets
-    const tickets = await getDynamicTickets(stageId);
+    // 1. Obtener la lista dinámica de tickets (incluyendo tickets especiales de admin como Invitado Anytime)
+    const tickets = await getDynamicTickets(stageId, true);
     const ticket = tickets.find((t) => t.id === ticketId);
 
     if (!ticket) {

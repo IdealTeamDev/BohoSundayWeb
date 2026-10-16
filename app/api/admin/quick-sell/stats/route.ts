@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     // 3. Fetch paid purchased tickets for target edition (or all if target is 'all')
     let purQuery = supabase
       .from('purchased_tickets')
-      .select('ticket_id, ticket_price, total_accesos, zone, edition_slug')
+      .select('ticket_id, ticket_price, total_accesos, accesos_restantes, ticket_name, zone, edition_slug')
       .in('status', ['paid', 'used']);
 
     if (targetEditionSlug !== 'all') {
@@ -88,29 +88,53 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // --- Process Individual Tickets Stats ---
-    const individualStats = dbIndividual?.map(ind => {
-      // Find matching sales for target edition
-      const sales = dbPurchased?.filter(p => p.ticket_id === ind.id) || [];
-      const soldCount = sales.reduce((sum, s) => sum + (s.total_accesos || 0), 0);
-      const revenue = sales.reduce((sum, s) => sum + ((s.ticket_price || 0) * (s.total_accesos || 0)), 0);
-      
-      return {
-        id: ind.id,
-        name: ind.name,
-        totalStock: ind.stock,
-        sold: soldCount,
-        remaining: Math.max(0, ind.stock - soldCount),
-        revenue: revenue
-      };
-    }) || [];
+    // --- Process Individual Tickets Stats (Excluyendo cortesías/invitados de compras comerciales) ---
+    const individualStats = dbIndividual
+      ?.filter(ind => ind.id !== 'invitado_anytime' && ind.id !== 'invitado-anytime')
+      ?.map(ind => {
+        // Find matching sales for target edition
+        const sales = dbPurchased?.filter(p => p.ticket_id === ind.id) || [];
+        const soldCount = sales.reduce((sum, s) => sum + (s.total_accesos || 0), 0);
+        const revenue = sales.reduce((sum, s) => sum + ((s.ticket_price || 0) * (s.total_accesos || 0)), 0);
+        
+        return {
+          id: ind.id,
+          name: ind.name,
+          totalStock: ind.stock,
+          sold: soldCount,
+          remaining: Math.max(0, ind.stock - soldCount),
+          revenue: revenue
+        };
+      }) || [];
+
+    // --- Process Guest Tickets Stats (Apartado exclusivo de Invitados) ---
+    const guestPurchases = dbPurchased?.filter(p => 
+      p.ticket_id === 'invitado_anytime' ||
+      p.ticket_id === 'invitado-anytime' ||
+      (p.ticket_name && p.ticket_name.toLowerCase().includes('invitado'))
+    ) || [];
+
+    const guestTicketsCount = guestPurchases.length;
+    const guestTotalAttendees = guestPurchases.reduce((sum, p) => sum + (p.total_accesos || 0), 0);
+    const guestRemainingAccesses = guestPurchases.reduce((sum, p) => sum + (p.accesos_restantes ?? p.total_accesos ?? 0), 0);
+    const guestCheckIns = Math.max(0, guestTotalAttendees - guestRemainingAccesses);
+
+    const guestStats = {
+      id: 'invitado_anytime',
+      name: 'Invitado Anytime',
+      totalTickets: guestTicketsCount,
+      totalAttendees: guestTotalAttendees,
+      remainingAccesses: guestRemainingAccesses,
+      checkIns: guestCheckIns
+    };
 
     return NextResponse.json({
       success: true,
       edition: targetEditionSlug,
       data: {
         zones: zoneStats,
-        individuals: individualStats
+        individuals: individualStats,
+        guests: guestStats
       }
     });
   } catch (error: any) {

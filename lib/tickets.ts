@@ -33,7 +33,7 @@ export async function getActiveStage(): Promise<any> {
  * Fetch tickets dynamically from Supabase database (boleteria_mesas and boleteria_individual).
  * Fallback to static tickets if database fails completely.
  */
-export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
+export async function getDynamicTickets(stageId?: string, includeAdminOnly: boolean = false): Promise<Ticket[]> {
   let dbCamasMapped: Ticket[] = [];
   let dbIndividualMapped: Ticket[] = [];
   let hasCamasError = false;
@@ -134,9 +134,9 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
           iconCard: formatPath(rawIcon),
           img: formatPath(rawImg) || '',
           name: row.name,
-          number: row.id === 'early' ? 1 : (row.id === 'general' ? 3 : 2),
+          number: row.id === 'early' ? 1 : (row.id === 'general' ? 3 : (row.id === 'invitado_anytime' ? 4 : 2)),
           persons: 1,
-          price: Number(row.price),
+          price: (row.id === 'invitado_anytime' || row.id === 'invitado-anytime') ? 0 : Number(row.price),
           currency: 'COP',
           includes: staticInfo.includes,
           available: Number(row.stock) > 0,
@@ -188,7 +188,11 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
   // 5. Filter individual tickets according to active stage:
   // - En Believers: solo la entrada 'general' está activa (early y anytime INACTIVAS)
   // - En otras etapas: 'early' y 'anytime' activas ('general' INACTIVA, ya que es única de Believers)
+  // - En panel admin (includeAdminOnly): siempre incluir 'invitado_anytime' (boleta de cortesía sin costo)
   const filteredIndividual = finalIndividual.filter(t => {
+    if (t.id === 'invitado_anytime' || t.id === 'invitado-anytime') {
+      return includeAdminOnly;
+    }
     if (isBelieversStage) {
       return t.id === 'general';
     } else {
@@ -215,6 +219,13 @@ export async function getDynamicTickets(stageId?: string): Promise<Ticket[]> {
   if (activeStage && activeStage.prices && typeof activeStage.prices === 'object') {
     const overrides = activeStage.prices as Record<string, any>;
     combined = combined.map((t) => {
+      // Las boletas de invitado siempre son gratuitas ($0) y no se ven afectadas por etapas
+      if (t.id === 'invitado_anytime' || t.id === 'invitado-anytime') {
+        return {
+          ...t,
+          price: 0,
+        };
+      }
       const zoneKey = (t.zone || '').toLowerCase();
       const idPrefix = (t.id || '').split('-')[0].toLowerCase();
       const nameLower = (t.name || '').toLowerCase();

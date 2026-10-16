@@ -333,13 +333,20 @@ export default function QuickSellPage() {
     totalCheckIns: number;
     totalOrders: number;
     totalCapacity: number;
+    totalGuests: number;
+    totalGuestAttendees: number;
+    totalGuestCheckIns: number;
   }>({
     totalRevenue: 0,
     totalSold: 0,
     totalCheckIns: 0,
     totalOrders: 0,
     totalCapacity: 0,
+    totalGuests: 0,
+    totalGuestAttendees: 0,
+    totalGuestCheckIns: 0,
   });
+  const [purchasedTypeFilter, setPurchasedTypeFilter] = useState<'all' | 'paid' | 'guests'>('all');
   const [zoneStats, setZoneStats] = useState<Array<{
     zone: string;
     name: string;
@@ -691,7 +698,7 @@ export default function QuickSellPage() {
     setFetchingTickets(true);
     try {
       const stgId = stageIdToUse !== undefined ? stageIdToUse : (selectedStageId || activeStageId || '');
-      const url = stgId ? `/api/tickets?stageId=${stgId}&nocache=${Date.now()}` : `/api/tickets?nocache=${Date.now()}`;
+      const url = stgId ? `/api/tickets?stageId=${stgId}&admin=true&nocache=${Date.now()}` : `/api/tickets?admin=true&nocache=${Date.now()}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -1004,6 +1011,9 @@ export default function QuickSellPage() {
               totalCheckIns: activeComparison.totalCheckIns || 0,
               totalOrders: activeComparison.totalOrders || 0,
               totalCapacity: dataStats.data?.totalCapacity || 44,
+              totalGuests: activeComparison.totalGuests || 0,
+              totalGuestAttendees: activeComparison.totalGuestAttendees || 0,
+              totalGuestCheckIns: activeComparison.totalGuestCheckIns || 0,
             });
           } else {
             setResumenStats({
@@ -1012,6 +1022,9 @@ export default function QuickSellPage() {
               totalCheckIns: dataStats.data?.totalCheckIns || 0,
               totalOrders: dataStats.data?.totalOrders || 0,
               totalCapacity: dataStats.data?.totalCapacity || 44,
+              totalGuests: dataStats.data?.totalGuests || 0,
+              totalGuestAttendees: dataStats.data?.totalGuestAttendees || 0,
+              totalGuestCheckIns: dataStats.data?.totalGuestCheckIns || 0,
             });
           }
           setEditionsComparison(dataStats.editionsComparison || []);
@@ -1056,7 +1069,8 @@ export default function QuickSellPage() {
     zone = selectedZone,
     search = purchasedSearch,
     limit = purchasedLimit,
-    edition = selectedEditionFilter
+    edition = selectedEditionFilter,
+    typeFilter = purchasedTypeFilter
   ) => {
     setPurchasedLoading(true);
     setPurchasedError(null);
@@ -1068,6 +1082,7 @@ export default function QuickSellPage() {
         zone: zone,
         search: search,
         edition: edition,
+        type: typeFilter,
       });
 
       const res = await fetch(`/api/admin/quick-sell/purchased-tickets?${params.toString()}`, {
@@ -1090,16 +1105,16 @@ export default function QuickSellPage() {
     } finally {
       setPurchasedLoading(false);
     }
-  }, [purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter]);
+  }, [purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter]);
 
   useEffect(() => {
     if (activeView === 'compras') {
       const delayDebounceFn = setTimeout(() => {
-        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter);
+        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter);
       }, 300);
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [activeView, purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, fetchPurchasedTickets]);
+  }, [activeView, purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter, fetchPurchasedTickets]);
 
   // Handle Edition Actions
   const handleSetActiveEdition = async (slug: string) => {
@@ -1330,13 +1345,17 @@ export default function QuickSellPage() {
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
-      doc.text(`Recaudado Total: $${resumenStats.totalRevenue.toLocaleString('es-CO')} COP`, margin, y);
+      doc.text(`Recaudado Total: ${resumenStats.totalRevenue.toLocaleString('es-CO')} COP`, margin, y);
       y += 6;
       doc.text(`Boletas Vendidas: ${resumenStats.totalSold}`, margin, y);
       y += 6;
       doc.text(`Órdenes Procesadas: ${resumenStats.totalOrders}`, margin, y);
       y += 6;
-      doc.text(`Check-ins / Ingresos: ${resumenStats.totalCheckIns}`, margin, y);
+      doc.text(`Check-ins Totales: ${resumenStats.totalCheckIns}`, margin, y);
+      y += 6;
+      doc.text(`Boletas Invitados (Cortesía): ${resumenStats.totalGuests || 0} (${resumenStats.totalGuestAttendees || 0} personas aforo)`, margin, y);
+      y += 6;
+      doc.text(`Check-ins Invitados: ${resumenStats.totalGuestCheckIns || 0}`, margin, y);
       y += 12;
 
       // Ocupación por Zona
@@ -1691,12 +1710,36 @@ export default function QuickSellPage() {
                       <div className="v">{resumenStats.totalSold}</div>
                     </div>
                     <div>
-                      <div className="k">Órdenes</div>
+                      <div className="k">Órdenes compras</div>
                       <div className="v">{resumenStats.totalOrders}</div>
                     </div>
                     <div>
-                      <div className="k">Check-ins</div>
+                      <div className="k">Check-ins Totales</div>
                       <div className="v">{resumenStats.totalCheckIns}</div>
+                    </div>
+                  </div>
+
+                  {/* Sección Separada: Métricas de Boletas de Invitados */}
+                  <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--line-soft)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, color: 'var(--olive-700)' }}>
+                        🎟️ Boletas de Invitados (Cortesía)
+                      </span>
+                      <span className="pill pill-bronze" style={{ fontSize: '11px', padding: '2px 8px' }}>Sin costo / Regaladas</span>
+                    </div>
+                    <div className="split" style={{ background: 'var(--cream-soft, #f7f4ed)', padding: '10px 14px', borderRadius: '10px' }}>
+                      <div>
+                        <div className="k">Invitados (Boletas)</div>
+                        <div className="v" style={{ color: 'var(--olive-900)' }}>{resumenStats.totalGuests}</div>
+                      </div>
+                      <div>
+                        <div className="k">Personas Aforo</div>
+                        <div className="v" style={{ color: 'var(--olive-900)' }}>{resumenStats.totalGuestAttendees}</div>
+                      </div>
+                      <div>
+                        <div className="k">Ingresados</div>
+                        <div className="v" style={{ color: 'var(--olive-900)' }}>{resumenStats.totalGuestCheckIns}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1853,9 +1896,11 @@ export default function QuickSellPage() {
                         ) : (
                           availableTickets.map((t) => (
                           <option key={t.id} value={t.id}>
-                            {t.stock !== undefined
-                              ? `${t.name} — $${t.price.toLocaleString('es-CO')} · ${(t as any).remaining ?? t.stock} disponibles`
-                              : `${t.name} - ${t.number} — $${t.price.toLocaleString('es-CO')}`}
+                            {t.id === 'invitado_anytime'
+                              ? `⭐ ${t.name} — Gratis ($0) · ${(t as any).remaining ?? t.stock} disponibles`
+                              : t.stock !== undefined
+                                ? `${t.name} — ${t.price.toLocaleString('es-CO')} · ${(t as any).remaining ?? t.stock} disponibles`
+                                : `${t.name} - ${t.number} — ${t.price.toLocaleString('es-CO')}`}
                           </option>
                         )))}
                       </select>
@@ -2097,7 +2142,7 @@ export default function QuickSellPage() {
 
                 <div style={{ padding: '16px 20px' }}>
                   <button type="submit" className="btn btn-primary btn-lg" disabled={loadingSale}>
-                    {loadingSale ? 'Procesando Venta...' : 'Confirmar Venta y Generar QR'}
+                    {loadingSale ? 'Procesando...' : (selectedTicket?.id === 'invitado_anytime' ? '⭐ Registrar Invitado y Generar QR' : 'Confirmar Venta y Generar QR')}
                   </button>
                 </div>
               </form>
@@ -2119,12 +2164,14 @@ export default function QuickSellPage() {
                     <b>{selectedTicket?.zone ? selectedTicket.zone.toUpperCase() : 'General'}</b>
                   </div>
                   <div className="total">
-                    <span>Total a cobrar</span>
-                    <b>${totalPrice.toLocaleString('es-CO')}</b>
+                    <span>{selectedTicket?.id === 'invitado_anytime' ? 'Total (Sin costo)' : 'Total a cobrar'}</span>
+                    <b>{selectedTicket?.id === 'invitado_anytime' ? '$0 COP (CORTESÍA)' : `${totalPrice.toLocaleString('es-CO')}`}</b>
                   </div>
                   
                   <div className="note">
-                    {selectedTicket?.stock !== undefined ? (
+                    {selectedTicket?.id === 'invitado_anytime' ? (
+                      `⭐ Boleta de cortesía para invitados del evento. No afecta las métricas de ingresos comerciales y se contabiliza en el apartado de invitados y aforo.`
+                    ) : selectedTicket?.stock !== undefined ? (
                       `Quedan ${(selectedTicket as any).remaining ?? selectedTicket.stock} boletas disponibles. Al confirmar se descuenta del inventario.`
                     ) : (
                       `Al confirmar se registra la venta de la mesa #${selectedTicket?.number || ''} y se reserva el aforo.`
@@ -2223,6 +2270,20 @@ export default function QuickSellPage() {
                   ))}
                 </select>
 
+                {/* Type Filter */}
+                <select
+                  value={purchasedTypeFilter}
+                  onChange={(e) => {
+                    const newType = e.target.value as 'all' | 'paid' | 'guests';
+                    setPurchasedTypeFilter(newType);
+                    setPurchasedPage(1);
+                  }}
+                >
+                  <option value="all">Todas las entradas</option>
+                  <option value="paid">Solo compras pagadas</option>
+                  <option value="guests">Solo invitados (Cortesía)</option>
+                </select>
+
                 {/* Limit Selector */}
                 <select
                   style={{ marginLeft: 'auto' }}
@@ -2299,7 +2360,11 @@ export default function QuickSellPage() {
                             )}
                           </td>
                           <td className="amt">
-                            ${(Number(item.ticketPrice) || 0).toLocaleString('es-CO')}
+                            {(item.ticketPrice === 0 || item.ticketId === 'invitado_anytime' || (item.ticketName && item.ticketName.toLowerCase().includes('invitado'))) ? (
+                              <span className="pill pill-bronze" style={{ fontSize: '11px', display: 'inline-block' }}>Gratis / Invitado</span>
+                            ) : (
+                              `${(Number(item.ticketPrice) || 0).toLocaleString('es-CO')}`
+                            )}
                           </td>
                           <td style={{ textAlign: 'center' }}>
                             <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>

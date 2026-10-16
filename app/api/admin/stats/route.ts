@@ -33,10 +33,10 @@ export async function GET(req: NextRequest) {
     const purchasedList = dbPurchased || [];
     const tickets = await getDynamicTickets();
 
-    // Calculate overall capacity for active tickets
+    // Calculate overall commercial capacity for active tickets (excluding dummy guest stock)
     let currentCapacity = 0;
     tickets.forEach(t => {
-      if (!t.disabled && t.available) {
+      if (!t.disabled && t.available && t.id !== 'invitado_anytime' && t.id !== 'invitado-anytime') {
         if (t.stock !== undefined) {
           currentCapacity += t.stock;
         } else {
@@ -53,6 +53,9 @@ export async function GET(req: NextRequest) {
       totalSold: number;
       totalCheckIns: number;
       totalOrders: number;
+      totalGuests: number;
+      totalGuestAttendees: number;
+      totalGuestCheckIns: number;
       ordersSet: Set<string>;
     }>();
 
@@ -65,6 +68,9 @@ export async function GET(req: NextRequest) {
         totalSold: 0,
         totalCheckIns: 0,
         totalOrders: 0,
+        totalGuests: 0,
+        totalGuestAttendees: 0,
+        totalGuestCheckIns: 0,
         ordersSet: new Set<string>(),
       });
     });
@@ -73,6 +79,10 @@ export async function GET(req: NextRequest) {
     let filteredRevenue = 0;
     let filteredSold = 0;
     let filteredCheckIns = 0;
+    let filteredGuests = 0;
+    let filteredGuestAttendees = 0;
+    let filteredGuestCheckIns = 0;
+    let filteredPaidAttendees = 0;
     const filteredOrdersSet = new Set<string>();
 
     purchasedList.forEach(ticketRow => {
@@ -84,9 +94,9 @@ export async function GET(req: NextRequest) {
       const accesosRestantes = Number(ticketRow.accesos_restantes) ?? totalAccesos;
       const checkInsUsed = Math.max(0, totalAccesos - accesosRestantes);
 
-      // Revenue: if price is bed price or ticket price
-      const rev = price;
-      const sold = 1; // 1 ticket or bed purchased
+      const isGuest = ticketRow.ticket_id === 'invitado_anytime' ||
+        ticketRow.ticket_id === 'invitado-anytime' ||
+        (ticketRow.ticket_name && ticketRow.ticket_name.toLowerCase().includes('invitado'));
 
       if (!editionsMap.has(edSlug)) {
         editionsMap.set(edSlug, {
@@ -96,25 +106,45 @@ export async function GET(req: NextRequest) {
           totalSold: 0,
           totalCheckIns: 0,
           totalOrders: 0,
+          totalGuests: 0,
+          totalGuestAttendees: 0,
+          totalGuestCheckIns: 0,
           ordersSet: new Set<string>(),
         });
       }
 
       const edStat = editionsMap.get(edSlug)!;
-      edStat.totalRevenue += rev;
-      edStat.totalSold += sold;
+      // All check-ins (both commercial and guest) count toward actual event entry / aforo
       edStat.totalCheckIns += checkInsUsed;
-      if (ticketRow.order_id) {
-        edStat.ordersSet.add(ticketRow.order_id);
+
+      if (isGuest) {
+        edStat.totalGuests += 1;
+        edStat.totalGuestAttendees += totalAccesos;
+        edStat.totalGuestCheckIns += checkInsUsed;
+      } else {
+        // Commercial purchases only
+        edStat.totalRevenue += price;
+        edStat.totalSold += 1;
+        if (ticketRow.order_id) {
+          edStat.ordersSet.add(ticketRow.order_id);
+        }
       }
 
-      // Filter check
+      // Filter check for currently selected edition
       if (selectedEdition === 'all' || edSlug === selectedEdition) {
-        filteredRevenue += rev;
-        filteredSold += sold;
         filteredCheckIns += checkInsUsed;
-        if (ticketRow.order_id) {
-          filteredOrdersSet.add(ticketRow.order_id);
+
+        if (isGuest) {
+          filteredGuests += 1;
+          filteredGuestAttendees += totalAccesos;
+          filteredGuestCheckIns += checkInsUsed;
+        } else {
+          filteredRevenue += price;
+          filteredSold += 1;
+          filteredPaidAttendees += totalAccesos;
+          if (ticketRow.order_id) {
+            filteredOrdersSet.add(ticketRow.order_id);
+          }
         }
       }
     });
@@ -126,6 +156,9 @@ export async function GET(req: NextRequest) {
       totalSold: item.totalSold,
       totalCheckIns: item.totalCheckIns,
       totalOrders: item.ordersSet.size,
+      totalGuests: item.totalGuests,
+      totalGuestAttendees: item.totalGuestAttendees,
+      totalGuestCheckIns: item.totalGuestCheckIns,
     }));
 
     return NextResponse.json({
@@ -139,6 +172,12 @@ export async function GET(req: NextRequest) {
         totalCheckIns: filteredCheckIns,
         totalCapacity: currentCapacity,
         totalOrders: filteredOrdersSet.size,
+        // Separated guest metrics
+        totalGuests: filteredGuests,
+        totalGuestAttendees: filteredGuestAttendees,
+        totalGuestCheckIns: filteredGuestCheckIns,
+        // Total attendance expected (paid attendees + guests)
+        totalExpectedAforo: filteredPaidAttendees + filteredGuestAttendees,
       },
       editionsComparison,
     });
