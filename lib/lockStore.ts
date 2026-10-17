@@ -330,6 +330,10 @@ export async function getRemainingSeconds(ticketId: string, sessionToken: string
  * Get current status of a ticket for active edition.
  */
 export async function getTicketStatus(ticketId: string, ticketsList?: Ticket[]): Promise<'available' | 'locked' | 'sold'> {
+  if (ticketId === 'invitado_anytime' || ticketId === 'invitado-anytime') {
+    return 'available';
+  }
+
   const list = ticketsList || [];
   const ticket = list.find((t) => t.id === ticketId);
   const activeEdition = await getActiveEdition();
@@ -420,6 +424,7 @@ export async function getTicketStatus(ticketId: string, ticketsList?: Ticket[]):
  * Get remaining available stock (total stock - sold - locked) for active edition.
  */
 export async function getRemainingStock(ticketId: string, totalStock: number): Promise<number> {
+  const isGuest = ticketId === 'invitado_anytime' || ticketId === 'invitado-anytime';
   await cleanExpiredLocks();
   const activeEdition = await getActiveEdition();
 
@@ -451,12 +456,132 @@ export async function getRemainingStock(ticketId: string, totalStock: number): P
       .eq('id', ticketId)
       .maybeSingle();
     
-    const finalStock = dbTicket ? Number(dbTicket.stock) : totalStock;
+    const rawStock = dbTicket ? Number(dbTicket.stock) : totalStock;
+    const finalStock = isGuest ? Math.max(rawStock || 5000, 5000) : rawStock;
 
-    return Math.max(0, finalStock - soldCount - lockedCount);
+    return isGuest ? Math.max(100, finalStock - soldCount - lockedCount) : Math.max(0, finalStock - soldCount - lockedCount);
   } catch (err) {
     console.error('[LockStore] Error in getRemainingStock:', err);
-    return totalStock;
+    return isGuest ? Math.max(totalStock || 5000, 5000) : totalStock;
+  }
+}
+
+/**
+ * Batch-enriches all tickets with `status` and `remaining` stock using a single set of queries
+ * instead of N+1 queries per ticket.
+ */
+export async function getTicketsWithStatusAndStock(tickets: Ticket[]) {
+  await cleanExpiredLocks();
+  const activeEdition = await getActiveEdition();
+  const nowIso = new Date().toISOString();
+  const nowMs = Date.now();
+
+  try {
+    const [
+      { data: purchasedRows },
+      { data: lockRows },
+      { data: dbIndividualRows },
+    ] = await Promise.all([
+      supabase
+        .from('purchased_tickets')
+        .select('ticket_id, total_accesos')
+        .eq('status', 'paid')
+        .eq('edition_slug', activeEdition.slug),
+      supabase
+        .from('ticket_locks')
+        .select('lock_key, ticket_id, quantity, status, expires_at'),
+      supabase
+        .from('boleteria_individual')
+        .select('id, stock'),
+    ]);
+
+    const soldByTicket = new Map<string, number>();
+    const hasPaidPurchase = new Set<string>();
+    for (const row of purchasedRows || []) {
+      const tid = row.ticket_id;
+      if (!tid) continue;
+      hasPaidPurchase.add(tid);
+      soldByTicket.set(tid, (soldByTicket.get(tid) || 0) + (Number(row.total_accesos) || 0));
+    }
+
+    const lockedQtyByTicket = new Map<string, number>();
+    const lockByKey = new Map<string, any>();
+    for (const row of lockRows || []) {
+      if (row.lock_key) {
+        lockByKey.set(row.lock_key, row);
+      }
+      if (row.status === 'locked' && row.expires_at && row.expires_at > nowIso && row.ticket_id) {
+        lockedQtyByTicket.set(
+          row.ticket_id,
+          (lockedQtyByTicket.get(row.ticket_id) || 0) + (Number(row.quantity) || 0)
+        );
+      }
+    }
+
+    const stockByTicket = new Map<string, number>();
+    for (const row of dbIndividualRows || []) {
+      if (row.id !== undefined) {
+        stockByTicket.set(row.id, Number(row.stock));
+      }
+    }
+
+    return tickets.map((t) => {
+      const isGuest = t.id === 'invitado_anytime' || t.id === 'invitado-anytime';
+      if (t.stock !== undefined) {
+        const soldCount = soldByTicket.get(t.id) || 0;
+        const lockedCount = lockedQtyByTicket.get(t.id) || 0;
+        const dbStock = stockByTicket.has(t.id) ? stockByTicket.get(t.id)! : (t.stock || 100);
+        const totalStock = isGuest ? Math.max(dbStock || 5000, 5000) : dbStock;
+
+        let status: 'available' | 'locked' | 'sold' = 'available';
+        if (!isGuest) {
+          if (soldCount >= totalStock) {
+            status = 'sold';
+          } else if (soldCount + lockedCount >= totalStock) {
+            status = 'locked';
+          }
+        }
+
+        const remaining = isGuest
+          ? Math.max(100, totalStock - soldCount - lockedCount)
+          : Math.max(0, totalStock - soldCount - lockedCount);
+
+        return {
+          ...t,
+          status,
+          remaining,
+        };
+      } else {
+        // Table / Cama
+        let status: 'available' | 'locked' | 'sold' = 'available';
+        if (hasPaidPurchase.has(t.id)) {
+          status = 'sold';
+        } else {
+          const lock = lockByKey.get(t.id);
+          if (lock) {
+            if (lock.status === 'sold') {
+              status = 'sold';
+            } else if (lock.expires_at && new Date(lock.expires_at).getTime() >= nowMs) {
+              status = 'locked';
+            }
+          }
+        }
+        return {
+          ...t,
+          status,
+          remaining: undefined,
+        };
+      }
+    });
+  } catch (err) {
+    console.error('[LockStore] Error in getTicketsWithStatusAndStock, falling back:', err);
+    return Promise.all(
+      tickets.map(async (t) => ({
+        ...t,
+        status: await getTicketStatus(t.id, tickets),
+        remaining: t.stock !== undefined ? await getRemainingStock(t.id, t.stock) : undefined,
+      }))
+    );
   }
 }
 

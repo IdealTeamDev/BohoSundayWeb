@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useParams } from 'next/navigation';
 import type { Ticket } from '@/types';
@@ -273,7 +273,7 @@ tr:hover .rowact{opacity:1 !important}
 /* ---------- Diálogo ediciones ---------- */
 .scrim{position:fixed !important;inset:0 !important;background:rgba(38,38,31,.45) !important;display:none !important;align-items:center !important;justify-content:center !important;padding:24px !important;z-index:50 !important}
 .scrim.is-open{display:flex !important}
-.dialog{background:var(--surface) !important;border-radius:12px !important;width:100% !important;max-width:520px !important;box-shadow:0 24px 60px -20px rgba(38,38,31,.5) !important;overflow:hidden !important}
+.dialog{background:var(--surface) !important;border-radius:12px !important;width:100% !important;max-width:520px !important;max-height:90vh !important;box-shadow:0 24px 60px -20px rgba(38,38,31,.5) !important;overflow-x:hidden !important;overflow-y:auto !important}
 .dialog header{padding:18px 22px !important;border-bottom:1px solid var(--line-soft) !important;display:flex !important;align-items:center !important}
 .dialog header h3{margin:0 !important;font-family:Fraunces,Georgia,serif !important;font-weight:500 !important;font-size:18px !important}
 .dialog header button{margin-left:auto !important;color:var(--ink-3) !important;font-size:18px !important;line-height:1 !important}
@@ -300,6 +300,7 @@ tr:hover .rowact{opacity:1 !important}
   .brand{border-bottom:0 !important;border-right:1px solid rgba(255,255,255,.1) !important;padding:14px 16px !important}
   .view,.topbar{padding-left:16px !important;padding-right:16px !important}
   .row,.row-3,.split{grid-template-columns:1fr !important}
+  .scrim{padding:12px !important}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 `;
@@ -694,13 +695,16 @@ export default function QuickSellPage() {
     }
   }, []);
 
+  const ticketsRequestIdRef = useRef(0);
+
   const fetchTicketsData = useCallback(async (stageIdToUse?: string) => {
+    const requestId = ++ticketsRequestIdRef.current;
     setFetchingTickets(true);
     try {
       const stgId = stageIdToUse !== undefined ? stageIdToUse : (selectedStageId || activeStageId || '');
       const url = stgId ? `/api/tickets?stageId=${stgId}&admin=true&nocache=${Date.now()}` : `/api/tickets?admin=true&nocache=${Date.now()}`;
       const res = await fetch(url);
-      if (res.ok) {
+      if (res.ok && requestId === ticketsRequestIdRef.current) {
         const data = await res.json();
         const sorted = [...data].sort((a: any, b: any) => {
           const isIndivA = a.stock !== undefined;
@@ -716,6 +720,7 @@ export default function QuickSellPage() {
         });
         setTickets(sorted);
         const available = sorted.filter((t: any) => {
+          if (t.id === 'invitado_anytime' || t.id === 'invitado-anytime') return true;
           if (t.stock !== undefined) {
             const rem = t.remaining ?? t.stock;
             return rem > 0 && t.status !== 'sold';
@@ -723,21 +728,22 @@ export default function QuickSellPage() {
           return t.status !== 'sold';
         });
 
-        if (available.length > 0) {
-          const stillValid = available.some((t: any) => t.id === selectedTicketId);
-          if (!stillValid) {
-            setSelectedTicketId(available[0].id);
+        setSelectedTicketId((prev) => {
+          if (available.length > 0) {
+            const stillValid = prev && available.some((t: any) => t.id === prev);
+            return stillValid ? prev : available[0].id;
           }
-        } else {
-          setSelectedTicketId('');
-        }
+          return '';
+        });
       }
     } catch (err) {
       console.error('Error fetching tickets:', err);
     } finally {
-      setFetchingTickets(false);
+      if (requestId === ticketsRequestIdRef.current) {
+        setFetchingTickets(false);
+      }
     }
-  }, [selectedStageId, activeStageId, selectedTicketId]);
+  }, [selectedStageId, activeStageId]);
 
   const fetchZonesData = useCallback(async () => {
     setZonesLoading(true);
@@ -1394,29 +1400,38 @@ export default function QuickSellPage() {
 
   // Selected Ticket Info Calculation
   const availableTickets = tickets.filter((t: any) => {
+    if (t.id === 'invitado_anytime' || t.id === 'invitado-anytime') return true;
     if (t.stock !== undefined) {
       const rem = (t as any).remaining ?? t.stock;
       return rem > 0 && t.status !== 'sold';
     }
     return t.status !== 'sold';
   });
-  const selectedTicket = tickets.find(t => t.id === selectedTicketId);
-  const isIndividual = selectedTicket?.stock !== undefined;
-  const unitPrice = selectedTicket?.price || 0;
+  const effectiveTicketId = selectedTicketId || (availableTickets[0]?.id ?? '');
+  const selectedTicket = tickets.find(t => t.id === effectiveTicketId);
+  const isGuestTicket = selectedTicket?.id === 'invitado_anytime' || selectedTicket?.id === 'invitado-anytime';
+  const isIndividual = selectedTicket?.stock !== undefined || isGuestTicket;
+  const unitPrice = isGuestTicket ? 0 : (selectedTicket?.price || 0);
   const totalPrice = isIndividual ? unitPrice * (Number(quantity) || 1) : unitPrice;
 
   function validateForm() {
     const newErrors: Partial<typeof form & { ticket: string; quantity?: string }> = {};
-    if (!selectedTicketId) newErrors.ticket = 'Debes seleccionar una boleta o mesa.';
+    if (!effectiveTicketId) newErrors.ticket = 'Debes seleccionar una boleta o mesa.';
     if (!form.name.trim()) newErrors.name = 'El nombre es obligatorio.';
     if (!form.docNumber.trim()) newErrors.docNumber = 'El documento es obligatorio.';
-    if (!/^\d{7,15}$/.test(form.phone.replace(/\s/g, ''))) {
+
+    const phoneDigits = form.phone.replace(/\D/g, '');
+    if (phoneDigits.length < 7 || phoneDigits.length > 15) {
       newErrors.phone = 'Número de teléfono inválido (7 a 15 dígitos).';
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+
+    const cleanEmail = form.email.replace(/[\s\u200B-\u200D\uFEFF]/g, '').toLowerCase();
+    const cleanConfirmEmail = form.confirmEmail.replace(/[\s\u200B-\u200D\uFEFF]/g, '').toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       newErrors.email = 'Correo electrónico inválido.';
     }
-    if (form.email.toLowerCase().trim() !== form.confirmEmail.toLowerCase().trim()) {
+    if (cleanEmail !== cleanConfirmEmail) {
       newErrors.confirmEmail = 'Los correos electrónicos no coinciden.';
     }
     if (isIndividual) {
@@ -1428,19 +1443,50 @@ export default function QuickSellPage() {
       }
     }
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstFieldId = newErrors.ticket
+        ? 'boleta'
+        : newErrors.quantity
+        ? 'cant'
+        : newErrors.name
+        ? 'nom'
+        : newErrors.docNumber
+        ? 'ndoc'
+        : newErrors.phone
+        ? 'tel'
+        : newErrors.email
+        ? 'mail'
+        : 'mail2';
+      const el = typeof document !== 'undefined' ? document.getElementById(firstFieldId) : null;
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus({ preventScroll: true });
+      }
+      return false;
+    }
+
+    return true;
   }
 
   async function handleRegisterSale(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitError(null);
     if (!validateForm()) return;
     setLoadingSale(true);
-    setSubmitError(null);
+
+    const prefixDigits = form.phonePrefix.replace(/\D/g, '');
+    let phoneDigits = form.phone.replace(/\D/g, '');
+    if (prefixDigits && phoneDigits.startsWith(prefixDigits) && phoneDigits.length - prefixDigits.length >= 7) {
+      phoneDigits = phoneDigits.slice(prefixDigits.length);
+    }
+
+    const cleanEmail = form.email.replace(/[\s\u200B-\u200D\uFEFF]/g, '').toLowerCase();
 
     const buyerInfo = {
       name: form.name.trim(),
-      phone: `${form.phonePrefix} ${form.phone.trim()}`,
-      email: form.email.toLowerCase().trim(),
+      phone: `${form.phonePrefix} ${phoneDigits}`,
+      email: cleanEmail,
       docType: form.docType,
       docNumber: form.docNumber.trim(),
       locale: form.locale,
@@ -1457,17 +1503,22 @@ export default function QuickSellPage() {
           'x-admin-token': token
         },
         body: JSON.stringify({
-          ticketId: selectedTicketId,
+          ticketId: effectiveTicketId,
           quantity: finalQty,
           buyerInfo,
           stageId: selectedStageId,
         }),
       });
 
-      const data = await res.json();
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
 
-      if (!res.ok) {
-        setSubmitError(data.error || 'Error al procesar la venta.');
+      if (!res.ok || !data?.orderId) {
+        setSubmitError(data?.error || 'Error al procesar la venta. Intenta nuevamente.');
         setLoadingSale(false);
         return;
       }
@@ -1480,9 +1531,9 @@ export default function QuickSellPage() {
         orderId: data.orderId,
         buyerName: buyerInfo.name,
         buyerEmail: buyerInfo.email,
-        ticketName: selectedTicket?.stock === undefined
+        ticketName: selectedTicket?.stock === undefined && !isGuestTicket
           ? `${selectedTicket?.name || 'Mesa'} - ${selectedTicket?.number}`
-          : selectedTicket?.name || 'Boleta',
+          : selectedTicket?.name || (isGuestTicket ? 'Invitado Anytime' : 'Boleta'),
         qrUrl,
         qrImageUrl,
         isIndividual,
@@ -1496,7 +1547,7 @@ export default function QuickSellPage() {
 
     } catch (err) {
       console.error('Error submitting quick sell:', err);
-      setSubmitError('Error de red al procesar el registro.');
+      setSubmitError('Error de red al procesar el registro. Verifica tu conexión e intenta nuevamente.');
       setLoadingSale(false);
     }
   }
@@ -1514,13 +1565,21 @@ export default function QuickSellPage() {
     setShowSuccessModal(false);
     setModalData(null);
     setErrors({});
+    setSubmitError(null);
     fetchTicketsData();
   }
 
   function handleCopyQR() {
     if (!modalData) return;
-    navigator.clipboard.writeText(modalData.qrUrl);
-    alert('¡Enlace del código QR copiado al portapapeles!');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(modalData.qrUrl).then(() => {
+        alert('¡Enlace del código QR copiado al portapapeles!');
+      }).catch(() => {
+        window.prompt('Copia el enlace del código QR:', modalData.qrUrl);
+      });
+    } else {
+      window.prompt('Copia el enlace del código QR:', modalData.qrUrl);
+    }
   }
 
   function handleShareWhatsApp() {
@@ -1864,9 +1923,7 @@ export default function QuickSellPage() {
                         id="etapa"
                         value={selectedStageId}
                         onChange={(e) => {
-                          const newStageId = e.target.value;
-                          setSelectedStageId(newStageId);
-                          fetchTicketsData(newStageId);
+                          setSelectedStageId(e.target.value);
                         }}
                       >
                         <option value="">Precios Base (Sin Etapa)</option>
@@ -1883,21 +1940,22 @@ export default function QuickSellPage() {
                       <label htmlFor="boleta">Boleta o mesa</label>
                       <select
                         id="boleta"
-                        value={selectedTicketId}
+                        value={effectiveTicketId}
                         onChange={(e) => {
                           setSelectedTicketId(e.target.value);
                           setQuantity(1);
+                          if (errors.ticket) setErrors((prev) => ({ ...prev, ticket: undefined }));
                         }}
                       >
-                        {fetchingTickets ? (
+                        {fetchingTickets && availableTickets.length === 0 ? (
                           <option value="">Cargando boletería...</option>
                         ) : availableTickets.length === 0 ? (
                           <option value="">No hay boletería disponible</option>
                         ) : (
                           availableTickets.map((t) => (
                           <option key={t.id} value={t.id}>
-                            {t.id === 'invitado_anytime'
-                              ? `⭐ ${t.name} — Gratis ($0) · ${(t as any).remaining ?? t.stock} disponibles`
+                            {t.id === 'invitado_anytime' || t.id === 'invitado-anytime'
+                              ? `⭐ ${t.name} — Gratis ($0) · ${(t as any).remaining ?? t.stock ?? 5000} disponibles`
                               : t.stock !== undefined
                                 ? `${t.name} — ${t.price.toLocaleString('es-CO')} · ${(t as any).remaining ?? t.stock} disponibles`
                                 : `${t.name} - ${t.number} — ${t.price.toLocaleString('es-CO')}`}
@@ -1930,6 +1988,7 @@ export default function QuickSellPage() {
                               const parsed = parseInt(val, 10);
                               setQuantity(isNaN(parsed) ? '' : parsed);
                             }
+                            if (errors.quantity) setErrors((prev) => ({ ...prev, quantity: undefined }));
                           }}
                         />
                         <button
@@ -1954,9 +2013,14 @@ export default function QuickSellPage() {
                     <label htmlFor="nom">Nombre completo</label>
                     <input
                       id="nom"
+                      type="text"
+                      autoComplete="name"
                       placeholder="Como aparece en el documento"
                       value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      onChange={(e) => {
+                        setForm({ ...form, name: e.target.value });
+                        if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                      }}
                     />
                     {errors.name && <span className="help" style={{ color: 'var(--sold)' }}>{errors.name}</span>}
                   </div>
@@ -1980,9 +2044,15 @@ export default function QuickSellPage() {
                       <label htmlFor="ndoc">Número de documento</label>
                       <input
                         id="ndoc"
+                        type="text"
+                        inputMode="text"
+                        autoComplete="off"
                         placeholder="1020304050"
                         value={form.docNumber}
-                        onChange={(e) => setForm({ ...form, docNumber: e.target.value })}
+                        onChange={(e) => {
+                          setForm({ ...form, docNumber: e.target.value });
+                          if (errors.docNumber) setErrors((prev) => ({ ...prev, docNumber: undefined }));
+                        }}
                       />
                       {errors.docNumber && <span className="help" style={{ color: 'var(--sold)' }}>{errors.docNumber}</span>}
                     </div>
@@ -2002,9 +2072,15 @@ export default function QuickSellPage() {
                       <label htmlFor="tel">Teléfono</label>
                       <input
                         id="tel"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel-national"
                         placeholder="300 123 4567"
                         value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        onChange={(e) => {
+                          setForm({ ...form, phone: e.target.value });
+                          if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
+                        }}
                       />
                       {errors.phone && <span className="help" style={{ color: 'var(--sold)' }}>{errors.phone}</span>}
                     </div>
@@ -2015,9 +2091,20 @@ export default function QuickSellPage() {
                       <label htmlFor="mail">Correo electrónico</label>
                       <input
                         id="mail"
+                        type="email"
+                        inputMode="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        autoComplete="email"
                         placeholder="nombre@correo.com"
                         value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        onChange={(e) => {
+                          setForm({ ...form, email: e.target.value });
+                          if (errors.email || errors.confirmEmail) {
+                            setErrors((prev) => ({ ...prev, email: undefined, confirmEmail: undefined }));
+                          }
+                        }}
                       />
                       {errors.email && <span className="help" style={{ color: 'var(--sold)' }}>{errors.email}</span>}
                     </div>
@@ -2026,9 +2113,18 @@ export default function QuickSellPage() {
                       <label htmlFor="mail2">Confirmar correo</label>
                       <input
                         id="mail2"
+                        type="email"
+                        inputMode="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        autoComplete="email"
                         placeholder="nombre@correo.com"
                         value={form.confirmEmail}
-                        onChange={(e) => setForm({ ...form, confirmEmail: e.target.value })}
+                        onChange={(e) => {
+                          setForm({ ...form, confirmEmail: e.target.value });
+                          if (errors.confirmEmail) setErrors((prev) => ({ ...prev, confirmEmail: undefined }));
+                        }}
                       />
                       <span className="help">El QR llega a esta dirección.</span>
                       {errors.confirmEmail && <span className="help" style={{ color: 'var(--sold)' }}>{errors.confirmEmail}</span>}
@@ -2140,9 +2236,28 @@ export default function QuickSellPage() {
                   )}
                 </div>
 
+                {(submitError || Object.values(errors).some(Boolean)) && (
+                  <div
+                    role="alert"
+                    style={{
+                      margin: '14px 20px 0',
+                      padding: '12px 14px',
+                      background: '#F8E7E2',
+                      border: '1px solid #E5B7AC',
+                      borderRadius: 'var(--r-control)',
+                      color: 'var(--sold)',
+                      fontSize: '12.5px',
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    <strong>No se pudo generar el QR:</strong>{' '}
+                    {submitError || Object.values(errors).filter(Boolean).join(' ')}
+                  </div>
+                )}
+
                 <div style={{ padding: '16px 20px' }}>
                   <button type="submit" className="btn btn-primary btn-lg" disabled={loadingSale}>
-                    {loadingSale ? 'Procesando...' : (selectedTicket?.id === 'invitado_anytime' ? '⭐ Registrar Invitado y Generar QR' : 'Confirmar Venta y Generar QR')}
+                    {loadingSale ? 'Procesando...' : (isGuestTicket ? '⭐ Registrar Invitado y Generar QR' : 'Confirmar Venta y Generar QR')}
                   </button>
                 </div>
               </form>
@@ -2164,12 +2279,12 @@ export default function QuickSellPage() {
                     <b>{selectedTicket?.zone ? selectedTicket.zone.toUpperCase() : 'General'}</b>
                   </div>
                   <div className="total">
-                    <span>{selectedTicket?.id === 'invitado_anytime' ? 'Total (Sin costo)' : 'Total a cobrar'}</span>
-                    <b>{selectedTicket?.id === 'invitado_anytime' ? '$0 COP (CORTESÍA)' : `${totalPrice.toLocaleString('es-CO')}`}</b>
+                    <span>{isGuestTicket ? 'Total (Sin costo)' : 'Total a cobrar'}</span>
+                    <b>{isGuestTicket ? '$0 COP (CORTESÍA)' : `${totalPrice.toLocaleString('es-CO')}`}</b>
                   </div>
                   
                   <div className="note">
-                    {selectedTicket?.id === 'invitado_anytime' ? (
+                    {isGuestTicket ? (
                       `⭐ Boleta de cortesía para invitados del evento. No afecta las métricas de ingresos comerciales y se contabiliza en el apartado de invitados y aforo.`
                     ) : selectedTicket?.stock !== undefined ? (
                       `Quedan ${(selectedTicket as any).remaining ?? selectedTicket.stock} boletas disponibles. Al confirmar se descuenta del inventario.`
