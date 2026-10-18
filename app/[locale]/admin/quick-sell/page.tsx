@@ -2431,6 +2431,7 @@ export default function QuickSellPage() {
                     <tr>
                       <th>Comprador</th>
                       <th>Entrada</th>
+                      <th style={{ textAlign: 'center' }}>Ingresos</th>
                       <th>Zona</th>
                       <th>Edición</th>
                       <th>Estado</th>
@@ -2441,18 +2442,24 @@ export default function QuickSellPage() {
                   <tbody>
                     {purchasedLoading ? (
                       <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }}>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '30px' }}>
                           Cargando registro de ventas...
                         </td>
                       </tr>
                     ) : purchasedList.length === 0 ? (
                       <tr>
-                        <td colSpan={7} style={{ textAlign: 'center', padding: '30px' }}>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '30px' }}>
                           No se encontraron ventas registradas.
                         </td>
                       </tr>
                     ) : (
-                      purchasedList.map((item) => (
+                      purchasedList.map((item) => {
+                        const usedAccesses = Math.max(0, (item.totalAccesos || 0) - (item.accesosRestantes || 0));
+                        const totalAcc = item.totalAccesos || 0;
+                        const isComplete = totalAcc > 0 && item.accesosRestantes === 0;
+                        const isPartial = usedAccesses > 0 && !isComplete;
+
+                        return (
                         <tr key={item.orderId + item.ticketId}>
                           <td>
                             <div className="who">
@@ -2463,6 +2470,14 @@ export default function QuickSellPage() {
                           </td>
                           <td>
                             {item.ticketName} {item.ticketNumber ? `#${item.ticketNumber}` : ''}
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span 
+                              className={`pill ${isComplete ? 'pill-ok' : isPartial ? 'pill-warn' : 'pill-muted'}`}
+                              style={{ fontWeight: 600, fontSize: '12px' }}
+                            >
+                              {usedAccesses} / {totalAcc}
+                            </span>
                           </td>
                           <td>
                             <span className="pill pill-muted">{item.zone ? item.zone.toUpperCase() : 'GENERAL'}</span>
@@ -2507,7 +2522,8 @@ export default function QuickSellPage() {
                             </div>
                           </td>
                         </tr>
-                      ))
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
