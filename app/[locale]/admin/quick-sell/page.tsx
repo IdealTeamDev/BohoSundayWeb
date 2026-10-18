@@ -957,7 +957,11 @@ export default function QuickSellPage() {
   // Check auth token
   useEffect(() => {
     const token = localStorage.getItem('admin_token');
-    if (!token) {
+    const role = localStorage.getItem('admin_role');
+    if (!token || role === 'bouncer') {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_username');
+      localStorage.removeItem('admin_role');
       router.push(`/${currentLocale}/admin/login`);
     } else {
       setCheckingAuth(false);
@@ -967,6 +971,7 @@ export default function QuickSellPage() {
   function handleLogout() {
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_username');
+    localStorage.removeItem('admin_role');
     router.push(`/${currentLocale}/admin/login`);
   }
 
