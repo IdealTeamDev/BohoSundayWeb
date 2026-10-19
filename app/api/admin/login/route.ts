@@ -66,6 +66,18 @@ export async function POST(req: NextRequest) {
     // 4. Reset failed attempts on successful login
     resetAttempts(lockKey);
 
+    // Si el usuario tiene rol bouncer y proviene del portal web de administración, bloquear acceso
+    const portal = req.headers.get('x-portal') || '';
+    const referer = req.headers.get('referer') || '';
+    const isFromAdminWeb = portal === 'admin-web' || referer.includes('/admin/login');
+
+    if (authResult.user.role === 'bouncer' && isFromAdminWeb) {
+      return NextResponse.json(
+        { error: 'Acceso no autorizado.' },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       token: authResult.token,

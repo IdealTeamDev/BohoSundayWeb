@@ -53,10 +53,11 @@ export async function GET(
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
 
-    const tickets = await getDynamicTickets();
-    const ticket = tickets.find((t) => t.id === order.ticketId);
+    const tickets = await getDynamicTickets(undefined, true, true);
+    const ticket = tickets.find((t) => t.id === order.ticketId || t.id.toLowerCase() === order.ticketId.toLowerCase());
 
-    const ticketName = ticket?.name || 'Boleto/Cama';
+    const isGuest = order.ticketId === 'invitado_anytime' || order.ticketId === 'invitado-anytime';
+    const ticketName = ticket?.name || (isGuest ? 'Invitado Anytime' : 'Boleto/Cama');
     const ticketNumber = ticket?.number || 0;
     const zone = ticket?.zone || 'general';
 
@@ -92,7 +93,7 @@ export async function GET(
       checksum: checksum,
       payment_ref: order.paymentId || order.errorDetail || 'N/A',
       created_at: new Date(order.createdAt).toISOString(),
-      ticket_price: ticket?.price || 0
+      ticket_price: isGuest ? 0 : (ticket?.price || 0)
     });
   } catch (error) {
     console.error('Error generating dynamic QR JSON:', error);
@@ -110,7 +111,7 @@ export async function POST(
     const token = req.headers.get('x-admin-token');
     const secret = process.env.ADMIN_SECRET_TOKEN;
     const isValidLegacy = secret && token === secret;
-    const sessionUser = validateSession(token);
+    const sessionUser = await validateSession(token);
     
     if (!isValidLegacy && !sessionUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -174,8 +175,8 @@ export async function POST(
 
 
 
-    const tickets = await getDynamicTickets();
-    const ticket = tickets.find((t) => t.id === order.ticketId);
+    const tickets = await getDynamicTickets(undefined, true, true);
+    const ticket = tickets.find((t) => t.id === order.ticketId || t.id.toLowerCase() === order.ticketId.toLowerCase());
 
     const basePersons = ticket ? (ticket.stock !== undefined ? 1 : (ticket.persons || 1)) : 1;
     const totalCapacity = basePersons * order.quantity;

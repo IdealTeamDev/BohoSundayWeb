@@ -17,31 +17,39 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { ticketId, quantity, buyerInfo, stageId } = body;
+    const { ticketId: rawTicketId, quantity, buyerInfo, stageId } = body;
 
-    if (!ticketId || !buyerInfo || !quantity) {
+    if (!rawTicketId || !buyerInfo || !quantity) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
     }
 
-    // 1. Obtener la lista dinámica de tickets (incluyendo tickets especiales de admin como Invitado Anytime)
-    const tickets = await getDynamicTickets(stageId, true);
-    const ticket = tickets.find((t) => t.id === ticketId);
+    const isGuestRequest = rawTicketId === 'invitado_anytime' || rawTicketId === 'invitado-anytime';
+    const ticketId = isGuestRequest ? 'invitado_anytime' : String(rawTicketId).trim();
+
+    // 1. Obtener la lista dinámica de tickets sin excluir por etapa (incluyendo tickets especiales de admin como Invitado Anytime)
+    const tickets = await getDynamicTickets(stageId, true, true);
+    const ticket = tickets.find(
+      (t) =>
+        t.id === ticketId ||
+        t.id.toLowerCase() === ticketId.toLowerCase() ||
+        (isGuestRequest && (t.id === 'invitado_anytime' || t.id === 'invitado-anytime'))
+    );
 
     if (!ticket) {
       return NextResponse.json({ error: 'El ticket/mesa seleccionado no existe' }, { status: 404 });
     }
 
     // 2. Si es una mesa/cama (no tiene stock definido), validar que no esté ya vendida
-    if (ticket.stock === undefined) {
-      const status = await getTicketStatus(ticketId, tickets);
+    if (ticket.stock === undefined && !isGuestRequest) {
+      const status = await getTicketStatus(ticket.id, tickets);
       if (status === 'sold') {
         return NextResponse.json({ 
           error: 'Esta mesa/cama ya ha sido vendida y no se puede registrar otra venta' 
         }, { status: 400 });
       }
-    } else {
-      // 3. Si es boleto individual, validar stock restante
-      const remaining = await getRemainingStock(ticketId, ticket.stock);
+    } else if (!isGuestRequest) {
+      // 3. Si es boleto individual normal, validar stock restante
+      const remaining = await getRemainingStock(ticket.id, ticket.stock ?? 100);
       if (remaining < Number(quantity)) {
         return NextResponse.json({ 
           error: `Stock insuficiente. Quedan ${remaining} boletas disponibles.` 
@@ -49,25 +57,47 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Normalize buyerInfo fields on the backend as well
+    const normalizedBuyerInfo = {
+      name: String(buyerInfo.name || '').trim(),
+      phone: String(buyerInfo.phone || '').trim(),
+      email: String(buyerInfo.email || '').trim(),
+      locale: buyerInfo.locale === 'en' ? ('en' as const) : ('es' as const),
+    };
+
     // Generate unique order ID
-    const orderId = `ORD-QUICK-${ticketId.toUpperCase()}-${Date.now()}`;
+    const orderId = `ORD-QUICK-${ticket.id.toUpperCase()}-${Date.now()}`;
 
-    // Create order in memory (pass empty sessionToken for manual sale)
-    await createOrder(orderId, ticketId, '', buyerInfo, Number(quantity), 'wompi', stageId);
+    // Create order in database (pass empty sessionToken for manual sale)
+    const createdOrder = await createOrder(
+      orderId,
+      ticket.id,
+      '',
+      normalizedBuyerInfo,
+      Number(quantity),
+      'wompi',
+      stageId
+    );
 
-    // Immediately approve the order (handles stock reduction and admin notification email)
-    await approveOrder(orderId, 'manual-sale');
+    // Immediately approve the order (passes createdOrder as fallback so purchased_tickets is always written)
+    await approveOrder(orderId, 'manual-sale', createdOrder);
 
-    // Queue client email confirmation containing QR code (handled safely so SMTP errors do not break sale completion)
+    // Queue client email confirmation containing QR code with a timeout guard
+    // so slow SMTP retries on Vercel never cause a 504 timeout before returning the QR modal to the admin.
     try {
-      await addEmailToQueue({
-        ticketId,
-        orderId,
-        buyerInfo,
-        quantity: Number(quantity),
-      });
+      await Promise.race([
+        addEmailToQueue({
+          ticketId: ticket.id,
+          orderId,
+          buyerInfo: normalizedBuyerInfo,
+          quantity: Number(quantity),
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Email dispatch timed out (sale already saved)')), 5500)
+        ),
+      ]);
     } catch (emailErr) {
-      console.warn(`[Quick Sell] ⚠️ Sale ${orderId} was recorded in DB, but email dispatch failed:`, emailErr);
+      console.warn(`[Quick Sell] ⚠️ Sale ${orderId} was recorded in DB, but email dispatch was deferred/failed:`, emailErr);
     }
 
     console.log(`[Quick Sell] ✅ Manual sale successfully registered for Order ${orderId}`);

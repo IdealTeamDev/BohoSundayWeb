@@ -91,7 +91,22 @@ export async function createOrder(
     });
 
     if (error) {
-      console.error('[OrderStore] ❌ Error inserting order into Supabase:', error);
+      console.warn('[OrderStore] ⚠️ Primary upsert into orders failed, retrying with base schema:', error.message);
+      const { error: fallbackErr } = await supabase.from('orders').upsert({
+        order_id: orderId,
+        ticket_id: ticketId,
+        session_token: sessionToken,
+        buyer_info: buyerInfo,
+        quantity,
+        payment_method: paymentMethod,
+        status: 'pending',
+        accesses_used: 0,
+        stage_id: stageId || null,
+        created_at: new Date(createdAt).toISOString(),
+      });
+      if (fallbackErr) {
+        console.error('[OrderStore] ❌ Error inserting order into Supabase (fallback):', fallbackErr);
+      }
     } else {
       console.log(`[OrderStore] 📝 Order created in Supabase: ${orderId} (Ticket: ${ticketId}, Edition: ${activeEdition.name}, Status: pending)`);
     }
@@ -156,8 +171,12 @@ export async function getAllOrders(): Promise<OrderDetail[]> {
 /**
  * Approves a pending order in Supabase
  */
-export async function approveOrder(orderId: string, paymentId: string): Promise<OrderDetail | null> {
-  const order = await getOrder(orderId);
+export async function approveOrder(
+  orderId: string,
+  paymentId: string,
+  fallbackOrder?: OrderDetail
+): Promise<OrderDetail | null> {
+  const order = (await getOrder(orderId)) || fallbackOrder || null;
   if (!order) {
     console.error(`[OrderStore] ❌ Error: Order ${orderId} not found to approve.`);
     return null;
@@ -194,8 +213,8 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
 
   // Save buyer/ticket details to Supabase database (purchased_tickets table)
   try {
-    const tickets = await getDynamicTickets(order.stageId, true);
-    const ticket = tickets.find((t) => t.id === order.ticketId);
+    const tickets = await getDynamicTickets(order.stageId, true, true);
+    const ticket = tickets.find((t) => t.id === order.ticketId || t.id.toLowerCase() === order.ticketId.toLowerCase());
 
     const isGuest = order.ticketId === 'invitado_anytime' || order.ticketId === 'invitado-anytime';
     const ticketName = ticket?.name || (isGuest ? 'Invitado Anytime' : 'Boleto/Cama');
@@ -215,7 +234,7 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
     const ticketPrice = isGuest ? 0 : (ticket?.price || 0);
     const activeEdition = order.editionSlug ? { slug: order.editionSlug, name: order.editionName || 'Colombiamoda' } : await getActiveEdition();
 
-    const { error } = await supabase.from('purchased_tickets').insert([{
+    const baseTicketRow = {
       order_id: order.orderId,
       ticket_id: order.ticketId,
       ticket_name: ticketName,
@@ -232,12 +251,22 @@ export async function approveOrder(orderId: string, paymentId: string): Promise<
       created_at: new Date(order.createdAt).toISOString(),
       language: languageStr,
       ticket_price: ticketPrice,
+    };
+
+    const { error } = await supabase.from('purchased_tickets').insert([{
+      ...baseTicketRow,
       edition_slug: activeEdition.slug,
       edition_name: activeEdition.name
     }]);
 
     if (error) {
-      console.error('[OrderStore] ❌ Error inserting approved ticket into purchased_tickets in Supabase:', error);
+      console.warn('[OrderStore] ⚠️ Primary insert into purchased_tickets failed, retrying without edition columns:', error.message);
+      const { error: fallbackInsertErr } = await supabase.from('purchased_tickets').insert([baseTicketRow]);
+      if (fallbackInsertErr) {
+        console.error('[OrderStore] ❌ Error inserting approved ticket into purchased_tickets in Supabase:', fallbackInsertErr);
+      } else {
+        console.log(`[OrderStore] 🎉 Saved approved ticket (fallback schema) to purchased_tickets for Order ${order.orderId}`);
+      }
     } else {
       console.log(`[OrderStore] 🎉 Successfully saved approved ticket to purchased_tickets table for Order ${order.orderId}`);
     }

@@ -21,7 +21,10 @@ export default function LoginPage() {
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-portal': 'admin-web'
+        },
         body: JSON.stringify({ username, password }),
       });
 
@@ -32,9 +35,19 @@ export default function LoginPage() {
         return;
       }
 
+      if (data.user?.role === 'bouncer') {
+        setError('Acceso no autorizado.');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_username');
+        localStorage.removeItem('admin_role');
+        setLoading(false);
+        return;
+      }
+
       // Save token in localStorage
       localStorage.setItem('admin_token', data.token);
       localStorage.setItem('admin_username', data.user.username);
+      localStorage.setItem('admin_role', data.user.role);
       
       // Redirect to quick-sell
       router.push(`/${currentLocale}/admin/quick-sell`);

@@ -206,15 +206,21 @@ export async function resetInventoryForEdition(): Promise<{ success: boolean; me
       console.error('[Editions Service] Error resetting boleteria_mesas:', mesasErr);
     }
 
-    // 3. Reset individual tickets stock to 100 in Supabase
+    // 3. Reset individual tickets stock to 100 in Supabase (and 5000 for invitado_anytime)
     const { error: individualErr } = await supabase
       .from('boleteria_individual')
       .update({ stock: 100 })
-      .neq('id', '____none____');
+      .neq('id', 'invitado_anytime')
+      .neq('id', 'invitado-anytime');
 
     if (individualErr) {
       console.error('[Editions Service] Error resetting boleteria_individual:', individualErr);
     }
+
+    await supabase
+      .from('boleteria_individual')
+      .update({ stock: 5000 })
+      .in('id', ['invitado_anytime', 'invitado-anytime']);
 
     console.log('[Editions Service] 🔄 Inventory and locks reset executed successfully for new edition.');
     return {

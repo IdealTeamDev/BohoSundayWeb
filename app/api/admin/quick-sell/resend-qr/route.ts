@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
       locale: purchase.language?.toLowerCase() === 'en' ? 'en' : 'es'
     };
 
-    const tickets = await getDynamicTickets();
-    const ticket = tickets.find((t) => t.id === purchase.ticket_id);
+    const tickets = await getDynamicTickets(undefined, true, true);
+    const ticket = tickets.find((t) => t.id === purchase.ticket_id || t.id.toLowerCase() === String(purchase.ticket_id).toLowerCase());
 
     let quantity = 1;
     if (ticket && ticket.stock !== undefined) {

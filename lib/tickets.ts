@@ -33,7 +33,11 @@ export async function getActiveStage(): Promise<any> {
  * Fetch tickets dynamically from Supabase database (boleteria_mesas and boleteria_individual).
  * Fallback to static tickets if database fails completely.
  */
-export async function getDynamicTickets(stageId?: string, includeAdminOnly: boolean = false): Promise<Ticket[]> {
+export async function getDynamicTickets(
+  stageId?: string,
+  includeAdminOnly: boolean = false,
+  skipStageFilter: boolean = false
+): Promise<Ticket[]> {
   let dbCamasMapped: Ticket[] = [];
   let dbIndividualMapped: Ticket[] = [];
   let hasCamasError = false;
@@ -111,7 +115,8 @@ export async function getDynamicTickets(stageId?: string, includeAdminOnly: bool
 
     if (dbTickets) {
       dbIndividualMapped = dbTickets.map((row: any) => {
-        const staticInfo = staticTickets.find((s) => s.id === row.id) || {
+        const isGuestRow = row.id === 'invitado_anytime' || row.id === 'invitado-anytime';
+        const staticInfo = staticTickets.find((s) => s.id === row.id || (isGuestRow && s.id === 'invitado_anytime')) || {
           zone: 'general',
           iconCard: `/images/icon/icon-${row.id}.png`,
           img: `/images/individual-ticket/card-${row.id}.png`,
@@ -127,21 +132,22 @@ export async function getDynamicTickets(stageId?: string, includeAdminOnly: bool
 
         const rawIcon = (row.icon_card && (row.icon_card.startsWith('http') || row.icon_card.startsWith('url('))) ? row.icon_card : (staticInfo.iconCard || row.icon_card || undefined);
         const rawImg = (row.img && (row.img.startsWith('http') || row.img.startsWith('url('))) ? row.img : (staticInfo.img || row.img || '');
+        const parsedStock = isGuestRow ? Math.max(Number(row.stock) || 0, 5000) : Number(row.stock);
 
         return {
           id: row.id,
           zone: 'general' as const,
           iconCard: formatPath(rawIcon),
           img: formatPath(rawImg) || '',
-          name: row.name,
-          number: row.id === 'early' ? 1 : (row.id === 'general' ? 3 : (row.id === 'invitado_anytime' ? 4 : 2)),
+          name: row.name || (isGuestRow ? 'Invitado Anytime' : row.id),
+          number: row.id === 'early' ? 1 : (row.id === 'general' ? 3 : (isGuestRow ? 4 : 2)),
           persons: 1,
-          price: (row.id === 'invitado_anytime' || row.id === 'invitado-anytime') ? 0 : Number(row.price),
+          price: isGuestRow ? 0 : Number(row.price),
           currency: 'COP',
           includes: staticInfo.includes,
-          available: Number(row.stock) > 0,
+          available: isGuestRow ? true : parsedStock > 0,
           position: { x: 0, y: 0 },
-          stock: Number(row.stock),
+          stock: parsedStock,
         };
       });
     }
@@ -156,8 +162,19 @@ export async function getDynamicTickets(stageId?: string, includeAdminOnly: bool
     : dbCamasMapped;
 
   const finalIndividual = hasIndividualError
-    ? staticTickets.filter(t => t.zone === 'general')
-    : dbIndividualMapped;
+    ? [...staticTickets.filter(t => t.zone === 'general')]
+    : [...dbIndividualMapped];
+
+  // Ensure admin-only courtesy ticket ('invitado_anytime') is always available even if not inserted in Supabase boleteria_individual table
+  const hasGuestTicket = finalIndividual.some(
+    (t) => t.id === 'invitado_anytime' || t.id === 'invitado-anytime'
+  );
+  if (!hasGuestTicket) {
+    const staticGuest = staticTickets.find((t) => t.id === 'invitado_anytime');
+    if (staticGuest) {
+      finalIndividual.push({ ...staticGuest });
+    }
+  }
 
   // 3. Fetch stage override if applicable
   let activeStage: any = null;
@@ -193,6 +210,9 @@ export async function getDynamicTickets(stageId?: string, includeAdminOnly: bool
     if (t.id === 'invitado_anytime' || t.id === 'invitado-anytime') {
       return includeAdminOnly;
     }
+    if (skipStageFilter) {
+      return true;
+    }
     if (isBelieversStage) {
       return t.id === 'general';
     } else {
@@ -204,6 +224,9 @@ export async function getDynamicTickets(stageId?: string, includeAdminOnly: bool
   // - En Believers: zonas 'vip' y 'candela' INACTIVAS
   // - En otras etapas: todas las zonas de camas activas
   const filteredCamas = finalCamas.filter(t => {
+    if (skipStageFilter) {
+      return true;
+    }
     const zoneLower = (t.zone || '').toLowerCase();
     if (isBelieversStage) {
       if (zoneLower === 'vip' || zoneLower === 'candela') {
