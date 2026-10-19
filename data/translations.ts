@@ -11,9 +11,9 @@ export const translations = {
     },
     home: {
       title: 'BOHO SUNDAY',
-      desc1: 'Una experiencia para disfrutar el sol, la música y la buena energía. Un domingo para bailar, compartir y dejarse llevar por el ritmo de Boho Sunday.',
-      desc2: 'No te pierdas la oportunidad de formar parte de la mejor fiesta de Sopetrán.',
-    
+      desc1: 'Es un ritual, un punto de encuentro y una escapada de lo cotidiano. Es el lugar donde el sol, la música, el baile y la energía bohemia se fusionan para crear el mejor día de la semana.',
+      desc2: 'Cada edición es completamente diferente, combinando una cuidada selección de DJs internacionales, shows en vivo y performances impactantes. Siente el ritmo, vive el ritual y reserva tu lugar para la próxima edición.',
+  
       location: 'LUGAR:',
       address: 'Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia',
       // Imágenes (si cambian en inglés, se pueden definir aquí)

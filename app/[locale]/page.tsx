@@ -23,13 +23,13 @@ export default function Home() {
 
     <div className="flex flex-col flex-1 items-center justify-center bg-[#EAE0CE] font-sans">
       {/* Se oculta el Top Bar (Marquee) por el post Boho */}
-      <Marquee />
+      {/*<Marquee />*/}
       <Navbar />
-      {/*<div className="w-full">
+      <div className="w-full">
         <BannerVideo />
-      </div>*/}
+      </div>
 
-      <BannerEvent />
+      {/*<BannerEvent />*/}
 
       <div className="px-6 md:px-10 mb-10 lg:mb-15 mt-5 text-center max-w-3xl">
         <img
@@ -39,20 +39,21 @@ export default function Home() {
           width={30}
           height={20}
         />
-        {/*<h2 className="text-[#231E1A] text-[28px] md:text-[34px] font-bold font-averia text-center pt-4 pb-6 uppercase tracking-wide">
+        <h2 className="text-[#231E1A] text-[28px] md:text-[34px] font-bold font-averia text-center pt-4 pb-6 uppercase tracking-wide">
           {t.home.title}
-        </h2>*/}
+        </h2>
         <p className="text-black lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light">{t.home.desc1}</p>
         <p className="text-black lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light"><strong>{t.home.desc2}</strong></p>
         
+        
       </div>
-      {/*<Editions />*/}
+      <Editions />
       {/* Se oculta la sección del Line Up por montaje de Boho Sunday */}
-      <LineUp />
+      {/*<LineUp />*/}
       {/* Se oculta la sección de Parallax (cuenta regresiva) por montaje de Boho Sunday */}
-      <Parallaxsection /> 
+      {/*<Parallaxsection /> */}
       {/* Se oculta hasta el reinicio del Boho*/}
-      {/*<PreRegister t={t.preregister} />*/}
+      <PreRegister t={t.preregister} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center items-center gap-10 py-10 lg:min-h-[450px] w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 lg:px-0 mb-5">
         <div className="flex lg:col-span-2 justify-center w-full h-[350px] lg:h-[400px] rounded-2xl shadow-sm overflow-hidden relative">
@@ -80,10 +81,10 @@ export default function Home() {
 
       {/* BottomBar contiene el mapa internamente */}
         
-      <BottomBar
+      {/*<BottomBar
         openMap={openMap}
         onToggleMap={() => setOpenMap(!openMap)}
-      />
+      />*/}
       <Footer />
     </div>
   );
