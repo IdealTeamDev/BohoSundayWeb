@@ -62,7 +62,7 @@ export const Footer = () => {
       </div>
 {/* ── Copyright ── */}
       <div className="border-t border-[#F3F0E9]/30 lg:max-w-6xl lg:mx-auto">
-        <p className="font-nunito text-center text-[#F3F0E9] pb-28 pt-8 text-xs">
+        <p className="font-nunito text-center text-[#F3F0E9] pb-8 pt-8 text-xs">
           {t.footer.rights}
         </p>
       </div>
