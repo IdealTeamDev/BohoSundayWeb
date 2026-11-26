@@ -20,8 +20,8 @@ export const zoneConfig = {
   },
   bohemian: {
     label: "Bohemian",
-    color: "#686A54",
-    dotColor: "#D85030",
+    color: "#BFC7BE",
+    dotColor: "#F4F4F4",
     icon: "https://res.cloudinary.com/dow0dxajr/image/upload/v1795716669/icons_5_ofqmdh.png",
     iconActive: "https://res.cloudinary.com/dow0dxajr/image/upload/v1790008915/icons_6_fwteap.png",
     glowColor: "rgba(245,158,11,0.5)",
@@ -34,7 +34,7 @@ export const zoneConfig = {
     dotColor: "#F4E6C6",
     icon: "https://res.cloudinary.com/dow0dxajr/image/upload/v1795716625/icons_1_drst0u.png",
     iconActive: "https://res.cloudinary.com/dow0dxajr/image/upload/v1790008488/icon_1_z9fm9i.png",
-    glowColor: "rgba(180,83,9,0.5)",
+    glowColor: "#C2AD89",
     width:"20",
   },
   candela: {
@@ -48,8 +48,8 @@ export const zoneConfig = {
   },
   primitivo: {
     label: "Lujo Primitivo",
-    color: "#fb923c",
-    dotColor: "#EAB93F",
+    color: "#FDFFFD",
+    dotColor: "#CED6CE",
     icon: "https://res.cloudinary.com/dow0dxajr/image/upload/v1790009028/vector_q28jf0.png",
     iconActive: "https://res.cloudinary.com/dow0dxajr/image/upload/v1790009071/icons_7_ovzvdd.png",
     glowColor: "rgba(249,115,22,0.45)",

@@ -28,18 +28,18 @@ const infoZones = [
     id: 'dancefloor',
     label: 'DANCE FLOOR',
     left: '72.5%', top: '37.5%', width: '7%', height: '20.5%',
-    bg: '#EAE0CE',
-    border: 'rgba(255,255,255,0.25)',
-    textColor: '#231E1A',
+    bg: '#FDFFFD',
+    border: '#FDFFFD',
+    textColor: '#9E9076',
     vertical: true,
   },
   {
     id: 'dj',
     label: 'DJ',
     left: '79.8%', top: '41%', width: '6.5%', height: '15%',
-    bg: '#231E1A',
-    border: 'rgba(139,92,246,0.45)',
-    textColor: '#F4EFE9',
+    bg: '#C2B5A4',
+    border: '#C2B5A4',
+    textColor: '#FDFFFD',
     vertical: true,
   },
   {
@@ -114,8 +114,8 @@ export default function EventMap({ onClose }: EventMapProps) {
               style={
                 isSelected
                   ? {
-                      borderColor: '#231E1A',
-                      color: '#231E1A',
+                      borderColor: '#FDFFFD',
+                      color: '#FDFFFD',
                       fontWeight: '600',
                       background: '#F3E5C8',
                     }
