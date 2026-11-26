@@ -45,7 +45,7 @@ export default function SplashScreen() {
     >
       {/* Uso <img> normal y NO next/image: next/image suele romper/congelar GIFs animados */}
       <img
-        src="https://res.cloudinary.com/dow0dxajr/image/upload/v1790008515/logo-carga_p7ii8x.gif"
+        src="https://res.cloudinary.com/dow0dxajr/image/upload/v1795726028/logo_dkxhnj.gif"
         alt="Cargando Boho Sunday..."
         className="w-full h-full object-contain"
       />

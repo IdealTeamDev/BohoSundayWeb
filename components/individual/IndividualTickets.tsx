@@ -98,7 +98,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
             style={{
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundImage: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795725293/button-early-desktop_1_flgu9q.png',
+              backgroundImage: 'url("https://res.cloudinary.com/dow0dxajr/image/upload/v1795725293/button-early-desktop_1_flgu9q.png")',
               backgroundColor: '#FDFFFD',
             }}
           >
@@ -138,8 +138,8 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
             style={{
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundImage: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795725296/button-anytime-desktop_1_gwvsgg.png',
-              backgroundColor: '#FDFFFD',
+              backgroundImage: 'url("https://res.cloudinary.com/dow0dxajr/image/upload/v1795725296/button-anytime-desktop_1_gwvsgg.png")',
+       
             }}
           >
             {isAnytimeSoldOut && (
@@ -178,8 +178,8 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
             style={{
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundImage: 'url("https://res.cloudinary.com/dow0dxajr/image/upload/v1790013241/Mask_group_5_1_vebgp5.webp")',
-              backgroundColor: '#FDFFFD',
+              backgroundImage: 'url("https://res.cloudinary.com/dow0dxajr/image/upload/v1795725296/button-anytime-desktop_1_gwvsgg.png")',
+          
             }}
           >
             {isGeneralSoldOut && (

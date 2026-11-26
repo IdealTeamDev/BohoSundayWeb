@@ -59,7 +59,7 @@ export default async function RootLayout({
       <body>
         <FacebookPixel />
         {/* Se oculta la animación de precarga (SplashScreen) al iniciar la web */}
-        {/*<SplashScreen /> */}
+        <SplashScreen />
         <Providers>
           <main>{children}</main>
         </Providers>

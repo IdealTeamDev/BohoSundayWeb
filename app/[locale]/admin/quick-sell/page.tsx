@@ -829,7 +829,7 @@ export default function QuickSellPage() {
     }
   }, [activeView, fetchStagesData, fetchZonesData]);
 
-  const handleActivateStage = async (stageId: string, updatedPrices?: Record<string, number>) => {
+  const handleActivateStage = async (stageId: string, updatedPrices?: Record<string, any>) => {
     setActivatingStageId(stageId);
     try {
       const token = localStorage.getItem('admin_token') || '';
