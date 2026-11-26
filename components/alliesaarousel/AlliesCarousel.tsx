@@ -6,9 +6,10 @@ import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
 
 const allies = [
-  { id: 1, name: 'Ubari', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790018434/logo-ubari_1_eujoak.png' },
-  { id: 2, name: '3NomadsX', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790018421/3nomads_1_v0gxim.webp' },
-  { id: 3, name: 'Salón Amador', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790018422/salon-amador_1_wpznsv.webp' },
+  { id: 1, name: 'Ubari', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795711458/logo-ubari_tpkzcw.png' },
+  { id: 2, name: '3NomadsX', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795711460/3nomads_m01vkt.png' },
+  { id: 3, name: 'Salón Amador', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795711456/salon-amador_ertiko.png' },
+  { id: 4, name: 'Pequod', logo: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795711360/Capa_1_1_1_1_pgvhhq.png' },
 
 ];
 
@@ -64,7 +65,7 @@ export default function AlliesCarousel() {
     <div className="w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 py-6">
 
       {/* ── MOBILE: Carousel Slider (hidden on lg+) ── */}
-      <div className="block lg:hidden relative rounded-xl overflow-hidden bg-[#CBB093] py-4">
+      <div className="block lg:hidden relative rounded-xl overflow-hidden bg-[#9E9076] py-4">
         {/* Titulo */}
         <div className="text-center mt-2">
           <p className="font-nunito text-[#F3E5C8] text-[20px] font-light uppercase tracking-widest">
@@ -136,10 +137,10 @@ export default function AlliesCarousel() {
       </div>
 
       {/* ── DESKTOP: All Allies in a row (hidden on mobile/tablet) ── */}
-      <div className="hidden lg:block rounded-2xl overflow-hidden bg-[#CBB093] py-6 px-10">
+      <div className="hidden lg:block rounded-2xl overflow-hidden bg-[#9E9076] py-6 px-10">
         {/* Titulo */}
         <div className="text-center mb-6 select-none">
-          <p className="font-nunito text-[#F3E5C8] text-[20px] font-light uppercase tracking-widest">
+          <p className="font-nunito text-[#FFFEEC] text-[20px] font-light uppercase tracking-widest">
             {t.allies.title}
           </p>
         </div>

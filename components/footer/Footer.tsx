@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
 
 
-const FOOTER_BANNER_URL= 'https://res.cloudinary.com/dow0dxajr/image/upload/v1789756308/footer_3_b1uvsw.webp';
+const FOOTER_BANNER_URL= 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795710262/footer_s43ae4.webp';
 export const Footer = () => {
   const params = useParams();
   const locale = (params?.locale as 'es' | 'en') || 'es';

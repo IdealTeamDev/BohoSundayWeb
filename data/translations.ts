@@ -10,9 +10,9 @@ export const translations = {
       place: 'Casa Candela'
     },
     home: {
-      title: 'BOHO SUNDAY',
-      desc1: 'Es un ritual, un punto de encuentro y una escapada de lo cotidiano. Es el lugar donde el sol, la música, el baile y la energía bohemia se fusionan para crear el mejor día de la semana.',
-      desc2: 'Cada edición es completamente diferente, combinando una cuidada selección de DJs internacionales, shows en vivo y performances impactantes. Siente el ritmo, vive el ritual y reserva tu lugar para la próxima edición.',
+      title: 'Plan de domingos de Boho Sunday White Edition III',
+      desc1: 'Una experiencia donde la música, la energía y el espíritu BOHO se encuentran para crear una tarde llena de buena vibra, baile y momentos para disfrutar.',
+      desc2: 'No te pierdas la oportunidad de vivir una nueva edición de BOHO SUNDAY en Sopetrán.',
   
       location: 'LUGAR:',
       address: 'Vereda Tafetanes Ruta 429180 Vía Antigua a Sopetrán, Antioquia',
@@ -182,7 +182,7 @@ export const translations = {
       title: 'Conoce el',
     },
     parallax: {
-      title: 'FALTA PARA EL BOHO',
+      title: 'conteo regresivo BOHO',
       days: 'Días',
       hours: 'Horas',
       minutes: 'Minutos',

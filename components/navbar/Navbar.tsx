@@ -23,23 +23,23 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="flex fixed top-10 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-[#D9D1C0] bg-opacity-30 px-5 py-5 rounded-xl z-999"> 
+    <nav className="flex fixed top-10 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl bg-[#9E9076] bg-opacity-30 px-5 py-5 rounded-xl z-999"> 
 
         <div className="flex-1 w-35">
             <Link href={isEn ? "/en" : "/"}>
-                <img className="w-35 lg:w-55" src="/images/logo/logo-boho.png" alt="Boho Sunday" />
+                <iframe className="w-85 h-10 lg:w-95" src="https://res.cloudinary.com/dow0dxajr/image/upload/v1795712195/logo-boho-horizontal_2_1_nyjcni.png" />
             </Link>
         </div>
         <div className="flex flex-1 w-24 justify-end items-center font-nunito font-semibold">
             <button 
               onClick={() => changeLanguage('es')}
-              className={`cursor-pointer transition-colors ${!isEn ? 'text-[#231E1A]' : 'text-[#BDB39B]'} mx-4`}
+              className={`cursor-pointer transition-colors ${!isEn ? 'text-[#FFFEEC]' : 'text-[#BDB39B]'} mx-4`}
             >
               ES
             </button> 
             <button 
               onClick={() => changeLanguage('en')}
-              className={`cursor-pointer transition-colors ${isEn ? 'text-[#231E1A]' : 'text-[#BDB39B]'}`}
+              className={`cursor-pointer transition-colors ${isEn ? 'text-[#FFFEEC]' : 'text-[#BDB39B]'}`}
             >
               EN
             </button>

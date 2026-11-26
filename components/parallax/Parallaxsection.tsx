@@ -4,13 +4,13 @@ import { useParams } from "next/navigation";
 import { translations } from "@/data/translations"; 
 
 
-const DESKTOP_BANNER_URL= 'https://res.cloudinary.com/dow0dxajr/image/upload/v1789755100/time_2_f1tyc4.webp';
+const DESKTOP_BANNER_URL= 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795710261/time_oem1bd.webp';
 export default function ParallaxSection() {
   const params = useParams();
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
 
-  const eventDate = new Date("2026-10-18T00:00:00");
+  const eventDate = new Date("2026-12-20T00:00:00");
 
   const [timeLeft, setTimeLeft] = useState({
     dias: 0,
@@ -47,8 +47,8 @@ export default function ParallaxSection() {
       className="w-full  bg-fixed bg-center bg-cover flex items-center justify-center py-8 lg:py-15 mb-5"
      
     >
-      <div className="text-white text-center">
-        <h2 className="text-md font-nunito font-light tracking-widest mb-6">{t.parallax.title}</h2>
+      <div className="text-[#9E9076] text-center">
+        <h2 className="text-md font-nunito uppercase font-light tracking-widest mb-6">{t.parallax.title}</h2>
         <div className="flex gap-3 lg:gap-6 items-end">
           {[
             { valor: timeLeft.dias, label: t.parallax.days },
@@ -58,13 +58,13 @@ export default function ParallaxSection() {
           ].map(({ valor, label }, i, arr) => (
             <div key={label} className="flex items-end gap-4 lg:gap-6">
               <div className="flex flex-col items-center">
-                <span className="text-5xl text-[#EAE0CE] lg:text-7xl font-gritor">
+                <span className="text-5xl text-[#9E9076] lg:text-7xl font-gritor">
                   {String(valor).padStart(2, "0")}
                 </span>
-                <span className="font-nunito text-[#EAE0CE] text-md font-light mt-1">{label}</span>
+                <span className="font-nunito text-[#9E9076] text-md font-light mt-1">{label}</span>
               </div>
               {i < arr.length - 1 && (
-                <span className="font-displayFlyer text-[#EAE0CE] text-md mb-10 lg:mb-13 lg:text-lg">:</span>
+                <span className="font-displayFlyer text-[#9E9076] text-md mb-10 lg:mb-13 lg:text-lg">:</span>
               )}
             </div>
           ))}

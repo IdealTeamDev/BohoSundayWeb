@@ -1,13 +1,13 @@
 'use client';
 
-const DESKTOP_BANNER_URL = 'https://res.cloudinary.com/dow0dxajr/image/upload/v1789753269/hero_5_1_qarfv8.webp';
-const UNIFIED_LOGO_URL = 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790000932/logo_boho-logo_cc-dates_1_y9tv2t.webp';
+const DESKTOP_BANNER_URL = 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795709101/hero_wcuvvy.webp';
+const UNIFIED_LOGO_URL = 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795709101/logo_boho-logo_cc-dates_wvxt8n.webp';
 
 export default function BannerEvent() {
   return (
     <div
       style={{ backgroundImage: `url(${DESKTOP_BANNER_URL})` }}
-      className="bg-cover bg-center bg-no-repeat flex flex-1 w-full flex-col mb-5 items-center justify-center pt-28 pb-16 px-6 md:px-16"
+      className="bg-cover bg-center bg-no-repeat flex flex-1 w-full flex-col mb-5 items-center justify-center pt-40 pb-40 px-6 md:px-16"
     >
       <div className="flex flex-col items-center justify-center w-full max-w-4xl">
         <img

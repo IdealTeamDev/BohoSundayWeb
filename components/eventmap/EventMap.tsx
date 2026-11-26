@@ -94,7 +94,7 @@ export default function EventMap({ onClose }: EventMapProps) {
   };
 
   return (
-    <div className="w-full bg-[#EAE0CE] shadow-lg rounded-2xl overflow-visible select-none relative flex flex-col items-center">
+    <div className="w-full bg-[#9E9076] shadow-lg rounded-2xl overflow-visible select-none relative flex flex-col items-center">
       <button
         onClick={onClose}
         className="absolute top-[-30px] right-2 z-50 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-xs sm:text-sm font-semibold shadow-md cursor-pointer"

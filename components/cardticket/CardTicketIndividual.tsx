@@ -116,7 +116,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
         <button
           onClick={() => setQuantity((q) => Math.max(1, q - 1))}
           disabled={quantity <= 1 || remainingStock <= 0}
-          className="w-9 h-9 rounded-full border border-[#F7963F] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+          className="w-9 h-9 rounded-full border border-[#9E9076] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
         >
           <DashIcon size={16} />
         </button>
@@ -138,7 +138,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
         <button
           onClick={() => setQuantity((q) => Math.min(maxAllowed, q + 1))}
           disabled={quantity >= maxAllowed || remainingStock <= 0}
-          className="w-9 h-9 rounded-full border border-[#F7963F] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+          className="w-9 h-9 rounded-full border border-[#9E9076] flex items-center justify-center text-xl font-light text-[#231E1A] hover:bg-[#E8E2DA] active:scale-95 transition-all cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
         >
           <PlusIcon size={16} />
         </button>
@@ -149,7 +149,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
         <div className="flex justify-center mb-2">
           <button
             className="w-55 py-2.5 rounded-lg text-[15px] font-semibold font-nunito uppercase text-[#231E1A] hover:opacity-88 transition-opacity cursor-pointer disabled:opacity-50"
-            style={{ background: '#F7963F' }}
+            style={{ background: '#9E9076' }}
             onClick={handleReserve}
             disabled={loading}
           >

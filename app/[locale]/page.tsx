@@ -18,42 +18,41 @@ export default function Home() {
   const params = useParams();
   const locale = (params?.locale as 'es' | 'en') || 'es';
   const t = translations[locale] || translations.es;
-  {/*Se eleimino un pb-28 para eliminar el espacio adicional que se crea cauando se activa el mapa de ventas */ }
+  {/*Se eleimino un pb-18 para eliminar el espacio adicional que se crea cauando se activa el mapa de ventas */ }
   return (
 
-    <div className="flex flex-col flex-1 items-center justify-center bg-[#EAE0CE] font-sans">
+    <div className="flex flex-col pb-18 flex-1 items-center justify-center bg-[#FFFEEC] font-sans">
       {/* Se oculta el Top Bar (Marquee) por el post Boho */}
-      {/*<Marquee />*/}
+      <Marquee />
       <Navbar />
-      <div className="w-full">
+      {/*<div className="w-full">
         <BannerVideo />
-      </div>
+      </div>*/}
 
-      {/*<BannerEvent />*/}
+      <BannerEvent />
 
       <div className="px-6 md:px-10 mb-10 lg:mb-15 mt-5 text-center max-w-3xl">
-        <img
+        <iframe
           className="inline-block"
-          src="images/icon/icon-palm.png"
-          alt="Boho Sunday Colombia Moda Edition"
-          width={30}
-          height={20}
+          src="https://res.cloudinary.com/dow0dxajr/image/upload/v1795709824/icon-palm_1_fe442t.webp"
+          width={50}
+          height={50}
         />
-        <h2 className="text-[#231E1A] text-[28px] md:text-[34px] font-bold font-averia text-center pt-4 pb-6 uppercase tracking-wide">
+        <h2 className="text-[#9E9076] text-[28px] md:text-[34px] font-bold font-averia text-center pt-4 pb-6 uppercase tracking-wide">
           {t.home.title}
         </h2>
-        <p className="text-black lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light">{t.home.desc1}</p>
-        <p className="text-black lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light"><strong>{t.home.desc2}</strong></p>
+        <p className="text-[#9E9076] lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light">{t.home.desc1}</p>
+        <p className="text-[#9E9076] lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light"><strong>{t.home.desc2}</strong></p>
         
         
       </div>
-      <Editions />
+      {/*<Editions />*/}
       {/* Se oculta la sección del Line Up por montaje de Boho Sunday */}
       {/*<LineUp />*/}
       {/* Se oculta la sección de Parallax (cuenta regresiva) por montaje de Boho Sunday */}
-      {/*<Parallaxsection /> */}
+      <Parallaxsection />
       {/* Se oculta hasta el reinicio del Boho*/}
-      <PreRegister t={t.preregister} />
+      {/*<PreRegister t={t.preregister} />*/}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 justify-items-center items-center gap-10 py-10 lg:min-h-[450px] w-full lg:w-[calc(100%-3rem)] max-w-4xl lg:max-w-5xl xl:max-w-6xl px-4 lg:px-0 mb-5">
         <div className="flex lg:col-span-2 justify-center w-full h-[350px] lg:h-[400px] rounded-2xl shadow-sm overflow-hidden relative">
@@ -68,11 +67,11 @@ export default function Home() {
         </div>
  
         <div className="flex flex-col lg:col-span-1 items-center justify-center px-7 py-4 lg:py-0 text-center  h-full select-none">
-          <span className="text-[#231E1A] text-sm font-nunito font-light">{t.home.location}</span>
-          <h2 className="text-[#231E1A] text-[26px] lg:text-[28px] font-bold font-averia uppercase tracking-wide mt-1 mb-3">
+          <span className="text-[#9E9076] text-sm font-nunito font-light">{t.home.location}</span>
+          <h2 className="text-[#9E9076] text-[26px] lg:text-[28px] font-bold font-averia uppercase tracking-wide mt-1 mb-3">
             {t.hero.place}
           </h2>
-          <div className="text-[#231E1A] text-[17px]/6 font-nunito font-light max-w-xs flex flex-col items-center lg:items-end text-center">
+          <div className="text-[#9E9076] text-[17px]/6 font-nunito font-light max-w-xs flex flex-col items-center lg:items-end text-center">
             <span>{t.home.address}</span>
           </div>
         </div>
@@ -80,10 +79,10 @@ export default function Home() {
       <AlliesCarousel />
 
       {/* Se oculta la barra de ventas (BottomBar) por post Boho */}
-      {/* <BottomBar
+       <BottomBar
         openMap={openMap}
         onToggleMap={() => setOpenMap(!openMap)}
-      /> */}
+      /> 
       <Footer />
     </div>
   );
