@@ -58,13 +58,13 @@ export default function ParallaxSection() {
           ].map(({ valor, label }, i, arr) => (
             <div key={label} className="flex items-end gap-4 lg:gap-6">
               <div className="flex flex-col items-center">
-                <span className="text-5xl text-[#9E9076] lg:text-7xl font-gritor">
+                <span className="text-5xl font-light text-[#9E9076] lg:text-7xl font-retrodream">
                   {String(valor).padStart(2, "0")}
                 </span>
                 <span className="font-nunito text-[#9E9076] text-md font-light mt-1">{label}</span>
               </div>
               {i < arr.length - 1 && (
-                <span className="font-displayFlyer text-[#9E9076] text-md mb-10 lg:mb-13 lg:text-lg">:</span>
+                <span className="font-retrodream text-[#9E9076] text-md mb-10 lg:mb-13 lg:text-lg">:</span>
               )}
             </div>
           ))}

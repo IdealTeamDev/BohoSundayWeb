@@ -45,7 +45,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '1 Botella licor premium',
     agua: 5,
     redbull: 5,
-    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795716443/photo_13_gf7h8k.png ',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795716443/photo_13_gf7h8k.png',
     iconCard: '/images/icon/icon-primitivo.png',
   },
   vip: {

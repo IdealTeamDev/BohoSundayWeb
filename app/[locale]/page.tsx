@@ -38,7 +38,7 @@ export default function Home() {
           width={50}
           height={50}
         />
-        <h2 className="text-[#9E9076] text-[28px] md:text-[34px] font-bold font-averia text-center pt-4 pb-6 uppercase tracking-wide">
+        <h2 className="text-[#9E9076] text-[20px] md:text-[20px] font-nunito font-bold text-center pt-4 pb-6 uppercase tracking-wide">
           {t.home.title}
         </h2>
         <p className="text-[#9E9076] lg:text-[18px] text-[17px]/6 text-center py-2 font-nunito font-light">{t.home.desc1}</p>

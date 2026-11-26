@@ -30,3 +30,8 @@ export const gritor = localFont({
   display: "swap",
 });
 
+export const retroDream = localFont({
+  src: "./fonts/RetroDream.otf",
+  variable: "--font-retro-dream",
+  display: "swap",
+});

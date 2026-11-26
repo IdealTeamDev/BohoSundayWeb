@@ -19,7 +19,8 @@
   --font-agilera: var(--font-agilera);
   --font-averia: var(--font-averia);
   --font-gritor: var(--font-gritor);
-
+  --font-retroDream: var(--font-retro-dream);
+  --font-retrodream: var(--font-retro-dream);
 
 }
 
@@ -48,6 +49,12 @@ body {
   font-family: var(--font-gritor), sans-serif;
 }
 
+.font-retroDream,
+.font-retrodream,
+.font-retro-dream {
+  font-family: var(--font-retro-dream), sans-serif;
+}
+
 /* Custom scrollbar for modals & drawers */
 .modal-scrollbar {
   scrollbar-width: thin;
@@ -71,4 +78,3 @@ body {
 .modal-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #A94A34;
 }
-

@@ -202,10 +202,14 @@ export async function getDynamicTickets(
     (activeStage.slug && String(activeStage.slug).toLowerCase().includes('believer'))
   );
 
-  // 5. Filter individual tickets according to active stage:
-  // - En Believers: solo la entrada 'general' está activa (early y anytime INACTIVAS)
-  // - En otras etapas: 'early' y 'anytime' activas ('general' INACTIVA, ya que es única de Believers)
+  // 5. Filter individual tickets according to active stage configuration:
+  // - Si la etapa tiene configurado `prices.enabled_individual` (array de IDs), se usa esa selección.
+  // - Si no está configurado aún, por defecto se habilitan 'early' y 'anytime' ('general' INACTIVA).
   // - En panel admin (includeAdminOnly): siempre incluir 'invitado_anytime' (boleta de cortesía sin costo)
+  const configuredEnabledIndividual: string[] | null = Array.isArray(activeStage?.prices?.enabled_individual)
+    ? activeStage.prices.enabled_individual.map((id: any) => String(id).toLowerCase())
+    : null;
+
   const filteredIndividual = finalIndividual.filter(t => {
     if (t.id === 'invitado_anytime' || t.id === 'invitado-anytime') {
       return includeAdminOnly;
@@ -213,11 +217,10 @@ export async function getDynamicTickets(
     if (skipStageFilter) {
       return true;
     }
-    if (isBelieversStage) {
-      return t.id === 'general';
-    } else {
-      return t.id === 'early' || t.id === 'anytime';
+    if (configuredEnabledIndividual !== null) {
+      return configuredEnabledIndividual.includes(String(t.id).toLowerCase());
     }
+    return t.id === 'early' || t.id === 'anytime';
   });
 
   // 6. Filter camas/mesas according to active stage:
@@ -270,6 +273,7 @@ export async function getDynamicTickets(
         overridePrice = Number(overrides[idPrefix]);
       } else {
         for (const k of Object.keys(overrides)) {
+          if (k === 'enabled_individual' || Array.isArray(overrides[k])) continue;
           if (k && nameLower.includes(k.toLowerCase())) {
             overridePrice = Number(overrides[k]);
             break;

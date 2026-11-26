@@ -89,13 +89,13 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
       {/* Title & Icon */}
       <div className="flex items-center justify-left  gap-2 mb-1">
         {/*<img src={iconSrc} alt="" width={28} height={28} />*/}
-        <h2 className="text-3xl font-gritor uppercase text-[#231E1A]">
+        <h2 className="text-3xl font-retrodream uppercase text-[#9E9076]">
           {tTicket.name}
         </h2>
       </div>
 
       {/* Subtitle */}
-      <p className="font-nunito text-left font-light text-[14px] text-[#231E1A] mb-3">
+      <p className="font-nunito text-left font-light text-[14px] text-[#9E9076] mb-3">
         {tTicket.licor}
       </p>
 
@@ -194,7 +194,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
           />
         </div>
 
-        <div className="p-5">
+        <div className="p-5 bg-[#FDFFFD]">
           <CardContent />
         </div>
       </div>
@@ -202,7 +202,7 @@ export default function CardTicketIndividual({ ticket, remainingStock, onClose }
       {/* ── DESKTOP: modal horizontal centrado ── */}
       <div
         className="hidden lg:flex w-full max-w-2xl rounded-2xl relative overflow-hidden shadow-2xl"
-        style={{ background: '#EAE0CE' }}
+        style={{ background: '#FDFFFD' }}
       >
         <button
           onClick={onClose}

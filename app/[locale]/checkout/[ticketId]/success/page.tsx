@@ -318,8 +318,7 @@ export default function SuccessPage() {
         {/* Hero image */}
         {ticket.img && (
           <div className="w-full h-50 overflow-hidden relative">
-            <img src="https://res.cloudinary.com/dow0dxajr/image/upload/v1790014711/image_4_1_pgip4u.webp" alt={ticket.name} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/30" />
+            <img src="https://res.cloudinary.com/dow0dxajr/image/upload/v1795724723/image_1_1_ujwpxi.png" alt={ticket.name} className="w-full h-full object-cover" />
           </div>
         )}
 
@@ -327,7 +326,7 @@ export default function SuccessPage() {
             <div className='flex justify-center'>
               {/*<img src="/images/icon/Íconos WEB 1.png" alt="Colombia Moda" width={100} className="rounded-lg" />*/}
             </div>
-            <h2 className="font-nunito uppercase font-medium text-[28px] text-[#231E1A] leading-tight mb-1">
+            <h2 className="font-nunito uppercase font-medium text-[28px] text-[#9E9076] leading-tight mb-1">
               {t.success.successTitle}
             </h2>
           {/* Success icon */}
@@ -338,9 +337,9 @@ export default function SuccessPage() {
           </div>
 
           <div className="bg-[#EAE0CE]/8 border border-[#686A54]/20 rounded-xl px-4 py-3 mb-4 mx-2">
-            <p className="font-nunito text-[12px] text-[#231E1A] leading-relaxed text-center">
+            <p className="font-nunito text-[12px] text-[#9E9076] leading-relaxed text-center">
               {t.success.sentEmail}<br />
-              <strong className="text-[#231E1A]">{buyerInfo.email}</strong>
+              <strong className="text-[#9E9076]">{buyerInfo.email}</strong>
             </p>
           </div>
 
@@ -350,7 +349,7 @@ export default function SuccessPage() {
               <img src={qrUrl} alt="QR de acceso" width={160} height={160} className="rounded-lg" />
               <button
                 onClick={downloadClientQR}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E0D9D0] font-nunito text-[12px] text-[#5A5248] hover:bg-[#FAF8F5] transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E0D9D0] font-nunito text-[12px] text-[#9E9076] hover:bg-[#FAF8F5] transition-colors"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -362,10 +361,10 @@ export default function SuccessPage() {
             </div>
           )}
 
-          <p className="font-nunito font-semibold text-[14px] text-[#231E1A] mb-2">
+          <p className="font-nunito font-semibold text-[14px] text-[#9E9076] mb-2">
             Tu {ticket.stock === undefined ? t.success.tableValidation : t.success.ticketValidation} <strong>{ticket.stock === undefined ? ticket.persons : quantity} {(ticket.stock === undefined ? ticket.persons : quantity) === 1 ? t.success.access_one : t.success.access_other}</strong>.<br />
           </p>
-          <ul className="list-disc list-outinside pl-12 text-left font-nunito font-semibold text-[14px] text-[#231E1A]">
+          <ul className="list-disc list-outinside pl-12 text-left font-nunito font-semibold text-[14px] text-[#9E9076]">
             <li>{t.success.instruction1}</li>
             <li><strong>{t.success.instruction2}</strong></li>
           </ul>
@@ -374,7 +373,7 @@ export default function SuccessPage() {
           <div className="flex gap-2 justify-center mb-4 mt-3.5">
             <button
               onClick={() => handleShare('copy')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E0D9D0] font-nunito text-[12px] text-[#5A5248] hover:bg-[#FAF8F5] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E0D9D0] font-nunito text-[12px] text-[#9E9076] hover:bg-[#FAF8F5] transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -384,7 +383,7 @@ export default function SuccessPage() {
             </button>
             <button
               onClick={() => handleShare('whatsapp')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E0D9D0] font-nunito text-[12px] text-[#5A5248] hover:bg-[#FAF8F5] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#E0D9D0] font-nunito text-[12px] text-[#9E9076] hover:bg-[#FAF8F5] transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#25D366">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
@@ -395,7 +394,7 @@ export default function SuccessPage() {
 
           <button
             onClick={() => router.replace(locale === 'en' ? '/en' : '/')}
-            className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[15px] bg-[#F7963F] text-[#231E1A]  uppercase font-semibold hover:bg-[#F7963F] transition-colors"
+            className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[15px] bg-[#F7963F] text-[#231E1A] uppercase font-semibold hover:bg-[#F7963F] transition-colors"
           >
             {t.success.close}
           </button>
@@ -411,11 +410,10 @@ export default function SuccessPage() {
           {/* Banner desktop — pon aquí tu imagen exclusiva de desktop */}
           <div className="w-full overflow-hidden relative">
             <img
-              src="https://res.cloudinary.com/dow0dxajr/image/upload/v1790014711/image_4_1_pgip4u.webp"
+              src="https://res.cloudinary.com/dow0dxajr/image/upload/v1795724723/image_1_1_ujwpxi.png"
               alt={ticket.name}
               className="w-full h-auto object-cover"
             />
-            <div className="absolute inset-0 bg-black/20" />
           </div>
 
           {/* Contenido en dos columnas */}
@@ -428,11 +426,11 @@ export default function SuccessPage() {
                   <img src="/images/icon/Íconos WEB 1.png" alt="Colombia Moda" width={130} />
                 </div>*/}
 
-                <h2 className="font-nunito uppercase text-center font-medium text-[48px] text-[#231E1A] leading-[1.05] mb-5">
+                <h2 className="font-nunito uppercase text-center font-medium text-[48px] text-[#9E9076] leading-[1.05] mb-5">
                   {t.success.successTitle}
                 </h2>
                 <div className="flex justify-center items-center">
-                  <p className="font-nunito font-semibold text-[18px] text-[#231E1A] mb-3">
+                  <p className="font-nunito font-semibold text-[18px] text-[#9E9076] mb-3">
                     Tu {ticket.stock === undefined ? t.success.tableValidation : t.success.ticketValidation}{' '}
                     <strong>
                       {ticket.stock === undefined ? ticket.persons : quantity}{' '}
@@ -441,32 +439,32 @@ export default function SuccessPage() {
                   </p>
                 </div>
                 <div className="flex justify-center items-center">
-                  <ul className="list-disc list-outside pl-5 font-nunito font-semibold text-[15px] text-[#231E1A] space-y-1.5 mb-6">
+                  <ul className="list-disc list-outside pl-5 font-nunito font-semibold text-[15px] text-[#9E9076] space-y-1.5 mb-6">
                     <li>{t.success.instruction1}</li>
                     <li><strong>{t.success.instruction2}</strong></li>
                   </ul>
                 </div>
                 {/* Share icons */}
                 <div className="flex items-center justify-center gap-5">
-                  <button onClick={() => handleShare('whatsapp')} aria-label="Compartir por WhatsApp" className="text-[#231E1A] hover:opacity-60 transition-opacity">
+                  <button onClick={() => handleShare('whatsapp')} aria-label="Compartir por WhatsApp" className="text-[#9E9076] hover:opacity-60 transition-opacity">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
                     </svg>
                   </button>
 
-                  <button onClick={() => handleShare('instagram')} aria-label="Compartir por Instagram" className="text-[#231E1A] hover:opacity-60 transition-opacity">
+                  <button onClick={() => handleShare('instagram')} aria-label="Compartir por Instagram" className="text-[#9E9076] hover:opacity-60 transition-opacity">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.43.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.43.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41-.56-.22-.96-.48-1.38-.9-.42-.42-.68-.82-.9-1.38-.16-.43-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.43-.16 1.06-.36 2.23-.41 1.27-.06 1.65-.07 4.85-.07M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63c-.79.3-1.46.72-2.13 1.38C1.35 2.68.93 3.35.63 4.14.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.3.79.72 1.46 1.38 2.13.67.66 1.34 1.08 2.13 1.38.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56.79-.3 1.46-.72 2.13-1.38.66-.67 1.08-1.34 1.38-2.13.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91-.3-.79-.72-1.46-1.38-2.13-.67-.66-1.34-1.08-2.13-1.38-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 100 12.32 6.16 6.16 0 000-12.32zm0 10.16a4 4 0 110-8 4 4 0 010 8zm6.41-10.4a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z"/>
                     </svg>
                   </button>
 
-                  <button onClick={() => handleShare('facebook')} aria-label="Compartir por Facebook" className="text-[#231E1A] hover:opacity-60 transition-opacity">
+                  <button onClick={() => handleShare('facebook')} aria-label="Compartir por Facebook" className="text-[#9E9076] hover:opacity-60 transition-opacity">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07c0 6.03 4.39 11.03 10.13 11.93v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.69.24 2.69.24v2.97h-1.52c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8v8.44C19.61 23.1 24 18.1 24 12.07z"/>
                     </svg>
                   </button>
 
-                  <button onClick={() => handleShare('copy')} className="flex items-center gap-1.5 text-[#9B9389] hover:text-[#5A5248] transition-colors ml-1">
+                  <button onClick={() => handleShare('copy')} className="flex items-center gap-1.5 text-[#9E9076] hover:opacity-80 transition-colors ml-1">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -492,7 +490,7 @@ export default function SuccessPage() {
                     <img src={qrUrl} alt="QR de acceso" width={250} height={250} className="rounded-lg" />
                     <button
                       onClick={downloadClientQR}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#E0D9D0] font-nunito text-[13px] text-[#5A5248] hover:bg-[#FAF8F5] transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[#E0D9D0] font-nunito text-[13px] text-[#9E9076] hover:bg-[#FAF8F5] transition-colors"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

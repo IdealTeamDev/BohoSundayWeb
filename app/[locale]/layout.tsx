@@ -1,4 +1,4 @@
-import { displayFlyer, nunito, agilera, averia, gritor } from "../fonts";
+import { displayFlyer, nunito, agilera, averia, gritor, retroDream } from "../fonts";
 import SplashScreen from '@/components/splash/SplashScreen';
 import WhatsAppButton from '@/components/whatsapp/WhatsAppButton';
 import FacebookPixel from '@/components/FacebookPixel';
@@ -53,7 +53,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale || "es"}
-      className={`${displayFlyer.variable} ${nunito.variable} ${agilera.variable} ${averia.variable} ${gritor.variable}`}
+      className={`${displayFlyer.variable} ${nunito.variable} ${agilera.variable} ${averia.variable} ${gritor.variable} ${retroDream.variable}`}
       suppressHydrationWarning
     >
       <body>

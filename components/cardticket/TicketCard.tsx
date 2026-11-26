@@ -104,7 +104,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           {/* Title */}
           <div className="items-center gap-1 w-fit mx-auto">
            {/* <img src={iconSrc} alt="" width={28} height={44} />*/} 
-            <h2 className="text-3xl font-gritor tracking-wider uppercase text-[#9E9076] my-4">
+            <h2 className="text-3xl font-retrodream tracking-wider uppercase text-[#9E9076] my-4">
               {tTicket.name} #{ticket.number}
             </h2>
             
@@ -200,7 +200,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
           {/* Title */}
           <div className="flex items-center gap-3 mb-2">
             {/*<img src={iconSrc} alt="" width={28} height={28} />*/}
-            <h2 className="text-3xl font-gritor tracking-wider uppercase text-[#9E9076]">
+            <h2 className="text-3xl font-retrodream tracking-wider uppercase text-[#9E9076]">
               {tTicket.name} #{ticket.number}
             </h2>
           </div>

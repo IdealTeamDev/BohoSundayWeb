@@ -442,6 +442,11 @@ export default function QuickSellPage() {
   const [activatingStageId, setActivatingStageId] = useState<string | null>(null);
   const [editingStage, setEditingStage] = useState<any | null>(null);
   const [editingPrices, setEditingPrices] = useState<Record<string, number>>({});
+  const [editingEnabledIndividual, setEditingEnabledIndividual] = useState<Record<string, boolean>>({
+    early: true,
+    anytime: true,
+    general: false,
+  });
   const [savingPrices, setSavingPrices] = useState<boolean>(false);
 
   // Modal de Agregar Pre-registros State
@@ -855,6 +860,16 @@ export default function QuickSellPage() {
   const openStagePriceEditor = (stage: any) => {
     setEditingStage(stage);
     const existingPrices = stage.prices || {};
+    const savedEnabled: string[] | null = Array.isArray(existingPrices.enabled_individual)
+      ? existingPrices.enabled_individual.map((id: any) => String(id).toLowerCase())
+      : null;
+
+    setEditingEnabledIndividual({
+      early: savedEnabled ? savedEnabled.includes('early') : true,
+      anytime: savedEnabled ? savedEnabled.includes('anytime') : true,
+      general: savedEnabled ? savedEnabled.includes('general') : false,
+    });
+
     setEditingPrices({
       early: Number(existingPrices.early ?? 250000),
       anytime: Number(existingPrices.anytime ?? 250000),
@@ -876,8 +891,12 @@ export default function QuickSellPage() {
     setSavingPrices(true);
     try {
       const token = localStorage.getItem('admin_token') || '';
+      const enabledIndividualList = (['early', 'anytime', 'general'] as const).filter(
+        (key) => editingEnabledIndividual[key]
+      );
       const payloadPrices = {
         ...editingPrices,
+        enabled_individual: enabledIndividualList,
         vip_1: Number(editingPrices['vip-1'] ?? editingPrices.vip_1 ?? 7000000),
         vip_2: Number(editingPrices['vip-2'] ?? editingPrices.vip_2 ?? 6500000),
         vip_3: Number(editingPrices['vip-3'] ?? editingPrices.vip_3 ?? 5800000),
@@ -2895,13 +2914,44 @@ export default function QuickSellPage() {
                               </div>
 
                               <div style={{ fontSize: '12px', color: 'var(--ink-2)', marginBottom: '14px' }}>
+                                {(() => {
+                                  const enabledInd: string[] = Array.isArray(prices.enabled_individual)
+                                    ? prices.enabled_individual.map((id: any) => String(id).toLowerCase())
+                                    : ['early', 'anytime'];
+                                  return (
+                                    <div style={{ marginBottom: '10px' }}>
+                                      <strong>Boletería individual habilitada:</strong>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '5px' }}>
+                                        {(['early', 'anytime', 'general'] as const).map((indKey) => {
+                                          const isIndOn = enabledInd.includes(indKey);
+                                          const label = indKey === 'early' ? 'Early' : indKey === 'anytime' ? 'Anytime' : 'General';
+                                          return (
+                                            <span
+                                              key={indKey}
+                                              style={{
+                                                fontSize: '11px',
+                                                fontWeight: 600,
+                                                padding: '2px 8px',
+                                                borderRadius: '99px',
+                                                background: isIndOn ? '#E6F2E5' : 'var(--cream-deep)',
+                                                color: isIndOn ? '#233821' : 'var(--ink-3)',
+                                                textDecoration: isIndOn ? 'none' : 'line-through',
+                                              }}
+                                            >
+                                              {isIndOn ? '✓ ' : '✕ '}
+                                              {label} (${Number(prices[indKey] || 0).toLocaleString('es-CO')})
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                                 <strong>Precios configurados:</strong>
                                 <ul style={{ margin: '6px 0 0', paddingLeft: '18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
                                   <li>Early: ${Number(prices.early || 0).toLocaleString('es-CO')}</li>
                                   <li>Anytime: ${Number(prices.anytime || 0).toLocaleString('es-CO')}</li>
-                                  {stg.name?.toLowerCase().includes('believer') && (
-                                    <li>General: ${Number(prices.general || 0).toLocaleString('es-CO')}</li>
-                                  )}
+                                  <li>General: ${Number(prices.general || 0).toLocaleString('es-CO')}</li>
                                   <li>Oasis: ${Number(prices.oasis || 0).toLocaleString('es-CO')}</li>
                                   <li>Bohemian: ${Number(prices.bohemian || 0).toLocaleString('es-CO')}</li>
                                   <li>Primitivo: ${Number(prices.primitivo || 0).toLocaleString('es-CO')}</li>
@@ -3639,34 +3689,69 @@ export default function QuickSellPage() {
             </div>
 
             <div style={{ padding: '24px', overflowY: 'auto' }}>
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '14px', color: 'var(--olive-800)' }}>
-                Boletería Individual
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--olive-800)' }}>
+                  Boletería Individual
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--ink-2)' }}>
+                  Marca cuáles boletas individuales estarán habilitadas en esta etapa
+                </span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Early ($)</label>
-                  <input
-                    type="number"
-                    value={editingPrices.early || ''}
-                    onChange={(e) => setEditingPrices({ ...editingPrices, early: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Anytime ($)</label>
-                  <input
-                    type="number"
-                    value={editingPrices.anytime || ''}
-                    onChange={(e) => setEditingPrices({ ...editingPrices, anytime: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>General ($)</label>
-                  <input
-                    type="number"
-                    value={editingPrices.general || ''}
-                    onChange={(e) => setEditingPrices({ ...editingPrices, general: Number(e.target.value) })}
-                  />
-                </div>
+                {([
+                  { key: 'early', label: 'Early' },
+                  { key: 'anytime', label: 'Anytime' },
+                  { key: 'general', label: 'General' },
+                ] as const).map(({ key, label }) => {
+                  const isEnabled = Boolean(editingEnabledIndividual[key]);
+                  return (
+                    <div
+                      key={key}
+                      style={{
+                        border: isEnabled ? '1.5px solid var(--olive-700)' : '1px solid var(--line)',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        background: isEnabled ? '#FAFDF9' : 'var(--cream)',
+                        opacity: isEnabled ? 1 : 0.72,
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontSize: '12.5px',
+                          fontWeight: 600,
+                          marginBottom: '8px',
+                          color: 'var(--ink)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span>{label} ($)</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 500, color: isEnabled ? '#233821' : 'var(--ink-3)' }}>
+                          <input
+                            type="checkbox"
+                            checked={isEnabled}
+                            onChange={(e) =>
+                              setEditingEnabledIndividual({
+                                ...editingEnabledIndividual,
+                                [key]: e.target.checked,
+                              })
+                            }
+                            style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: 'var(--olive-700)' }}
+                          />
+                          {isEnabled ? 'Habilitada' : 'Inactiva'}
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        value={editingPrices[key] || ''}
+                        onChange={(e) => setEditingPrices({ ...editingPrices, [key]: Number(e.target.value) })}
+                      />
+                    </div>
+                  );
+                })}
               </div>
 
               <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '14px', color: 'var(--olive-800)' }}>

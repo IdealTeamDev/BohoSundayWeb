@@ -110,14 +110,14 @@ export default function EventMap({ onClose }: EventMapProps) {
             <button
               key={zone}
               onClick={() => setSelectedZone(isSelected ? null : zone)}
-              className="flex gap-2 items-center justify-start text-[#CBB093] font-nunito font-medium text-xs sm:text-sm border rounded-full px-3 sm:px-4 py-1 border-[#BDB39B] cursor-pointer hover:bg-[#F3E5C8] transition-all whitespace-nowrap"
+              className="flex gap-2 items-center justify-start text-[#FDFFFD] font-nunito font-medium text-xs sm:text-sm border rounded-full px-3 sm:px-4 py-1 border-[#FDFFFD] cursor-pointer hover:bg-[#9E9076] transition-all whitespace-nowrap"
               style={
                 isSelected
                   ? {
-                      borderColor: '#FDFFFD',
-                      color: '#FDFFFD',
+                      borderColor: '#9E9076',
+                      color: '#9E9076',
                       fontWeight: '600',
-                      background: '#F3E5C8',
+                      background: '#FDFFFD',
                     }
                   : {}
               }
@@ -217,7 +217,7 @@ export default function EventMap({ onClose }: EventMapProps) {
                 zIndex: 10,
                 transition: 'transform 0.15s ease, opacity 0.2s ease',
                 fontSize: `${Math.max(6, dotSize * 0.42)}px`,
-                fontWeight: '700',
+                fontWeight: '800',
                 color: ticket.zone === 'bohemian' || ticket.zone === 'vip' || ticket.zone === 'candela'
                   ? '#EAE0CE'
                   : '#231E1A',

@@ -43,7 +43,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
 
   if (dynamicTickets.length === 0) {
     return (
-      <div className="w-full bg-[#F4EFE9] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center min-h-[300px] justify-center">
+      <div className="w-full bg-[#FDFFFD] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center min-h-[300px] justify-center">
         <button
           onClick={onClose}
           className="absolute top-[-36px] right-2 z-50 w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center text-[#231E1A] hover:bg-[#D8D0C5] transition-colors text-sm font-semibold shadow-md cursor-pointer"
@@ -58,7 +58,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
   }
 
   return (
-    <div className="w-full bg-[#EAE0CE] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center">
+    <div className="w-full bg-[#FDFFFD] shadow-lg rounded-2xl overflow-visible select-none relative pt-10 pb-10 px-6 flex flex-col items-center">
       {/* Close button */}
       <button
         onClick={onClose}
@@ -78,7 +78,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
       />
 
       {/* Title */}
-      <h2 className="font-gritor text-center text-4xl lg:text-4xl uppercase text-[#231E1A] mt-3 mb-8">
+      <h2 className="font-retrodream text-center text-4xl lg:text-4xl uppercase text-[#9E9076] mt-3 mb-8">
         {t.generalModal.title}
       </h2>
 
@@ -98,8 +98,8 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
             style={{
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundImage: 'url("/images/individual-ticket/early.png")',
-              backgroundColor: '#4E4F44',
+              backgroundImage: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795725293/button-early-desktop_1_flgu9q.png',
+              backgroundColor: '#FDFFFD',
             }}
           >
             {isEarlySoldOut && (
@@ -116,7 +116,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
               <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
                 {t.generalModal.entrada}
               </span>
-              <span className="font-gritor text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+              <span className="font-retrodream text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
                 {t.generalModal.early}
               </span>
               <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
@@ -138,8 +138,8 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
             style={{
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              backgroundImage: 'url("/images/individual-ticket/anytime.png")',
-              backgroundColor: '#45463C',
+              backgroundImage: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795725296/button-anytime-desktop_1_gwvsgg.png',
+              backgroundColor: '#FDFFFD',
             }}
           >
             {isAnytimeSoldOut && (
@@ -156,7 +156,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
               <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
                 {t.generalModal.entrada}
               </span>
-              <span className="font-gritorr text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+              <span className="font-retrodream text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
                 {t.generalModal.anytime}
               </span>
               <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
@@ -179,7 +179,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundImage: 'url("https://res.cloudinary.com/dow0dxajr/image/upload/v1790013241/Mask_group_5_1_vebgp5.webp")',
-              backgroundColor: '#45463C',
+              backgroundColor: '#FDFFFD',
             }}
           >
             {isGeneralSoldOut && (
@@ -196,7 +196,7 @@ export default function IndividualTickets({ onClose }: IndividualTicketsProps) {
               <span className="font-nunito font-light text-[14px] uppercase text-white/80 transition-colors group-hover:text-white">
                 {t.generalModal.entrada}
               </span>
-              <span className="font-gritor text-3xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
+              <span className="font-retrodream text-4xl uppercase text-[#F4EFE9] mt-0.5 transition-transform group-hover:scale-105 duration-300">
                 {t.generalModal.general || 'GENERAL'}
               </span>
               <span className="font-nunito font-light text-[12px] text-white/70 mt-1 bg-black/35 px-2 py-0.5 rounded-full">
