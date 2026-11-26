@@ -32,11 +32,13 @@ export default function Home() {
       <BannerEvent />
 
       <div className="px-6 md:px-10 mb-10 lg:mb-15 mt-5 text-center max-w-3xl">
-        <iframe
-          className="inline-block"
-          src="https://res.cloudinary.com/dow0dxajr/image/upload/v1795709824/icon-palm_1_fe442t.webp"
+        <img
+          className="inline-block object-contain"
+          src="https://res.cloudinary.com/dow0dxajr/image/upload/f_auto,q_auto/v1795709824/icon-palm_1_fe442t.webp"
+          alt="Boho Sunday"
           width={50}
           height={50}
+          loading="lazy"
         />
         <h2 className="text-[#9E9076] text-[20px] md:text-[20px] font-nunito font-bold text-center pt-4 pb-6 uppercase tracking-wide">
           {t.home.title}

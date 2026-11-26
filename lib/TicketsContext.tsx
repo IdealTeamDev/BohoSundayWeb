@@ -54,44 +54,64 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // 1. Precarga inicial en segundo plano al montar la aplicación
-    fetchTicketsAndStatuses();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let initialized = false;
 
-    // 2. Suscripción Realtime a TODAS las tablas de la BD involucradas
-    const channel = supabase
-      .channel('global_tickets_realtime_channel')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'boleteria_mesas' },
-        () => {
-          fetchTicketsAndStatuses();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'boleteria_individual' },
-        () => {
-          fetchTicketsAndStatuses();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'ticket_locks' },
-        () => {
-          fetchTicketsAndStatuses();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'purchased_tickets' },
-        () => {
-          fetchTicketsAndStatuses();
-        }
-      )
-      .subscribe();
+    const initRealtimeAndFetch = () => {
+      if (initialized) return;
+      initialized = true;
+
+      // 1. Precarga en segundo plano
+      fetchTicketsAndStatuses();
+
+      // 2. Suscripción Realtime a TODAS las tablas de la BD involucradas
+      channel = supabase
+        .channel('global_tickets_realtime_channel')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'boleteria_mesas' },
+          () => {
+            fetchTicketsAndStatuses();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'boleteria_individual' },
+          () => {
+            fetchTicketsAndStatuses();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'ticket_locks' },
+          () => {
+            fetchTicketsAndStatuses();
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'purchased_tickets' },
+          () => {
+            fetchTicketsAndStatuses();
+          }
+        )
+        .subscribe();
+    };
+
+    // Diferir 2s en la carga inicial para no penalizar LCP/TBT en móvil,
+    // o iniciar de inmediato en la primera interacción del usuario.
+    const timer = window.setTimeout(initRealtimeAndFetch, 2000);
+    const onFirstInteraction = () => {
+      window.clearTimeout(timer);
+      initRealtimeAndFetch();
+    };
+
+    window.addEventListener('pointerdown', onFirstInteraction, { once: true, passive: true });
+    window.addEventListener('touchstart', onFirstInteraction, { once: true, passive: true });
+    window.addEventListener('keydown', onFirstInteraction, { once: true, passive: true });
 
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      if (!document.hidden && initialized) {
         fetchTicketsAndStatuses();
       }
     };
@@ -99,7 +119,13 @@ export function TicketsProvider({ children }: { children: React.ReactNode }) {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      supabase.removeChannel(channel);
+      window.clearTimeout(timer);
+      window.removeEventListener('pointerdown', onFirstInteraction);
+      window.removeEventListener('touchstart', onFirstInteraction);
+      window.removeEventListener('keydown', onFirstInteraction);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [fetchTicketsAndStatuses]);

@@ -4,6 +4,7 @@ export const displayFlyer = localFont({
   src: "./fonts/BrownCasalova.ttf",
   variable: "--font-flyer-display",
   display: "swap",
+  preload: false,
 });
 
 export const nunito = localFont({
@@ -16,18 +17,21 @@ export const agilera = localFont({
   src: "./fonts/Agilera.otf",
   variable: "--font-agilera",
   display: "swap",
+  preload: false,
 });
 
 export const averia = localFont({
   src: "./fonts/AveriaSerifLibre-Regular.ttf",
   variable: "--font-averia",
   display: "swap",
+  preload: false,
 });
 
 export const gritor = localFont({
   src: "./fonts/gritor.otf",
   variable: "--font-gritor",
   display: "swap",
+  preload: false,
 });
 
 export const retroDream = localFont({

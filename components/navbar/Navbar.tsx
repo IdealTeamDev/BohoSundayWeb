@@ -27,7 +27,7 @@ export const Navbar = () => {
 
         <div className="flex-1 w-35">
             <Link href={isEn ? "/en" : "/"}>
-                <iframe className="w-85 h-10 lg:w-85" src="https://res.cloudinary.com/dow0dxajr/image/upload/v1795712195/logo-boho-horizontal_2_1_nyjcni.png" />
+                <img className="w-85 h-10 lg:w-85 object-contain object-left" src="https://res.cloudinary.com/dow0dxajr/image/upload/f_auto,q_auto/v1795712195/logo-boho-horizontal_2_1_nyjcni.png" alt="Boho Sunday" width={340} height={40} fetchPriority="high" />
             </Link>
         </div>
         <div className="flex flex-1 w-24 justify-end items-center font-nunito font-semibold">

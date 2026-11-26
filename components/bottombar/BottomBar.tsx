@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import { translations } from '@/data/translations';
-import EventMap from '@/components/eventmap/EventMap';
-import IndividualTickets from '@/components/individual/IndividualTickets';
+
+const EventMap = dynamic(() => import('@/components/eventmap/EventMap'), { ssr: false });
+const IndividualTickets = dynamic(() => import('@/components/individual/IndividualTickets'), { ssr: false });
 
 interface BottomBarProps {
   openMap: boolean;
