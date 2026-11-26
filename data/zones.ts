@@ -21,7 +21,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '1 Botella licor premium',
     agua: 4,
     redbull: 4,
-    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790015211/photo_3_avwexi.webp',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795711160/photo_10_n5kl5b.webp',
     iconCard: '/images/icon/icon-bohemian.png',
   },
   oasis: {
@@ -34,7 +34,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '1 Botella licor premium',
     agua: 3,
     redbull: 3,
-    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790015210/photo_4_dv3lz4.webp',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795711162/photo_11_g0bkyf.webp',
     iconCard: '/images/icon/icon-oasis.png',
   },
   primitivo: {
@@ -45,7 +45,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '1 Botella licor premium',
     agua: 5,
     redbull: 5,
-    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790016492/photo_9_1_qn0u9v.webp',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795716443/photo_13_gf7h8k.png ',
     iconCard: '/images/icon/icon-primitivo.png',
   },
   vip: {
@@ -56,7 +56,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '1 Botella licor premium',
     agua: 5,
     redbull: 5,
-    img: '/images/ticketsimage/VIP.png',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795711163/photo_7_phpfcj.webp',
     iconCard: '/images/icon/icon-vip.png',
   },
   candela: {
@@ -69,7 +69,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '1 Botella licor premium',
     agua: 3,
     redbull: 3,
-    img: '/images/ticketsimage/CANDELA.png',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795716445/photo_12_ycuuru.png',
     iconCard: '/images/icon/icon-mesacandela.png',
   },
   backstage: {
@@ -80,7 +80,7 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     licor: '3 Botellas de licor premium',
     agua: 10,
     redbull: 10,
-    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1790015214/photo_2_wjhjxx.webp',
+    img: 'https://res.cloudinary.com/dow0dxajr/image/upload/v1795711159/photo_9_zggqcb.webp',
     iconCard: '/images/icon/icon-backstage.png',
   },
 };
