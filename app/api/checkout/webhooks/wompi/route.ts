@@ -122,9 +122,8 @@ export async function POST(req: NextRequest) {
       console.log(`[Wompi Webhook] ✅ Order ${orderId} finalized and confirmation email queued.`);
 
     } else if (status === 'DECLINED' || status === 'VOIDED' || status === 'ERROR') {
-      console.log(`[Wompi Webhook] ❌ Transaction for Order ${orderId} failed with status ${status}. Rejecting order and releasing lock.`);
+      console.log(`[Wompi Webhook] ❌ Transaction for Order ${orderId} failed with status ${status}. Marking order as rejected (preserving session lock until timer expires so buyer can retry).`);
       await rejectOrder(orderId, `Wompi payment failed with status: ${status}`);
-      await releaseLock(order.ticketId, order.sessionToken, tickets);
     }
 
     return NextResponse.json({ success: true });

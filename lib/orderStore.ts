@@ -263,77 +263,95 @@ export async function approveOrder(
     console.error(`[OrderStore] 🚨 Exception updating order ${orderId} in Supabase:`, err);
   }
 
-  // Save buyer/ticket details to Supabase database (purchased_tickets table)
+  // Check if purchased_tickets already has a record for this orderId (idempotency against concurrent webhook + polling)
+  let alreadyInPurchasedTickets = false;
   try {
-    const tickets = await getDynamicTickets(order.stageId, true, true);
-    const ticket = tickets.find((t) => t.id === order.ticketId || t.id.toLowerCase() === order.ticketId.toLowerCase());
-
-    const isGuest = order.ticketId === 'invitado_anytime' || order.ticketId === 'invitado-anytime';
-    const ticketName = ticket?.name || (isGuest ? 'Invitado Anytime' : 'Boleto/Cama');
-    const ticketNumber = ticket?.number || 0;
-    const zone = ticket?.zone || 'general';
-
-    const basePersons = ticket ? (ticket.stock !== undefined ? 1 : (ticket.persons || 1)) : 1;
-    const totalAccesos = basePersons * order.quantity;
-
-    const checksum = crypto
-      .createHash('sha256')
-      .update(`${order.orderId}-${order.buyerInfo.email}-${paymentId || ''}-approved`)
-      .digest('hex')
-      .substring(0, 16);
-
-    const languageStr = (order.buyerInfo.locale || 'es').toUpperCase() === 'EN' ? 'EN' : 'ES';
-    const ticketPrice = isGuest ? 0 : (ticket?.price || 0);
-    const activeEdition = order.editionSlug ? { slug: order.editionSlug, name: order.editionName || 'Colombiamoda' } : await getActiveEdition();
-
-    const baseTicketRow = {
-      order_id: order.orderId,
-      ticket_id: order.ticketId,
-      ticket_name: ticketName,
-      ticket_number: ticketNumber,
-      zone: zone,
-      buyer_name: order.buyerInfo.name,
-      buyer_email: order.buyerInfo.email,
-      buyer_phone: order.buyerInfo.phone,
-      total_accesos: totalAccesos,
-      accesos_restantes: totalAccesos,
-      status: 'paid',
-      checksum: checksum,
-      payment_ref: paymentId,
-      created_at: new Date(order.createdAt).toISOString(),
-      language: languageStr,
-      ticket_price: ticketPrice,
-    };
-
-    const { error } = await supabase.from('purchased_tickets').insert([{
-      ...baseTicketRow,
-      edition_slug: activeEdition.slug,
-      edition_name: activeEdition.name
-    }]);
-
-    if (error) {
-      console.warn('[OrderStore] ⚠️ Primary insert into purchased_tickets failed, retrying without edition columns:', error.message);
-      const { error: fallbackInsertErr } = await supabase.from('purchased_tickets').insert([baseTicketRow]);
-      if (fallbackInsertErr) {
-        console.error('[OrderStore] ❌ Error inserting approved ticket into purchased_tickets in Supabase:', fallbackInsertErr);
-      } else {
-        console.log(`[OrderStore] 🎉 Saved approved ticket (fallback schema) to purchased_tickets for Order ${order.orderId}`);
-      }
-    } else {
-      console.log(`[OrderStore] 🎉 Successfully saved approved ticket to purchased_tickets table for Order ${order.orderId}`);
+    const { data: existingRows } = await supabase
+      .from('purchased_tickets')
+      .select('order_id')
+      .eq('order_id', order.orderId)
+      .limit(1);
+    if (existingRows && existingRows.length > 0) {
+      alreadyInPurchasedTickets = true;
+      console.log(`[OrderStore] ℹ️ Order ${order.orderId} already exists in purchased_tickets. Skipping duplicate insert.`);
     }
-  } catch (dbErr) {
-    console.error('[OrderStore] 🚨 Exception saving to purchased_tickets in Supabase:', dbErr);
+  } catch (e) {
+    console.warn('[OrderStore] Warning checking existing purchased_tickets row:', e);
+  }
+
+  // Save buyer/ticket details to Supabase database (purchased_tickets table)
+  if (!alreadyInPurchasedTickets) {
+    try {
+      const tickets = await getDynamicTickets(order.stageId, true, true);
+      const ticket = tickets.find((t) => t.id === order.ticketId || t.id.toLowerCase() === order.ticketId.toLowerCase());
+
+      const isGuest = order.ticketId === 'invitado_anytime' || order.ticketId === 'invitado-anytime';
+      const ticketName = ticket?.name || (isGuest ? 'Invitado Anytime' : 'Boleto/Cama');
+      const ticketNumber = ticket?.number || 0;
+      const zone = ticket?.zone || 'general';
+
+      const basePersons = ticket ? (ticket.stock !== undefined ? 1 : (ticket.persons || 1)) : 1;
+      const totalAccesos = basePersons * order.quantity;
+
+      const checksum = crypto
+        .createHash('sha256')
+        .update(`${order.orderId}-${order.buyerInfo.email}-${paymentId || ''}-approved`)
+        .digest('hex')
+        .substring(0, 16);
+
+      const languageStr = (order.buyerInfo.locale || 'es').toUpperCase() === 'EN' ? 'EN' : 'ES';
+      const ticketPrice = isGuest ? 0 : (ticket?.price || 0);
+      const activeEdition = order.editionSlug ? { slug: order.editionSlug, name: order.editionName || 'Colombiamoda' } : await getActiveEdition();
+
+      const baseTicketRow = {
+        order_id: order.orderId,
+        ticket_id: order.ticketId,
+        ticket_name: ticketName,
+        ticket_number: ticketNumber,
+        zone: zone,
+        buyer_name: order.buyerInfo.name,
+        buyer_email: order.buyerInfo.email,
+        buyer_phone: order.buyerInfo.phone,
+        total_accesos: totalAccesos,
+        accesos_restantes: totalAccesos,
+        status: 'paid',
+        checksum: checksum,
+        payment_ref: paymentId,
+        created_at: new Date(order.createdAt).toISOString(),
+        language: languageStr,
+        ticket_price: ticketPrice,
+      };
+
+      const { error } = await supabase.from('purchased_tickets').insert([{
+        ...baseTicketRow,
+        edition_slug: activeEdition.slug,
+        edition_name: activeEdition.name
+      }]);
+
+      if (error) {
+        console.warn('[OrderStore] ⚠️ Primary insert into purchased_tickets failed, retrying without edition columns:', error.message);
+        const { error: fallbackInsertErr } = await supabase.from('purchased_tickets').insert([baseTicketRow]);
+        if (fallbackInsertErr) {
+          console.error('[OrderStore] ❌ Error inserting approved ticket into purchased_tickets in Supabase:', fallbackInsertErr);
+        } else {
+          console.log(`[OrderStore] 🎉 Saved approved ticket (fallback schema) to purchased_tickets for Order ${order.orderId}`);
+        }
+      } else {
+        console.log(`[OrderStore] 🎉 Successfully saved approved ticket to purchased_tickets table for Order ${order.orderId}`);
+      }
+    } catch (dbErr) {
+      console.error('[OrderStore] 🚨 Exception saving to purchased_tickets in Supabase:', dbErr);
+    }
+
+    // Send success notification email to admin asynchronously (only once per order)
+    sendAdminNotificationEmail(updatedOrder, 'approved').catch((err) => {
+      console.error('[OrderStore] Error calling sendAdminNotificationEmail (approved):', err);
+    });
   }
 
   // Decrease stock/mark unavailable in database
   await decreaseDatabaseStock(order.ticketId).catch((err) => {
     console.error('[OrderStore] Error calling decreaseDatabaseStock:', err);
-  });
-
-  // Send success notification email to admin asynchronously
-  sendAdminNotificationEmail(updatedOrder, 'approved').catch((err) => {
-    console.error('[OrderStore] Error calling sendAdminNotificationEmail (approved):', err);
   });
 
   return updatedOrder;

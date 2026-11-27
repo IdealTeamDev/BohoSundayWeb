@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyLock, getRemainingSeconds, markAsSold } from '@/lib/lockStore';
+import {
+  verifyLock,
+  acquireLock,
+  extendLockForPayment,
+  getLockQuantity,
+  markAsSold,
+} from '@/lib/lockStore';
 import { createOrder, approveOrder } from '@/lib/orderStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
 import { getDynamicTickets, getActiveStage } from '@/lib/tickets';
@@ -21,11 +27,11 @@ export async function POST(req: NextRequest) {
 
     const tickets = await getDynamicTickets();
 
-    // Verify lock is still valid
+    // Verify lock is still valid in DB
     const isLocked = await verifyLock(ticketId, sessionToken, tickets);
     if (!isLocked) {
       return NextResponse.json({
-        error: 'Tu tiempo de reserva expiró. Por favor regresa a la página principal.',
+        error: 'Tu tiempo de reserva expiró o la mesa ya no está disponible. Por favor regresa a la página principal.',
       }, { status: 410 });
     }
 
@@ -34,9 +40,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
 
-    const remainingSeconds = await getRemainingSeconds(ticketId, sessionToken, tickets);
     const isIndividual = ticket.stock !== undefined;
-    const finalQty = isIndividual ? quantity : 1;
+    const finalQty = isIndividual ? Number(quantity) : 1;
+
+    // For individual tickets, ensure the lock in DB covers the requested quantity
+    if (isIndividual) {
+      const currentLockedQty = await getLockQuantity(ticketId, sessionToken, tickets);
+      if (currentLockedQty !== finalQty) {
+        const updatedLock = await acquireLock(ticketId, sessionToken, finalQty, tickets);
+        if (!updatedLock) {
+          return NextResponse.json({
+            error: 'La cantidad seleccionada ya no está disponible en stock.',
+          }, { status: 409 });
+        }
+      }
+    }
+
+    // Extend lock to 15 minutes from payment initiation so it never expires while buyer is in Wompi / PSE / bank app
+    const extended = await extendLockForPayment(ticketId, sessionToken, tickets);
+    if (!extended) {
+      return NextResponse.json({
+        error: 'No se pudo asegurar el bloqueo de tu reserva para el pago. Por favor intenta de nuevo.',
+      }, { status: 409 });
+    }
+
     const totalPrice = ticket.price * finalQty;
 
     // Generate unique order ID

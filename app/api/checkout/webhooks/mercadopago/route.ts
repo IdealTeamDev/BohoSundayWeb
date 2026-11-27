@@ -130,9 +130,9 @@ export async function POST(req: NextRequest) {
 
     } else if (paymentStatus === 'rejected' || paymentStatus === 'cancelled') {
       // 2. If payment was REJECTED / CANCELLED
-      console.log(`[Webhook Mercado Pago] ❌ Payment for Order ${orderId} was ${paymentStatus}. Rejecting order & releasing lock.`);
+      // Keep the session lock alive until its timer expires so the buyer can retry with another card or switch to Wompi without losing their table.
+      console.log(`[Webhook Mercado Pago] ❌ Payment for Order ${orderId} was ${paymentStatus}. Marking order as rejected (preserving session lock for retry).`);
       await rejectOrder(orderId, `Payment ${paymentStatus} by provider.`);
-      await releaseLock(order.ticketId, order.sessionToken, tickets);
     }
 
     return new Response(JSON.stringify({ success: true }), {

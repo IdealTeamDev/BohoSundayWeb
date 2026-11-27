@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import { getOrder, approveOrder, rejectOrder } from '@/lib/orderStore';
-import { markAsSold, releaseLock } from '@/lib/lockStore';
+import { markAsSold, extendLockForPayment, getTicketStatus } from '@/lib/lockStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
 import { getDynamicTickets } from '@/lib/tickets';
 
@@ -31,6 +31,27 @@ export async function POST(req: NextRequest) {
     );
     if (!ticket) {
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
+    }
+
+    // Pre-charge anti-oversell verification: ensure table/ticket is still locked by this session and not already sold
+    if (ticket.stock === undefined) {
+      const currentStatus = await getTicketStatus(ticket.id, tickets);
+      if (currentStatus === 'sold') {
+        return NextResponse.json(
+          { error: 'Esta mesa/cama ya fue vendida. No se realizó ningún cobro a tu tarjeta.' },
+          { status: 409 }
+        );
+      }
+    }
+
+    if (order.sessionToken) {
+      const lockExtended = await extendLockForPayment(order.ticketId, order.sessionToken, tickets);
+      if (!lockExtended) {
+        return NextResponse.json(
+          { error: 'Tu tiempo de reserva expiró antes de procesar el pago. No se realizó ningún cobro. Por favor selecciona nuevamente tu entrada.' },
+          { status: 410 }
+        );
+      }
     }
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;

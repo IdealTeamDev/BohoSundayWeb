@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createOrder, approveOrder } from '@/lib/orderStore';
 import { addEmailToQueue } from '@/lib/emailQueue';
 import { getDynamicTickets } from '@/lib/tickets';
-import { getTicketStatus, getRemainingStock } from '@/lib/lockStore';
+import { getTicketStatus, getRemainingStock, markAsSold } from '@/lib/lockStore';
 import { validateSession } from '@/lib/authStore';
 
 export async function POST(req: NextRequest) {
@@ -39,21 +39,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'El ticket/mesa seleccionado no existe' }, { status: 404 });
     }
 
-    // 2. Si es una mesa/cama (no tiene stock definido), validar que no esté ya vendida
+    // 2. Si es una mesa/cama (no tiene stock definido), validar que no esté ya vendida NI bloqueada por un cliente pagando en la web
     if (ticket.stock === undefined && !isGuestRequest) {
       const status = await getTicketStatus(ticket.id, tickets);
       if (status === 'sold') {
         return NextResponse.json({ 
-          error: 'Esta mesa/cama ya ha sido vendida y no se puede registrar otra venta' 
-        }, { status: 400 });
+          error: 'Esta mesa/cama ya ha sido vendida y no se puede registrar otra venta.' 
+        }, { status: 409 });
+      }
+      if (status === 'locked') {
+        return NextResponse.json({
+          error: 'Esta mesa/cama está bloqueada en este momento por un cliente que está pagando en la web. Espera a que finalice o expire su reserva para evitar una sobre-venta.'
+        }, { status: 409 });
       }
     } else if (!isGuestRequest) {
-      // 3. Si es boleto individual normal, validar stock restante
+      // 3. Si es boleto individual normal, validar stock restante (descontando vendidas + bloqueadas activas)
       const remaining = await getRemainingStock(ticket.id, ticket.stock ?? 100);
       if (remaining < Number(quantity)) {
         return NextResponse.json({ 
-          error: `Stock insuficiente. Quedan ${remaining} boletas disponibles.` 
-        }, { status: 400 });
+          error: `Stock insuficiente. Quedan ${remaining} boletas disponibles (teniendo en cuenta reservas en curso en la web).` 
+        }, { status: 409 });
       }
     }
 
@@ -81,6 +86,7 @@ export async function POST(req: NextRequest) {
 
     // Immediately approve the order (passes createdOrder as fallback so purchased_tickets is always written)
     await approveOrder(orderId, 'manual-sale', createdOrder);
+    await markAsSold(ticket.id, 'admin-quick-sell', tickets);
 
     // Queue client email confirmation containing QR code with a timeout guard
     // so slow SMTP retries on Vercel never cause a 504 timeout before returning the QR modal to the admin.

@@ -5,7 +5,8 @@ import { getActiveEdition } from './editions';
 import { processAbandonedCarts } from './abandonedCart';
 import { syncAllPendingOrders } from './wompiReconciliation';
 
-const LOCK_DURATION_MS = 10 * 60 * 1000; // 10 minutes
+const LOCK_DURATION_MS = 10 * 60 * 1000; // 10 minutes initial checkout lock
+const PAYMENT_GATEWAY_LOCK_MS = 15 * 60 * 1000; // 15 minutes when redirected to Wompi / PSE / payment gateway
 
 /**
  * Remove all expired locks from Supabase database, reconcile pending Wompi orders, and process expired 10-minute abandoned carts
@@ -35,6 +36,40 @@ async function cleanExpiredLocks(): Promise<void> {
 }
 
 /**
+ * Helper to check if a table/bed is already paid/approved in the active edition
+ */
+async function isTableSoldInEdition(ticketId: string, editionSlug: string): Promise<boolean> {
+  const [{ data: purchases, error: purchaseError }, { data: approvedOrders, error: orderError }] =
+    await Promise.all([
+      supabase
+        .from('purchased_tickets')
+        .select('order_id')
+        .eq('ticket_id', ticketId)
+        .eq('status', 'paid')
+        .eq('edition_slug', editionSlug)
+        .limit(1),
+      supabase
+        .from('orders')
+        .select('order_id')
+        .eq('ticket_id', ticketId)
+        .eq('status', 'approved')
+        .eq('edition_slug', editionSlug)
+        .limit(1),
+    ]);
+
+  if (purchaseError) throw purchaseError;
+  if (orderError) {
+    // Fallback if edition_slug column query fails on orders
+    console.warn('[LockStore] Warning checking orders edition_slug:', orderError.message);
+  }
+
+  return Boolean(
+    (purchases && purchases.length > 0) ||
+    (approvedOrders && approvedOrders.length > 0)
+  );
+}
+
+/**
  * Try to lock a ticket for a session in the Supabase database.
  * Returns the lock if successful, null if already locked or no stock.
  */
@@ -46,6 +81,10 @@ export async function acquireLock(
 ): Promise<TicketLock | null> {
   await cleanExpiredLocks();
 
+  if (!ticketId || !sessionToken || quantity <= 0) {
+    return null;
+  }
+
   const list = ticketsList || [];
   const ticket = list.find((t) => t.id === ticketId);
 
@@ -56,9 +95,11 @@ export async function acquireLock(
   const lockKey = ticket.stock !== undefined ? `${ticketId}_${sessionToken}` : ticketId;
   const activeEdition = await getActiveEdition();
 
-  // If the ticket has stock defined (individual tickets early/anytime)
+  // If the ticket has stock defined (individual tickets early/anytime/general)
   if (ticket.stock !== undefined) {
     try {
+      const nowIso = new Date().toISOString();
+
       // 1. Get total sold count from purchased_tickets for current active edition
       const { data: soldData, error: soldError } = await supabase
         .from('purchased_tickets')
@@ -76,7 +117,7 @@ export async function acquireLock(
         .select('quantity')
         .eq('ticket_id', ticketId)
         .eq('status', 'locked')
-        .gt('expires_at', new Date().toISOString())
+        .gt('expires_at', nowIso)
         .neq('session_token', sessionToken);
 
       if (lockedError) throw lockedError;
@@ -99,7 +140,8 @@ export async function acquireLock(
       }
 
       // 4. Create/update the lock in Supabase
-      const expiresAt = new Date(Date.now() + LOCK_DURATION_MS).toISOString();
+      const expiresAtMs = Date.now() + LOCK_DURATION_MS;
+      const expiresAt = new Date(expiresAtMs).toISOString();
       const { error: insertError } = await supabase
         .from('ticket_locks')
         .upsert({
@@ -108,7 +150,7 @@ export async function acquireLock(
           session_token: sessionToken,
           quantity,
           status: 'locked',
-          expires_at: expiresAt
+          expires_at: expiresAt,
         });
 
       if (insertError) {
@@ -116,10 +158,32 @@ export async function acquireLock(
         return null;
       }
 
+      // 5. Post-write concurrency check: re-verify total locked + sold after inserting our lock
+      // to prevent race conditions when two users grab the last remaining tickets at the exact same millisecond.
+      const { data: postLocks, error: postLockErr } = await supabase
+        .from('ticket_locks')
+        .select('session_token, quantity')
+        .eq('ticket_id', ticketId)
+        .eq('status', 'locked')
+        .gt('expires_at', new Date().toISOString());
+
+      if (!postLockErr && postLocks) {
+        const totalLockedAfter = postLocks.reduce((sum, row) => sum + Number(row.quantity), 0);
+        if (soldCount + totalLockedAfter > totalStock) {
+          console.warn(`[LockStore] ⚠️ Race condition detected on last stock for ${ticketId}. Rolling back lock for ${sessionToken}.`);
+          await supabase
+            .from('ticket_locks')
+            .delete()
+            .eq('lock_key', lockKey)
+            .eq('session_token', sessionToken);
+          return null;
+        }
+      }
+
       return {
         ticketId,
         sessionToken,
-        expiresAt: Date.now() + LOCK_DURATION_MS,
+        expiresAt: expiresAtMs,
         status: 'locked',
         quantity,
       };
@@ -128,75 +192,106 @@ export async function acquireLock(
       return null;
     }
   } else {
-    // Table/Cama ticket logic
+    // Table/Cama ticket logic (Atomic anti-race-condition implementation)
     try {
-      // Check if locked by another active session
-      const { data: activeLock, error: lockError } = await supabase
+      // 1. Verify not already sold in purchased_tickets or approved orders for active edition
+      const alreadySold = await isTableSoldInEdition(ticketId, activeEdition.slug);
+      if (alreadySold) {
+        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold in ${activeEdition.name}`);
+        return null;
+      }
+
+      const nowIso = new Date().toISOString();
+
+      // 2. Delete any expired lock for this table specifically
+      await supabase
         .from('ticket_locks')
-        .select('*')
+        .delete()
         .eq('lock_key', lockKey)
         .eq('status', 'locked')
-        .gt('expires_at', new Date().toISOString())
-        .neq('session_token', sessionToken)
-        .maybeSingle();
+        .lt('expires_at', nowIso);
 
-      if (lockError) throw lockError;
-      if (activeLock) {
-        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already locked by session ${activeLock.session_token}`);
-        return null;
-      }
-
-      // Check if already sold in ticket_locks
-      const { data: soldLock, error: soldLockError } = await supabase
+      // 3. Check if any lock currently exists for this table
+      const { data: existingLocks, error: lockError } = await supabase
         .from('ticket_locks')
         .select('*')
         .eq('lock_key', lockKey)
-        .eq('status', 'sold')
-        .maybeSingle();
+        .limit(1);
 
-      if (soldLockError) throw soldLockError;
-      if (soldLock) {
-        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold (found in ticket_locks)`);
-        return null;
+      if (lockError) throw lockError;
+      const existingLock = existingLocks && existingLocks.length > 0 ? existingLocks[0] : null;
+
+      const expiresAtMs = Date.now() + LOCK_DURATION_MS;
+      const expiresAt = new Date(expiresAtMs).toISOString();
+
+      if (existingLock) {
+        if (existingLock.status === 'sold') {
+          console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold (in ticket_locks)`);
+          return null;
+        }
+
+        const isStillActive = new Date(existingLock.expires_at).getTime() >= Date.now();
+        if (existingLock.session_token !== sessionToken && isStillActive) {
+          console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already locked by session ${existingLock.session_token}`);
+          return null;
+        }
+
+        // Same session renewing lock, or expired lock that wasn't deleted yet
+        const { error: updateErr } = await supabase
+          .from('ticket_locks')
+          .update({
+            session_token: sessionToken,
+            quantity: 1,
+            status: 'locked',
+            expires_at: expiresAt,
+          })
+          .eq('lock_key', lockKey)
+          .eq('session_token', existingLock.session_token);
+
+        if (updateErr) {
+          console.error('[LockStore] Error updating table lock:', updateErr);
+          return null;
+        }
+      } else {
+        // 4. Use INSERT (not UPSERT) so Postgres primary key constraint rejects concurrent writers!
+        const { error: insertError } = await supabase
+          .from('ticket_locks')
+          .insert({
+            lock_key: lockKey,
+            ticket_id: ticketId,
+            session_token: sessionToken,
+            quantity: 1,
+            status: 'locked',
+            expires_at: expiresAt,
+          });
+
+        if (insertError) {
+          console.warn(`[LockStore] ❌ Concurrent lock prevented on table ${ticketId}:`, insertError.message);
+          return null;
+        }
       }
 
-      // Check if already sold in purchased_tickets for active edition
-      const { data: purchase, error: purchaseError } = await supabase
-        .from('purchased_tickets')
-        .select('order_id')
-        .eq('ticket_id', ticketId)
-        .eq('status', 'paid')
-        .eq('edition_slug', activeEdition.slug)
-        .maybeSingle();
-
-      if (purchaseError) throw purchaseError;
-      if (purchase) {
-        console.warn(`[LockStore] ❌ Bed/Table ${ticketId} is already sold in ${activeEdition.name} (found in purchased_tickets)`);
-        return null;
-      }
-
-      // Create/update the lock in Supabase
-      const expiresAt = new Date(Date.now() + LOCK_DURATION_MS).toISOString();
-      const { error: insertError } = await supabase
+      // 5. Post-write ownership verification: confirm our sessionToken is the one persisted in DB
+      const { data: verifyRows, error: verifyErr } = await supabase
         .from('ticket_locks')
-        .upsert({
-          lock_key: lockKey,
-          ticket_id: ticketId,
-          session_token: sessionToken,
-          quantity: 1,
-          status: 'locked',
-          expires_at: expiresAt
-        });
+        .select('session_token, status, expires_at')
+        .eq('lock_key', lockKey)
+        .limit(1);
 
-      if (insertError) {
-        console.error('[LockStore] Error saving table lock to DB:', insertError);
+      if (verifyErr || !verifyRows || verifyRows.length === 0) {
+        return null;
+      }
+
+      const persisted = verifyRows[0];
+      if (persisted.session_token !== sessionToken || persisted.status !== 'locked') {
+        console.warn(`[LockStore] ❌ Post-write lock verification failed for ${ticketId}. Owned by another session.`);
         return null;
       }
 
       return {
         ticketId,
         sessionToken,
-        expiresAt: Date.now() + LOCK_DURATION_MS,
+        expiresAt: expiresAtMs,
         status: 'locked',
         quantity: 1,
       };
@@ -208,9 +303,13 @@ export async function acquireLock(
 }
 
 /**
- * Verify a session still holds the lock for a ticket.
+ * Verify a session still holds an active, non-expired lock for a ticket.
  */
 export async function verifyLock(ticketId: string, sessionToken: string, ticketsList?: Ticket[]): Promise<boolean> {
+  if (!ticketId || !sessionToken) {
+    return false;
+  }
+
   const list = ticketsList || [];
   const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
@@ -219,54 +318,103 @@ export async function verifyLock(ticketId: string, sessionToken: string, tickets
   try {
     // If it's a table/bed (stock is undefined), verify if it has already been sold in active edition
     if (!ticket || ticket.stock === undefined) {
-      const { data: purchase, error: purchaseError } = await supabase
-        .from('purchased_tickets')
-        .select('order_id')
-        .eq('ticket_id', ticketId)
-        .eq('status', 'paid')
-        .eq('edition_slug', activeEdition.slug)
-        .maybeSingle();
-
-      if (purchaseError) throw purchaseError;
-      if (purchase) {
-        console.warn(`[LockStore] ❌ verifyLock: Bed/Table ${ticketId} is already sold in ${activeEdition.name} (found in purchased_tickets)`);
+      const alreadySold = await isTableSoldInEdition(ticketId, activeEdition.slug);
+      if (alreadySold) {
+        console.warn(`[LockStore] ❌ verifyLock: Bed/Table ${ticketId} is already sold in ${activeEdition.name}`);
         return false;
       }
     }
 
-    const { data: lock, error } = await supabase
+    const { data: lockRows, error } = await supabase
       .from('ticket_locks')
       .select('*')
       .eq('lock_key', lockKey)
-      .maybeSingle();
+      .limit(1);
 
     if (error) throw error;
 
+    const lock = lockRows && lockRows.length > 0 ? lockRows[0] : null;
     if (!lock) {
-      if (sessionToken) return true;
       return false;
     }
 
-    if (lock.session_token !== sessionToken) return false;
+    if (lock.status !== 'locked') {
+      return false;
+    }
+
+    if (lock.session_token !== sessionToken) {
+      return false;
+    }
 
     const expiryTime = new Date(lock.expires_at).getTime();
     if (expiryTime < Date.now()) {
-      await supabase.from('ticket_locks').delete().eq('lock_key', lockKey);
+      await supabase
+        .from('ticket_locks')
+        .delete()
+        .eq('lock_key', lockKey)
+        .eq('session_token', sessionToken)
+        .eq('status', 'locked');
       return false;
     }
 
     return true;
   } catch (err) {
     console.error('[LockStore] Error in verifyLock:', err);
-    if (sessionToken) return true;
     return false;
   }
 }
 
 /**
- * Release a lock — call after payment fails or cancels.
+ * Extends the lock expiration time when the buyer initiates a payment session (Wompi / Mercado Pago / PSE)
+ * so the lock cannot expire while the user is authorizing the payment in their bank app.
+ */
+export async function extendLockForPayment(
+  ticketId: string,
+  sessionToken: string,
+  ticketsList?: Ticket[],
+  durationMs: number = PAYMENT_GATEWAY_LOCK_MS
+): Promise<boolean> {
+  if (!ticketId || !sessionToken) {
+    return false;
+  }
+
+  const isValid = await verifyLock(ticketId, sessionToken, ticketsList);
+  if (!isValid) {
+    return false;
+  }
+
+  const list = ticketsList || [];
+  const ticket = list.find((t) => t.id === ticketId);
+  const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
+  const newExpiresAt = new Date(Date.now() + durationMs).toISOString();
+
+  try {
+    const { data: updatedRows, error } = await supabase
+      .from('ticket_locks')
+      .update({ expires_at: newExpiresAt })
+      .eq('lock_key', lockKey)
+      .eq('session_token', sessionToken)
+      .eq('status', 'locked')
+      .select('session_token');
+
+    if (error || !updatedRows || updatedRows.length === 0) {
+      console.warn(`[LockStore] ❌ Could not extend lock for ${ticketId} (session: ${sessionToken})`);
+      return false;
+    }
+
+    console.log(`[LockStore] 🔒 Extended lock for ${ticketId} until ${newExpiresAt} during payment gateway flow.`);
+    return true;
+  } catch (err) {
+    console.error('[LockStore] Error in extendLockForPayment:', err);
+    return false;
+  }
+}
+
+/**
+ * Release a lock — call when user explicitly exits checkout.
  */
 export async function releaseLock(ticketId: string, sessionToken: string, ticketsList?: Ticket[]): Promise<void> {
+  if (!ticketId || !sessionToken) return;
   const list = ticketsList || [];
   const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
@@ -311,19 +459,20 @@ export async function markAsSold(ticketId: string, sessionToken?: string, ticket
  * Get remaining lock time in seconds for display.
  */
 export async function getRemainingSeconds(ticketId: string, sessionToken: string, ticketsList?: Ticket[]): Promise<number> {
+  if (!ticketId || !sessionToken) return 0;
   const list = ticketsList || [];
   const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
 
   try {
-    const { data: lock } = await supabase
+    const { data: lockRows } = await supabase
       .from('ticket_locks')
-      .select('expires_at, session_token')
+      .select('expires_at, session_token, status')
       .eq('lock_key', lockKey)
-      .maybeSingle();
+      .limit(1);
 
-    if (!lock || lock.session_token !== sessionToken) {
-      if (sessionToken) return 600;
+    const lock = lockRows && lockRows.length > 0 ? lockRows[0] : null;
+    if (!lock || lock.session_token !== sessionToken || lock.status !== 'locked') {
       return 0;
     }
 
@@ -331,7 +480,6 @@ export async function getRemainingSeconds(ticketId: string, sessionToken: string
     return Math.max(0, Math.floor((expiryTime - Date.now()) / 1000));
   } catch (err) {
     console.error('[LockStore] Error in getRemainingSeconds:', err);
-    if (sessionToken) return 600;
     return 0;
   }
 }
@@ -395,31 +543,28 @@ export async function getTicketStatus(ticketId: string, ticketsList?: Ticket[]):
   } else {
     // Table/Cama ticket status
     try {
-      // 1. Check if there's an approved purchase in purchased_tickets for active edition
-      const { data: purchase, error: purchaseError } = await supabase
-        .from('purchased_tickets')
-        .select('order_id')
-        .eq('ticket_id', ticketId)
-        .eq('status', 'paid')
-        .eq('edition_slug', activeEdition.slug)
-        .maybeSingle();
-
-      if (purchaseError) throw purchaseError;
-      if (purchase) return 'sold';
+      // 1. Check if there's an approved purchase in purchased_tickets or orders for active edition
+      const alreadySold = await isTableSoldInEdition(ticketId, activeEdition.slug);
+      if (alreadySold) return 'sold';
 
       // 2. Check locks
-      const { data: lock } = await supabase
+      const { data: lockRows } = await supabase
         .from('ticket_locks')
         .select('*')
         .eq('lock_key', ticketId)
-        .maybeSingle();
+        .limit(1);
 
+      const lock = lockRows && lockRows.length > 0 ? lockRows[0] : null;
       if (!lock) return 'available';
       if (lock.status === 'sold') return 'sold';
 
       const expiryTime = new Date(lock.expires_at).getTime();
       if (expiryTime < Date.now()) {
-        await supabase.from('ticket_locks').delete().eq('lock_key', ticketId);
+        await supabase
+          .from('ticket_locks')
+          .delete()
+          .eq('lock_key', ticketId)
+          .eq('status', 'locked');
         return 'available';
       }
       return 'locked';
@@ -599,19 +744,20 @@ export async function getTicketsWithStatusAndStock(tickets: Ticket[]) {
  * Get quantity for an active lock.
  */
 export async function getLockQuantity(ticketId: string, sessionToken: string, ticketsList?: Ticket[]): Promise<number> {
+  if (!ticketId || !sessionToken) return 0;
   const list = ticketsList || [];
   const ticket = list.find((t) => t.id === ticketId);
   const lockKey = (ticket && ticket.stock !== undefined) ? `${ticketId}_${sessionToken}` : ticketId;
 
   try {
-    const { data: lock } = await supabase
+    const { data: lockRows } = await supabase
       .from('ticket_locks')
-      .select('quantity, expires_at, session_token')
+      .select('quantity, expires_at, session_token, status')
       .eq('lock_key', lockKey)
-      .maybeSingle();
+      .limit(1);
 
-    if (!lock || lock.session_token !== sessionToken) {
-      if (sessionToken) return 1;
+    const lock = lockRows && lockRows.length > 0 ? lockRows[0] : null;
+    if (!lock || lock.session_token !== sessionToken || lock.status !== 'locked') {
       return 0;
     }
 
@@ -622,7 +768,6 @@ export async function getLockQuantity(ticketId: string, sessionToken: string, ti
     return lock.quantity || 1;
   } catch (err) {
     console.error('[LockStore] Error in getLockQuantity:', err);
-    if (sessionToken) return 1;
     return 0;
   }
 }

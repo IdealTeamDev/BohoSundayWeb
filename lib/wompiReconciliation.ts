@@ -307,6 +307,35 @@ export async function forceApproveOrder(
     };
   }
 
+  // Prevent overselling a table/cama if another order already bought it in this edition
+  const tickets = await getDynamicTickets(order.stageId, true, true);
+  const ticket = tickets.find(
+    (t) => t.id === order.ticketId || t.id.toLowerCase() === order.ticketId.toLowerCase()
+  );
+
+  if (!ticket || ticket.stock === undefined) {
+    const editionSlug = order.editionSlug || 'white-edition-iii';
+    const { data: existingTableSales } = await supabase
+      .from('purchased_tickets')
+      .select('order_id, buyer_name')
+      .eq('ticket_id', order.ticketId)
+      .eq('status', 'paid')
+      .eq('edition_slug', editionSlug)
+      .neq('order_id', order.orderId)
+      .limit(1);
+
+    if (existingTableSales && existingTableSales.length > 0) {
+      const winner = existingTableSales[0];
+      return {
+        orderId,
+        previousStatus: order.status,
+        newStatus: order.status,
+        synced: false,
+        message: `⚠️ No se puede aprobar esta orden porque la mesa/cama (${order.ticketId}) YA fue comprada y pagada por ${winner.buyer_name} en la orden ${winner.order_id}. Se bloqueó la aprobación para evitar una sobre-venta.`,
+      };
+    }
+  }
+
   const paymentId =
     manualPaymentRef?.trim() || order.paymentId || `manual-admin-${Date.now()}`;
 
