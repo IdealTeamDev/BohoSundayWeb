@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 
 const DESKTOP_VIDEO_URL =
-  'https://res.cloudinary.com/dow0dxajr/video/upload/q_auto,vc_auto,w_1920/v1795723680/BANNER_WEB_jw63qx.mp4';
+  'https://res.cloudinary.com/dow0dxajr/video/upload/v1795788364/BANNER_WEB_1_jg6fnb.mp4';
 const MOBILE_VIDEO_URL =
-  'https://res.cloudinary.com/dow0dxajr/video/upload/q_auto,vc_auto,w_720/v1795723684/BANNER_MOBILE_gpccha.mp4';
+  'https://res.cloudinary.com/dow0dxajr/video/upload/v1795788387/BANNER_MOBILE_1_rdxdu6.mp4';
 
 const DESKTOP_POSTER_URL =
   'https://res.cloudinary.com/dow0dxajr/video/upload/f_webp,q_auto,w_1920,so_0/v1795723680/BANNER_WEB_jw63qx.jpg';

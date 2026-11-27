@@ -59,7 +59,7 @@ export async function getDynamicTickets(
         const def = ZONE_DEFAULTS[zoneKey] || {};
 
         const rawIcon = (row.icon_card && (row.icon_card.startsWith('http') || row.icon_card.startsWith('url('))) ? row.icon_card : (def.iconCard || row.icon_card || undefined);
-        const rawImg = (row.img && (row.img.startsWith('http') || row.img.startsWith('url('))) ? row.img : (def.img || row.img || '');
+        const rawImg = def.img || row.img || '';
 
         const formatPath = (p?: string) => {
           if (!p) return p;
