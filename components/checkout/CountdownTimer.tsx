@@ -46,14 +46,13 @@ export default function CountdownTimer({ seconds, ticketName, ticketId }: Countd
   return (
     <>
       <div
-        className={`w-full px-4 py-6 sm:py-8 relative flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-0
-          ${isUrgent ? 'bg-red-50' : 'bg-[#EBCB9D]'}`}
+        className="w-full px-4 py-6 sm:py-8 relative flex flex-col sm:flex-row items-center justify-between sm:justify-center gap-3 sm:gap-0 bg-[#CED6CE]"
       >
         {/* Left: Volver al inicio button */}
         <button
           type="button"
           onClick={() => setShowExitModal(true)}
-          className="sm:absolute sm:left-6 lg:left-10 flex items-center gap-2 text-xs lg:text-sm font-nunito font-semibold text-[#CF6E19] hover:text-[#231E1A] transition-colors py-1.5 px-3 rounded-lg hover:bg-black/5"
+          className="sm:absolute sm:left-6 lg:left-10 flex items-center gap-2 text-xs lg:text-sm font-nunito font-semibold text-[#FDFFFD] hover:opacity-80 transition-opacity py-1.5 px-3 rounded-lg hover:bg-black/5"
           aria-label={t.checkout.backToHome || 'Volver al inicio'}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -64,11 +63,10 @@ export default function CountdownTimer({ seconds, ticketName, ticketId }: Countd
 
         {/* Center: Timer details */}
         <div className="text-center">
-          <p className={`font-nunito font-bold text-[16px] sm:text-[18px] uppercase tracking-wider
-            ${isUrgent ? 'text-red-500' : 'text-[#CF6E19]'}`}>
+          <p className="font-nunito font-bold text-[16px] sm:text-[18px] uppercase tracking-wider text-[#FDFFFD]">
             {isUrgent ? t.checkout.hurryUp : securedText}
           </p>
-          <p className="font-nunito font-bold text-[16px] sm:text-[18px] text-[#CF6E19]">
+          <p className="font-nunito font-bold text-[16px] sm:text-[18px] text-[#FDFFFD]">
             {t.checkout.completePayment} {String(minutes).padStart(2, '0')}:{String(secs).padStart(2, '0')}
           </p>
         </div>

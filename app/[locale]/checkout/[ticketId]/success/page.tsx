@@ -394,7 +394,7 @@ export default function SuccessPage() {
 
           <button
             onClick={() => router.replace(locale === 'en' ? '/en' : '/')}
-            className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[15px] bg-[#F7963F] text-[#231E1A] uppercase font-semibold hover:bg-[#F7963F] transition-colors"
+            className="w-full py-3 rounded-xl border border-[#E0D9D0] font-nunito text-[15px] bg-[#9E9076] text-[#FDFFFD] uppercase font-semibold hover:opacity-90 transition-opacity"
           >
             {t.success.close}
           </button>
@@ -508,7 +508,7 @@ export default function SuccessPage() {
             <div className="flex justify-center mt-10">
               <button
                 onClick={() => router.replace('/')}
-                className="px-24 py-3 rounded-xl bg-[#F7963F] text-[#231E1A] uppercase font-semibold font-nunito text-[15px] hover:opacity-90 transition-opacity"
+                className="px-24 py-3 rounded-xl bg-[#9E9076] text-[#FDFFFD] uppercase font-semibold font-nunito text-[15px] hover:opacity-90 transition-opacity"
               >
                 Cerrar
               </button>

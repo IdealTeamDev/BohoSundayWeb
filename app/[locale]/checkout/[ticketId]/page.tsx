@@ -273,7 +273,7 @@ export default function CheckoutPage() {
 
   if (sessionValid === null) {
     return (
-      <div className="min-h-screen bg-[#F4EFE9] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FDFFFD] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#686A54] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -292,13 +292,13 @@ export default function CheckoutPage() {
     : `/${zoneConfig[ticket.zone].icon}`;
 
   return (
-    <div className="w-full bg-[#EAE0CE] flex flex-col items-center">
+    <div className="w-full min-h-screen bg-[#FDFFFD] flex flex-col items-center">
 
       {/* Timer banner */}
       <CountdownTimer seconds={remainingSeconds} ticketName={`${tTicket.name}${ticket.stock === undefined ? ` #${ticket.number}` : ''}`} ticketId={ticketId} />
 
       {/* Card */}
-      <div className="w-full lg:max-w-3xl bg-[#EAE0CE] overflow-hidden lg:shadow-none shadow-sm">
+      <div className="w-full lg:max-w-3xl bg-[#FDFFFD] overflow-hidden lg:shadow-none shadow-sm">
 
         <div className="px-3 py-4">
           {/* Title with Icon */}
@@ -399,7 +399,7 @@ export default function CheckoutPage() {
             />
             <div
               className={`w-5 h-5 rounded flex-shrink-0 mt-0.5 border flex items-center justify-center transition-all duration-200
-                ${acceptedTerms ? 'bg-[#EAE0CE] border-[#686A54]' : 'border-[#C4BDB4] bg-white group-hover:border-[#686A54]'}`}
+                ${acceptedTerms ? 'bg-[#9E9076] border-[#9E9076]' : 'border-[#C4BDB4] bg-white group-hover:border-[#686A54]'}`}
             >
               {acceptedTerms && (
                 <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
@@ -422,7 +422,7 @@ export default function CheckoutPage() {
           <button
             onClick={handleSubmit}
             disabled={loading || !acceptedTerms}
-            className="w-full mt-8 mb-6 py-3 rounded-lg bg-[#F7963F] text-[#231E1A] text-[15px] font-semibold font-nunito uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full mt-8 mb-6 py-3 rounded-lg bg-[#9E9076] text-[#FDFFFD] text-[15px] font-semibold font-nunito uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? t.checkout.loading : t.checkout.finishButton}
           </button>
@@ -432,7 +432,7 @@ export default function CheckoutPage() {
       {/* Mercado Pago Bricks Modal Overlay */}
       {showMPBrick && ticket && (
         <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-2">
-          <div className="bg-[#F4EFE9] rounded-2xl p-2 w-full max-w-md shadow-lg border border-[#BDB39B]/30 relative flex flex-col items-center">
+          <div className="bg-[#FDFFFD] rounded-2xl p-2 w-full max-w-md shadow-lg border border-[#BDB39B]/30 relative flex flex-col items-center">
             <button
               onClick={() => setShowMPBrick(false)}
               className="absolute top-4 right-4 text-[#231E1A] hover:opacity-60 transition-opacity font-semibold w-8 h-8 rounded-full bg-[#E8E2DA] flex items-center justify-center cursor-pointer"
@@ -490,7 +490,7 @@ function Field({ label, value, onChange, error, placeholder, type = 'text', noPa
         onChange={(e) => onChange(e.target.value)}
         onPaste={noPaste ? (e) => e.preventDefault() : undefined}
         placeholder={placeholder}
-        className={`w-full px-3 py-3  border-[1px] rounded-xl font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#BDB39B] bg-[#EAE0CE] outline-none transition-colors
+        className={`w-full px-3 py-3  border-[1px] rounded-xl font-light font-nunito text-[15px] text-[#231E1A] placeholder:text-[#BDB39B] bg-[#FDFFFD] outline-none transition-colors
           ${error ? 'border-red-400 focus:border-red-500' : 'border-[#231E1A] focus:border-[#5C9D41]'}`}
       />
       {error && (
@@ -564,7 +564,7 @@ function DropdownField({
         {label}
       </label>
       <div
-        className={`w-full flex items-center px-3 rounded-xl bg-[#EAE0CE] transition-colors relative border
+        className={`w-full flex items-center px-3 rounded-xl bg-[#FDFFFD] transition-colors relative border
           ${error 
             ? 'border-red-400' 
             : focused 
@@ -596,7 +596,7 @@ function DropdownField({
 
           {/* Dropdown Options Menu */}
           {open && (
-            <div className="absolute top-full left-0 mt-1 bg-[#EAE0CE] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-hidden min-w-[240px] flex flex-col max-h-64">
+            <div className="absolute top-full left-0 mt-1 bg-[#FDFFFD] border border-[#BDB39B] rounded-xl shadow-lg z-50 overflow-hidden min-w-[240px] flex flex-col max-h-64">
               {showSearch && (
                 <div className="p-2 border-b border-[#BDB39B]/40 bg-[#F4EFE9] sticky top-0 z-10">
                   <input

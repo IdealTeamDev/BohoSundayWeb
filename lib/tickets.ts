@@ -77,12 +77,16 @@ export async function getDynamicTickets(
           description: row.description || def.description || undefined,
           number: Number(row.number) || 0,
           persons: row.persons ? Number(row.persons) : (def.persons || 10),
-          chairs: row.chairs !== undefined && row.chairs !== null
-            ? Number(row.chairs)
-            : (row.sillas_altas !== undefined && row.sillas_altas !== null
-              ? Number(row.sillas_altas)
-              : def.chairs),
-          chairsLabel: row.chairs_label || row.sillas_altas_label || def.chairsLabel,
+          chairs: zoneKey === 'candela'
+            ? undefined
+            : (row.chairs !== undefined && row.chairs !== null
+              ? Number(row.chairs)
+              : (row.sillas_altas !== undefined && row.sillas_altas !== null
+                ? Number(row.sillas_altas)
+                : def.chairs)),
+          chairsLabel: zoneKey === 'candela'
+            ? undefined
+            : (row.chairs_label || row.sillas_altas_label || def.chairsLabel),
           price: Number(row.price) || 0,
           currency: row.currency || 'COP',
           includes: {

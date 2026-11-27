@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl;
     const edition = searchParams.get('edition') || 'all';
+    const zone = searchParams.get('zone') || 'all';
     const q = (searchParams.get('search') || '').trim().toLowerCase();
 
     const activeEdition = await getActiveEdition();
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
       .select('*')
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .limit(200);
 
     if (error) {
       console.error('[Admin Reconcile API] Error fetching pending orders:', error);
@@ -49,6 +50,18 @@ export async function GET(req: NextRequest) {
 
     const tickets = await getDynamicTickets(undefined, true, true);
     const ticketsMap = new Map(tickets.map((t) => [t.id.toLowerCase(), t]));
+
+    const inferEditionFromDate = (createdAt?: string) => {
+      if (!createdAt) return { slug: activeEdition.slug, name: activeEdition.name };
+      const ts = new Date(createdAt).getTime();
+      if (ts < new Date('2026-09-01T00:00:00Z').getTime()) {
+        return { slug: 'colombiamoda', name: 'Colombiamoda' };
+      }
+      if (ts < new Date('2026-11-15T00:00:00Z').getTime()) {
+        return { slug: 'entre-soles', name: 'Entre Soles' };
+      }
+      return { slug: activeEdition.slug, name: activeEdition.name };
+    };
 
     const pendingOrders = (rows || [])
       .filter((r: any) => !String(r.order_id || '').startsWith('DRAFT-'))
@@ -60,8 +73,9 @@ export async function GET(req: NextRequest) {
         const ticket = ticketsMap.get(String(r.ticket_id || '').toLowerCase());
         const quantity = Number(r.quantity) || 1;
         const unitPrice = ticket ? ticket.price : 0;
-        const edSlug = r.edition_slug || activeEdition.slug;
-        const edName = r.edition_name || activeEdition.name;
+        const inferred = inferEditionFromDate(r.created_at);
+        const edSlug = r.edition_slug || inferred.slug;
+        const edName = r.edition_name || inferred.name;
 
         return {
           orderId: r.order_id,
@@ -74,7 +88,7 @@ export async function GET(req: NextRequest) {
           buyerPhone: buyerInfo.phone || '',
           quantity,
           totalPrice: unitPrice * quantity,
-          paymentMethod: r.payment_method || 'wompi',
+          paymentMethod: r.payment_method || 'manual',
           paymentId: r.payment_id || '',
           status: r.status,
           createdAt: r.created_at,
@@ -84,6 +98,9 @@ export async function GET(req: NextRequest) {
       })
       .filter((item: any) => {
         if (edition !== 'all' && item.editionSlug !== edition) {
+          return false;
+        }
+        if (zone !== 'all' && String(item.zone || '').toLowerCase() !== zone.toLowerCase()) {
           return false;
         }
         if (q) {

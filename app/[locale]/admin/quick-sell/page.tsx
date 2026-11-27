@@ -263,7 +263,7 @@ tbody tr:hover{background:#FBFAF6 !important}
 .who span{font-size:12px !important;color:var(--ink-3) !important}
 .ord{font-size:11.5px !important;color:var(--ink-3) !important;font-variant-numeric:tabular-nums !important}
 .amt{text-align:right !important;font-family:Fraunces,Georgia,serif !important;font-variant-numeric:tabular-nums !important;font-size:13.5px !important}
-.rowact{opacity:0 !important;transition:opacity .12s ease !important;font-size:12.5px !important;color:var(--bronze) !important;font-weight:500 !important}
+.rowact{opacity:1 !important;transition:opacity .12s ease !important;font-size:12.5px !important;color:var(--bronze) !important;font-weight:500 !important}
 tr:hover .rowact{opacity:1 !important}
 .tfoot{display:flex !important;align-items:center !important;padding:14px 20px !important;font-size:12.5px !important;color:var(--ink-2) !important}
 .pager{margin-left:auto !important;display:flex !important;gap:4px !important}
@@ -347,7 +347,7 @@ export default function QuickSellPage() {
     totalGuestAttendees: 0,
     totalGuestCheckIns: 0,
   });
-  const [purchasedTypeFilter, setPurchasedTypeFilter] = useState<'all' | 'paid' | 'guests'>('all');
+  const [purchasedTypeFilter, setPurchasedTypeFilter] = useState<'all' | 'paid' | 'guests' | 'pending'>('all');
   const [zoneStats, setZoneStats] = useState<Array<{
     zone: string;
     name: string;
@@ -1166,10 +1166,11 @@ export default function QuickSellPage() {
     }
   }, [purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter]);
 
-  // Fetch Pending Orders for Wompi Reconciliation
+  // Fetch Pending Orders for Wompi Reconciliation / Manual Approval
   const fetchPendingOrders = useCallback(async (
     edition = selectedEditionFilter,
-    search = purchasedSearch
+    search = purchasedSearch,
+    zone = selectedZone
   ) => {
     setPendingOrdersLoading(true);
     try {
@@ -1177,6 +1178,7 @@ export default function QuickSellPage() {
       const params = new URLSearchParams({
         edition,
         search,
+        zone,
       });
       const res = await fetch(`/api/admin/orders/reconcile?${params.toString()}`, {
         headers: { 'x-admin-token': token },
@@ -1192,7 +1194,7 @@ export default function QuickSellPage() {
     } finally {
       setPendingOrdersLoading(false);
     }
-  }, [selectedEditionFilter, purchasedSearch]);
+  }, [selectedEditionFilter, purchasedSearch, selectedZone]);
 
   const handleVerifyOrderWithWompi = async (orderId: string) => {
     setReconcilingOrderId(orderId);
@@ -1219,7 +1221,7 @@ export default function QuickSellPage() {
         });
         alert(data.message || `¡Orden ${orderId} verificada y aprobada en Wompi! El QR ya fue emitido y enviado.`);
         await Promise.all([
-          fetchPendingOrders(selectedEditionFilter, purchasedSearch),
+          fetchPendingOrders(selectedEditionFilter, purchasedSearch, selectedZone),
           fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter),
           fetchResumenData(),
         ]);
@@ -1228,7 +1230,7 @@ export default function QuickSellPage() {
 
       // If automatic lookup by reference didn't find an approved transaction, offer entering Wompi Transaction ID from client receipt
       const manualTxId = window.prompt(
-        `${data.message || 'No se encontró transacción aprobada automáticamente por referencia.'}\n\nSi el cliente tiene el comprobante de Wompi, ingresa el ID de Transacción de Wompi (ej: 179562-1792305666-18058) para consultarlo directamente, o deja vacío para cancelar:`
+        `${data.message || 'No se encontró transacción aprobada automáticamente por referencia.'}\n\nSi el cliente tiene comprobante de Wompi, ingresa el ID de Transacción (ej: 179562-1792305666-18058) para consultarlo, o deja vacío para cancelar:`
       );
 
       if (manualTxId && manualTxId.trim()) {
@@ -1252,7 +1254,7 @@ export default function QuickSellPage() {
           });
           alert(dataTx.message);
           await Promise.all([
-            fetchPendingOrders(selectedEditionFilter, purchasedSearch),
+            fetchPendingOrders(selectedEditionFilter, purchasedSearch, selectedZone),
             fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter),
             fetchResumenData(),
           ]);
@@ -1281,12 +1283,11 @@ export default function QuickSellPage() {
   };
 
   const handleForceApproveOrder = async (orderId: string, buyerName: string) => {
-    const paymentRef = window.prompt(
-      `¿Confirmas FORZAR LA APROBACIÓN de la orden ${orderId} (${buyerName})?\n\nEsto registrará inmediatamente la boleta en el sistema de ingreso (QR para guardias), descontará el cupo/mesa y enviará el correo con el QR al cliente.\n\nOpcional: Ingresa el número de referencia o ID de transacción de Wompi del comprobante (o deja en blanco):`,
-      ''
+    const confirmed = window.confirm(
+      `¿Confirmas APROBAR la orden ${orderId} de ${buyerName}?\n\nEsto registrará la venta en la edición correspondiente, habilitará su QR para el ingreso y enviará el correo de confirmación con el QR al cliente.`
     );
 
-    if (paymentRef === null) return; // Cancelled prompt
+    if (!confirmed) return;
 
     setReconcilingOrderId(orderId);
     setReconcileFeedback(null);
@@ -1301,7 +1302,6 @@ export default function QuickSellPage() {
         body: JSON.stringify({
           action: 'force_approve',
           orderId,
-          paymentRef: paymentRef.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -1313,7 +1313,7 @@ export default function QuickSellPage() {
         });
         alert(data.message);
         await Promise.all([
-          fetchPendingOrders(selectedEditionFilter, purchasedSearch),
+          fetchPendingOrders(selectedEditionFilter, purchasedSearch, selectedZone),
           fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter),
           fetchResumenData(),
         ]);
@@ -1326,7 +1326,7 @@ export default function QuickSellPage() {
       }
     } catch (err) {
       console.error('Error forcing order approval:', err);
-      alert('Error de red al forzar la aprobación de la orden.');
+      alert('Error de red al aprobar la orden.');
     } finally {
       setReconcilingOrderId(null);
     }
@@ -1356,7 +1356,7 @@ export default function QuickSellPage() {
         });
         alert(data.message);
         await Promise.all([
-          fetchPendingOrders(selectedEditionFilter, purchasedSearch),
+          fetchPendingOrders(selectedEditionFilter, purchasedSearch, selectedZone),
           fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter),
           fetchResumenData(),
         ]);
@@ -1380,8 +1380,8 @@ export default function QuickSellPage() {
   useEffect(() => {
     if (activeView === 'compras') {
       const delayDebounceFn = setTimeout(() => {
-        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter);
-        fetchPendingOrders(selectedEditionFilter, purchasedSearch);
+        fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter === 'pending' ? 'all' : purchasedTypeFilter);
+        fetchPendingOrders(selectedEditionFilter, purchasedSearch, selectedZone);
       }, 300);
       return () => clearTimeout(delayDebounceFn);
     }
@@ -2644,113 +2644,6 @@ export default function QuickSellPage() {
               </div>
             )}
 
-            {/* Panel de Órdenes Pendientes para Verificar en Wompi o Forzar Aprobación */}
-            {pendingOrdersList.length > 0 && (
-              <div className="card" style={{ marginBottom: '22px', border: '1.5px solid #D9B45F' }}>
-                <div className="card-head" style={{ background: 'var(--warn-soft)' }}>
-                  <div>
-                    <h3 style={{ color: '#6E5623' }}>
-                      ⏳ Órdenes Pendientes en Pasarela ({pendingOrdersList.length})
-                    </h3>
-                    <p style={{ color: '#7A6535' }}>
-                      Si un cliente pagó en Wompi pero el webhook no impactó, presiona <b>Verificar en Wompi</b> o <b>Forzar Aprobación</b> para emitir su QR al instante.
-                    </p>
-                  </div>
-                  <div className="right">
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => fetchPendingOrders(selectedEditionFilter, purchasedSearch)}
-                      disabled={pendingOrdersLoading}
-                    >
-                      {pendingOrdersLoading ? 'Actualizando...' : 'Actualizar pendientes'}
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ overflowX: 'auto' }}>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Cliente / Orden</th>
-                        <th>Entrada / Mesa</th>
-                        <th>Pasarela</th>
-                        <th>Fecha Intento</th>
-                        <th>Estado</th>
-                        <th style={{ textAlign: 'right' }}>Valor</th>
-                        <th style={{ textAlign: 'center' }}>Acciones Taquilla / Soporte</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pendingOrdersList.map((ord) => {
-                        const isWorking = reconcilingOrderId === ord.orderId;
-                        return (
-                          <tr key={ord.orderId}>
-                            <td>
-                              <div className="who">
-                                <b>{ord.buyerName}</b>
-                                <span>{ord.buyerEmail} · {ord.buyerPhone}</span>
-                                <span className="ord">{ord.orderId}</span>
-                              </div>
-                            </td>
-                            <td>
-                              {ord.ticketName} {ord.ticketNumber ? `#${ord.ticketNumber}` : ''} (×{ord.quantity})
-                            </td>
-                            <td>
-                              <span className="pill pill-muted">{String(ord.paymentMethod || 'wompi').toUpperCase()}</span>
-                            </td>
-                            <td>
-                              <span className="num" style={{ fontSize: '12px', color: 'var(--ink-2)' }}>
-                                {ord.createdAt
-                                  ? new Date(ord.createdAt).toLocaleString('es-CO', {
-                                      day: '2-digit',
-                                      month: '2-digit',
-                                      year: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })
-                                  : '-'}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="pill pill-warn">⏳ Pendiente</span>
-                            </td>
-                            <td className="amt">
-                              ${Number(ord.totalPrice || 0).toLocaleString('es-CO')}
-                            </td>
-                            <td style={{ textAlign: 'center' }}>
-                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <button
-                                  type="button"
-                                  className="btn btn-ghost"
-                                  style={{ padding: '6px 10px', fontSize: '12px', borderColor: 'var(--bronze)', color: 'var(--bronze)' }}
-                                  disabled={isWorking}
-                                  onClick={() => handleVerifyOrderWithWompi(ord.orderId)}
-                                  title="Consultar estado real de esta orden directamente en Wompi"
-                                >
-                                  {isWorking ? 'Verificando...' : '🔍 Verificar en Wompi'}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-primary"
-                                  style={{ padding: '6px 10px', fontSize: '12px' }}
-                                  disabled={isWorking}
-                                  onClick={() => handleForceApproveOrder(ord.orderId, ord.buyerName)}
-                                  title="Aprobar inmediatamente, registrar en sistema de guardias y enviar QR al correo"
-                                >
-                                  {isWorking ? 'Procesando...' : '✅ Forzar Aprobación'}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
             <div className="card">
               <div className="filters">
                 <div className="search">
@@ -2799,14 +2692,15 @@ export default function QuickSellPage() {
                 <select
                   value={purchasedTypeFilter}
                   onChange={(e) => {
-                    const newType = e.target.value as 'all' | 'paid' | 'guests';
+                    const newType = e.target.value as 'all' | 'paid' | 'guests' | 'pending';
                     setPurchasedTypeFilter(newType);
                     setPurchasedPage(1);
                   }}
                 >
-                  <option value="all">Todas las entradas</option>
+                  <option value="all">Todas las entradas (Aprobadas)</option>
                   <option value="paid">Solo compras pagadas</option>
                   <option value="guests">Solo invitados (Cortesía)</option>
+                  <option value="pending">⏳ Órdenes pendientes ({pendingOrdersList.length})</option>
                 </select>
 
                 {/* Limit Selector */}
@@ -2836,7 +2730,9 @@ export default function QuickSellPage() {
                     <tr>
                       <th>Comprador</th>
                       <th>Entrada</th>
-                      <th style={{ textAlign: 'center' }}>Ingresos</th>
+                      <th style={{ textAlign: 'center' }}>
+                        {purchasedTypeFilter === 'pending' ? 'Método' : 'Ingresos'}
+                      </th>
                       <th>Zona</th>
                       <th>Edición</th>
                       <th>Estado</th>
@@ -2845,7 +2741,106 @@ export default function QuickSellPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {purchasedLoading ? (
+                    {purchasedTypeFilter === 'pending' ? (
+                      pendingOrdersLoading ? (
+                        <tr>
+                          <td colSpan={8} style={{ textAlign: 'center', padding: '30px' }}>
+                            Cargando órdenes pendientes...
+                          </td>
+                        </tr>
+                      ) : pendingOrdersList.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} style={{ textAlign: 'center', padding: '30px' }}>
+                            No hay órdenes pendientes para los filtros seleccionados.
+                          </td>
+                        </tr>
+                      ) : (
+                        pendingOrdersList
+                          .slice((purchasedPage - 1) * purchasedLimit, purchasedPage * purchasedLimit)
+                          .map((ord) => {
+                            const isWorking = reconcilingOrderId === ord.orderId;
+                            const methodLabel =
+                              !ord.paymentMethod || ord.paymentMethod === 'manual'
+                                ? 'MANUAL'
+                                : String(ord.paymentMethod).toUpperCase();
+
+                            return (
+                              <tr key={ord.orderId}>
+                                <td>
+                                  <div className="who">
+                                    <b>{ord.buyerName}</b>
+                                    <span>{ord.buyerEmail} · {ord.buyerPhone}</span>
+                                    <span className="ord">{ord.orderId}</span>
+                                  </div>
+                                </td>
+                                <td>
+                                  {ord.ticketName} {ord.ticketNumber ? `#${ord.ticketNumber}` : ''} (×{ord.quantity})
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                  <span className="pill pill-muted">{methodLabel}</span>
+                                </td>
+                                <td>
+                                  <span className="pill pill-muted">
+                                    {ord.zone ? String(ord.zone).toUpperCase() : 'GENERAL'}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className={`pill ${ord.editionSlug === 'entre-soles' ? 'pill-bronze' : 'pill-muted'}`}>
+                                    {ord.editionName || ord.editionSlug}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className="pill pill-warn">⏳ Pendiente</span>
+                                </td>
+                                <td className="amt">
+                                  ${Number(ord.totalPrice || 0).toLocaleString('es-CO')}
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                    <button
+                                      type="button"
+                                      className="btn btn-primary"
+                                      style={{ padding: '5px 10px', fontSize: '12px' }}
+                                      disabled={isWorking}
+                                      onClick={() => handleForceApproveOrder(ord.orderId, ord.buyerName)}
+                                      title="Aprobar compra (manual o pasarela), registrar en sistema de guardias y enviar QR al correo"
+                                    >
+                                      {isWorking ? 'Procesando...' : '✅ Aprobar y Enviar QR'}
+                                    </button>
+                                    {ord.paymentMethod === 'wompi' && (
+                                      <button
+                                        type="button"
+                                        className="rowact"
+                                        disabled={isWorking}
+                                        onClick={() => handleVerifyOrderWithWompi(ord.orderId)}
+                                        title="Consultar estado en Wompi"
+                                      >
+                                        Verificar Wompi
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      className="rowact"
+                                      title="Reenviar correo con QR"
+                                      onClick={() => handleResendQR(ord.orderId)}
+                                    >
+                                      Reenviar QR
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="rowact"
+                                      title="Descargar imagen QR PNG"
+                                      onClick={() => downloadQRImage(ord.orderId, ord.buyerName, ord.ticketName)}
+                                    >
+                                      Descargar QR
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                      )
+                    ) : purchasedLoading ? (
                       <tr>
                         <td colSpan={8} style={{ textAlign: 'center', padding: '30px' }}>
                           Cargando registro de ventas...
@@ -2903,7 +2898,7 @@ export default function QuickSellPage() {
                             {(item.ticketPrice === 0 || item.ticketId === 'invitado_anytime' || (item.ticketName && item.ticketName.toLowerCase().includes('invitado'))) ? (
                               <span className="pill pill-bronze" style={{ fontSize: '11px', display: 'inline-block' }}>Gratis / Invitado</span>
                             ) : (
-                              `${(Number(item.ticketPrice) || 0).toLocaleString('es-CO')}`
+                              `$${(Number(item.ticketPrice) || 0).toLocaleString('es-CO')}`
                             )}
                           </td>
                           <td style={{ textAlign: 'center' }}>
@@ -2935,45 +2930,57 @@ export default function QuickSellPage() {
               </div>
 
               {/* Pagination Bar */}
-              <div className="tfoot">
-                <span>
-                  {purchasedTotal > 0
-                    ? `${(purchasedPage - 1) * purchasedLimit + 1} a ${Math.min(purchasedPage * purchasedLimit, purchasedTotal)} de ${purchasedTotal} ventas`
-                    : '0 ventas'}
-                </span>
-                {purchasedTotalPages > 1 && (
-                  <div className="pager">
-                    <button
-                      type="button"
-                      disabled={purchasedPage <= 1}
-                      onClick={() => setPurchasedPage(p => Math.max(1, p - 1))}
-                    >
-                      Anterior
-                    </button>
+              {(() => {
+                const activeTotal = purchasedTypeFilter === 'pending' ? pendingOrdersList.length : purchasedTotal;
+                const activeTotalPages =
+                  purchasedTypeFilter === 'pending'
+                    ? Math.max(1, Math.ceil(pendingOrdersList.length / purchasedLimit))
+                    : purchasedTotalPages;
 
-                    {Array.from({ length: purchasedTotalPages }, (_, i) => i + 1)
-                      .filter(p => p === 1 || p === purchasedTotalPages || Math.abs(p - purchasedPage) <= 1)
-                      .map(p => (
+                return (
+                  <div className="tfoot">
+                    <span>
+                      {activeTotal > 0
+                        ? `${(purchasedPage - 1) * purchasedLimit + 1} a ${Math.min(purchasedPage * purchasedLimit, activeTotal)} de ${activeTotal} ${purchasedTypeFilter === 'pending' ? 'órdenes pendientes' : 'ventas'}`
+                        : purchasedTypeFilter === 'pending'
+                        ? '0 órdenes pendientes'
+                        : '0 ventas'}
+                    </span>
+                    {activeTotalPages > 1 && (
+                      <div className="pager">
                         <button
-                          key={p}
                           type="button"
-                          aria-current={p === purchasedPage ? 'true' : undefined}
-                          onClick={() => setPurchasedPage(p)}
+                          disabled={purchasedPage <= 1}
+                          onClick={() => setPurchasedPage(p => Math.max(1, p - 1))}
                         >
-                          {p}
+                          Anterior
                         </button>
-                      ))}
 
-                    <button
-                      type="button"
-                      disabled={purchasedPage >= purchasedTotalPages}
-                      onClick={() => setPurchasedPage(p => Math.min(purchasedTotalPages, p + 1))}
-                    >
-                      Siguiente
-                    </button>
+                        {Array.from({ length: activeTotalPages }, (_, i) => i + 1)
+                          .filter(p => p === 1 || p === activeTotalPages || Math.abs(p - purchasedPage) <= 1)
+                          .map(p => (
+                            <button
+                              key={p}
+                              type="button"
+                              aria-current={p === purchasedPage ? 'true' : undefined}
+                              onClick={() => setPurchasedPage(p)}
+                            >
+                              {p}
+                            </button>
+                          ))}
+
+                        <button
+                          type="button"
+                          disabled={purchasedPage >= activeTotalPages}
+                          onClick={() => setPurchasedPage(p => Math.min(activeTotalPages, p + 1))}
+                        >
+                          Siguiente
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()}
             </div>
           </div>
 

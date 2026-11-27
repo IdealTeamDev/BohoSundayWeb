@@ -123,7 +123,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
               <p className="text-[19px] font-nunito text-[#9E9076]">{ticket.persons}</p>
               <p className="text-[15px] font-nunito font-extralight text-[#C2B5A4]">{t.tickets.people}</p>
             </div>
-            {ticket.chairs !== undefined && ticket.chairs !== null && (
+            {ticket.zone !== 'candela' && ticket.chairs !== undefined && ticket.chairs !== null && (
               <div className="flex flex-col items-center justify-center">
                 <p className="text-[19px] font-nunito text-[#C2B5A4]">{ticket.chairs}</p>
                 <p className="text-[15px] font-nunito font-extralight text-[#C2B5A4] text-center whitespace-nowrap">
@@ -218,7 +218,7 @@ export default function TicketCard({ ticket, onClose }: TicketCardProps) {
               <p className="text-[22px] font-nunito text-[#9E9076]">{ticket.persons}</p>
               <p className="text-[14px] font-nunito font-extralight text-[#C2B5A4]">{t.tickets.people}</p>
             </div>
-            {ticket.chairs !== undefined && ticket.chairs !== null && (
+            {ticket.zone !== 'candela' && ticket.chairs !== undefined && ticket.chairs !== null && (
               <div className="flex flex-col items-center justify-center">
                 <p className="text-[22px] font-nunito text-[#C2B5A4]">{ticket.chairs}</p>
                 <p className="text-[14px] font-nunito font-extralight text-[#C2B5A4] text-center whitespace-nowrap">

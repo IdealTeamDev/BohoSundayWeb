@@ -64,8 +64,6 @@ export const ZONE_DEFAULTS: Record<string, ZoneCategoryConfig> = {
     name: 'MESA CANDELA',
     description: 'Mesa alta exclusiva',
     persons: 6,
-    chairs: 4,
-    chairsLabel: 'Sillas altas',
     licor: '1 Botella licor premium',
     agua: 3,
     redbull: 3,
