@@ -12,401 +12,194 @@ interface SendMailParams {
 }
 
 // ==========================================
-// CÓDIGO HTML EN INGLÉS (EMAILIFY FIGMA)
-// Copia y pega tu código HTML en inglés exportado dentro de las comillas invertidas (backticks) abajo.
+// CÓDIGO HTML CONFIRMACIÓN RESERVA EN INGLÉS (EMAILIFY FIGMA)
 // ==========================================
 export const EMAIL_HTML_EN = `<!doctype html>
-<html lang="en" dir="auto" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html lang="es">
 <head>
-<title></title>
-<!--[if !mso]><!-->
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<!--<![endif]-->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style type="text/css">
-
-#outlook a { padding:0; }
-body { margin:0;padding:0;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%; }
-table, td { border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt; }
-img { border:0;height:auto;line-height:100%; outline:none;text-decoration:none;-ms-interpolation-mode:bicubic; }
-p { display:block;margin:13px 0; }
-</style>
-<!--[if mso]>
-<noscript>
-<xml>
-<o:OfficeDocumentSettings>
-<o:AllowPNG/>
-<o:PixelsPerInch>96</o:PixelsPerInch>
-</o:OfficeDocumentSettings>
-</xml>
-</noscript>
-<![endif]-->
-<!--[if lte mso 11]>
-<style type="text/css">
-
-.h { width:100% !important; }
-</style>
-<![endif]-->
-<!--[if !mso]><!-->
-<link href="https://fonts.googleapis.com/css?family=Inter:400,800,500,700" rel="stylesheet" type="text/css">
-<!--<![endif]-->
-<style type="text/css">
-
-@media only screen and (min-width:600px) {
-.p { width:568px !important; max-width: 568px; }
-.c { width:600px !important; max-width: 600px; }
-.f { width:450px !important; max-width: 450px; }
-.j { width:418px !important; max-width: 418px; }
-.k { width:536px !important; max-width: 536px; }
-}
-</style>
-<style media="screen and (min-width:600px)">
-.moz-text-html .p { width:568px !important; max-width: 568px; }
-.moz-text-html .c { width:600px !important; max-width: 600px; }
-.moz-text-html .f { width:450px !important; max-width: 450px; }
-.moz-text-html .j { width:418px !important; max-width: 418px; }
-.moz-text-html .k { width:536px !important; max-width: 536px; }
-</style>
-<style type="text/css">
-
-@media only screen and (max-width:599px) {
-table.m { width: 100% !important; }
-td.m { width: auto !important; }
-}
-</style>
-<style type="text/css">
-
-body {
--webkit-font-smoothing:antialiased;
--moz-osx-font-smoothing:grayscale;
-}
-a[x-apple-data-detectors] {
-color: inherit !important;
-text-decoration: none !important;
-}
-[data-markjs] { color: inherit; padding: 0; background: none; }
-#MessageViewBody a {
-color: inherit !important;
-text-decoration: none!important;
-}
-[x-apple-data-detectors-type="calendar-event"] { color: inherit !important; -webkit-text-decoration-color: inherit !important; }
-u + .emailify a[href^="tel:"],
-u + .emailify a[href^="mailto:"],
-u + .emailify a[href*="maps.google"] {
-color: inherit !important;
-text-decoration: none !important;
-}
-@media only screen and (max-width:599px) {
-.emailify { height:100% !important; margin:0 !important; padding:0 !important; width:100% !important; }
-.m img { width: 100%!important; max-width: 100%!important; height: auto!important; }
-div.r > table > tbody > tr > td { direction: ltr!important; }
-img { background-color: transparent!important; }
-div.r.e > table > tbody > tr > td, div.r.e > div > table > tbody > tr > td { padding-right:16px!important }
-div.r.y > table > tbody > tr > td, div.r.y > div > table > tbody > tr > td { padding-left:16px!important }
-div.r.pt-0 > table > tbody > tr > td, div.r.pt-0 > div > table > tbody > tr > td { padding-top:0px!important }
-div.r.pr-0 > table > tbody > tr > td, div.r.pr-0 > div > table > tbody > tr > td { padding-right:0px!important }
-div.r.pb-0 > table > tbody > tr > td, div.r.pb-0 > div > table > tbody > tr > td { padding-bottom:0px!important }
-div.r.pl-0 > table > tbody > tr > td, div.r.pl-0 > div > table > tbody > tr > td { padding-left:0px!important }
-td.x.qk span, td.x.qk p, td.x.qk a, td.x.qk ol, td.x.qk ul, td.x.qk div, td.x.qk { font-size:20px!important }
-td.x.pj span, td.x.pj p, td.x.pj a, td.x.pj ol, td.x.pj ul, td.x.pj div, td.x.pj { line-height:24px!important }
-td.x.t span, td.x.t p, td.x.t a, td.x.t ol, td.x.t ul, td.x.t div, td.x.t { font-size:14px!important }
-td.x.s span, td.x.s p, td.x.s a, td.x.s ol, td.x.s ul, td.x.s div, td.x.s { line-height:18px!important }
-td.x.n span, td.x.n p, td.x.n a, td.x.n ol, td.x.n ul, td.x.n div, td.x.n { line-height:24px!important }
-}
-</style>
-<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
-<meta name="x-apple-disable-message-reformatting">
-<meta name="color-scheme" content="light dark">
-<meta name="supported-color-schemes" content="light dark">
-<!--[if gte mso 9]>
-<style>
-a:link {
-mso-style-priority: 99;
-color: inherit;
-text-decoration: none;
-}
-a:visited {
-mso-style-priority: 99;
-color: inherit;
-text-decoration: none;
-}
-li { margin-left: -1em !important }
-table, td, p, div, span, ul, ol, li, a, h1, h2, h3, h4, h5, h6 {
-mso-hyphenate: none;
-}
-sup, sub { font-size: 100% !important; }
-img { background-color: transparent !important; }
-</style>
-<![endif]-->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Email</title>
+  <style type="text/css">
+    :root {
+      color-scheme: light only;
+      supported-color-schemes: light only;
+    }
+    html,body{margin:0!important;padding:0!important;width:100%!important;background:#f4f4f4;}
+    table,td{border-collapse:collapse!important;mso-table-lspace:0pt!important;mso-table-rspace:0pt!important;}
+    img{-ms-interpolation-mode:bicubic;}
+    .emailify-desktop{display:none;max-height:0;overflow:hidden;mso-hide:all;}
+    .emailify-mobile{display:table;width:100%;max-height:none;overflow:visible;}
+    .emailify-mobile img,.emailify-fluid img{width:100%!important;max-width:100%!important;height:auto!important;}
+    @media only screen and (min-width:601px){
+      .emailify-desktop{display:table!important;width:100%!important;max-height:none!important;overflow:visible!important;}
+      .emailify-mobile{display:none!important;max-height:0!important;overflow:hidden!important;mso-hide:all!important;}
+    }
+  </style>
+  <!--[if mso]>
+  <style type="text/css">
+    .emailify-desktop{display:table!important;width:100%!important;max-height:none!important;overflow:visible!important;}
+    .emailify-mobile{display:none!important;max-height:0!important;overflow:hidden!important;mso-hide:all!important;}
+  </style>
+  <![endif]-->
 </head>
-<body lang="en" link="#2C6FF2" vlink="#2C6FF2" class="emailify" style="mso-line-height-rule: exactly; mso-hyphenate: none; word-wrap: normal; word-spacing: normal; background-color: #1e1e1e;">
-<style data-emailify-desktop-column-width-fallback type="text/css">
-@media only screen and (min-width:600px) {
-.p { width:568px !important; max-width: 568px; }
-.c { width:600px !important; max-width: 600px; }
-.f { width:450px !important; max-width: 450px; }
-.j { width:418px !important; max-width: 418px; }
-.k { width:536px !important; max-width: 536px; }
-}
-</style>
-<div style="background-color:#1e1e1e;" lang="en" dir="auto">
-<!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#a94a34;background-color:#a94a34;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#a94a34;background-color:#a94a34;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:16px 16px 16px 16px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:568px;"><![endif]-->
-<div class="p h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" style="font-size:0;padding:0;word-break:break-word;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0;">
-<tbody>
-<tr>
-<td style="width:238px;">
-<img alt src="https://e.hypermatic.com/f854eb869b5cb1a100c4794e37a7d354.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="238">
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r pt-0 pr-0 pb-0 pl-0" style="background:#fffffe;background-color:#fffffe;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#fffffe;background-color:#fffffe;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:0;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:600px;"><![endif]-->
-<div class="c h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" style="font-size:0;padding:0;word-break:break-word;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0;" class="m">
-<tbody>
-<tr>
-<td style="width:600px;" class="m">
-<img alt src="https://e.hypermatic.com/31c49f0b8ddcf67843a1527607cc19ca.jpg" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="600">
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#eae0ce;background-color:#eae0ce;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eae0ce;background-color:#eae0ce;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:30px 75px 7px 75px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:450px;"><![endif]-->
-<div class="f h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x qk pj" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Gritor', 'Arial', sans-serif;font-size:26px;font-weight:400;line-height:100%;text-align:center;text-transform:uppercase;color:#231e1a;"><p style="Margin:0;mso-line-height-alt:26px;font-size:26px;line-height:100%;"><span style="letter-spacing:-0.52px;">Your reservation for Boho Sunday is confirmed!</span></p></div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#eae0ce;background-color:#eae0ce;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eae0ce;background-color:#eae0ce;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:5px 91px 7px 91px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:418px;"><![endif]-->
-<div class="j h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x t s" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:400;line-height:131%;text-align:center;color:#231e1a;"><p style="Margin:0;mso-line-height-alt:21px;font-size:16px;line-height:131%;">Thank you for being part of this experience. Attached is your access QR code, which you'll need to present on the day of the event.</p></div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#eae0ce;background-color:#eae0ce;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eae0ce;background-color:#eae0ce;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:14px 32px 16px 32px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:536px;"><![endif]-->
-<div class="k h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x t n" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:800;line-height:150%;text-align:center;text-transform:uppercase;color:#5d5d5d;"><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;">Location: <span style="font-weight:500;">Casa Candela</span></p><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;">Date: <span style="font-weight:400;">OCTOBER 18TH </span> <span style="font-size:10px;font-weight:500;mso-line-height-alt:15px;">|</span><span style="font-size:10px;mso-line-height-alt:15px;"> </span> date: <span style="font-weight:500;">10 a.m.</span></p></div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#eae0ce;background-color:#eae0ce;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eae0ce;background-color:#eae0ce;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:5px 75px 40px 75px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:450px;"><![endif]-->
-<div class="f h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x t s" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:400;line-height:131%;text-align:center;color:#231e1a;"><p style="Margin:0;mso-line-height-alt:21px;font-size:16px;line-height:131%;">We recommend saving this message so you have your entry on hand.</p><p style="Margin:0;mso-line-height-alt:21px;font-size:16px;line-height:131%;"><span style="font-weight:700;color:#a94a34;">See you soon for an afternoon of fashion, music, and good energy!</span></p></div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#1e1e1e;background-color:#1e1e1e;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#1e1e1e;background-color:#1e1e1e;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:16px 16px 16px 16px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:568px;"><![endif]-->
-<div class="p h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x" style="font-size:0;padding-bottom:16px;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:13px;font-weight:400;letter-spacing:19px;line-height:115%;text-align:center;color:#4d4d4d;"><p style="Margin:0;mso-line-height-alt:15px;font-size:13px;line-height:115%;">CASA CANDELA</p></div>
-</td>
-</tr>
-<tr>
-<td align="center" class="x" style="font-size:0;padding-bottom:16px;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:14px;font-weight:400;line-height:157%;text-align:center;color:#d9d1c0;"><p style="Margin:0;mso-line-height-alt:22px;font-size:14px;line-height:157%;">Tafetanes, Route 429180 Old Road to Sopetr&aacute;n, Antioquia</p><p style="Margin:0;mso-line-height-alt:22px;font-size:14px;line-height:183%;"><span style="font-size:12px;font-weight:700;line-height:183%;letter-spacing:2px;text-transform:uppercase;">www.casacandela.co</span></p></div>
-</td>
-</tr>
-<tr>
-<td align="center" style="font-size:0;padding:0;padding-bottom:0;word-break:break-word;">
-<!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation"><tr><td><![endif]-->
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-<tbody>
-<tr>
-<td style="padding:0 16px 0 0;vertical-align:middle;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:24px;">
-<tbody>
-<tr>
-<td style="font-size:0;height:24px;vertical-align:middle;width:24px;">
-<a href="https://www.instagram.com/casacandela.co/" target="_blank">
-<img alt="Instagram" height="24" src="https://e.hypermatic.com/0feda55cb30db8d1464c2097a3aad4bb.png" style="display:block;" width="24">
-</a>
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-<!--[if mso | IE]></td><td><![endif]-->
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-<tbody>
-<tr>
-<td style="padding:0 16px 0 0;vertical-align:middle;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:24px;">
-<tbody>
-<tr>
-<td style="font-size:0;height:24px;vertical-align:middle;width:24px;">
-<a href="https://www.facebook.com/casacandelaco" target="_blank">
-<img alt="Facebook" height="24" src="https://e.hypermatic.com/9b77b1191ee06a4222b39733471af6ef.png" style="display:block;" width="24">
-</a>
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-<!--[if mso | IE]></td><td><![endif]-->
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-<tbody>
-<tr>
-<td style="padding:0;padding-right:0;vertical-align:middle;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:24px;">
-<tbody>
-<tr>
-<td style="font-size:0;height:24px;vertical-align:middle;width:24px;">
-<a href="https://wa.link/s64zsh" target="_blank">
-<img alt="X" height="24" src="https://e.hypermatic.com/45e79b24e2181becd378fe3ec69a8cce.png" style="display:block;" width="24">
-</a>
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</div>
+<body style="margin:0;padding:0;background-color:#f4f4f4;">
+  <center style="width:100%;background-color:#f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f4f4f4;border-collapse:collapse;"><tr><td align="center" style="padding:0;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-collapse:collapse;"><tr><td align="center" style="padding:0;">
+        <table role="presentation" class="emailify-fluid" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td style="padding:0;line-height:0;font-size:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr><td width="600" style="width:100.0000%;padding:0;line-height:0;font-size:0;vertical-align:top;cursor:default!important;"><span role="presentation" aria-hidden="true" style="display:block;line-height:0;font-size:0;cursor:default!important;"><!--[if !mso]><!--><div style="max-height:0;max-width:600px;line-height:0;font-size:0;mso-hide:all;"><div style="max-width:600px;padding-bottom:162.1667%;opacity:0;line-height:0;font-size:0;" role="presentation" aria-hidden="true">&nbsp;</div></div><!--<![endif]--><img src="https://emailify-assets.santiago-5d0.workers.dev/campaigns/figma-mwyzycotgpqgoehslv-4001662/8f889a737d75bcd5faedf867ca4d9ad9.jpg" width="600" height="973" border="0" draggable="false" role="presentation" alt="✉️ Mailing Confirmación reserva EN" style="display:block;width:100%;max-width:600px;height:auto;margin:0;padding:0;border:0;outline:none;text-decoration:none;pointer-events:none!important;cursor:default!important;" /></span></td></tr></table></td></tr></table>
+      </td></tr></table>
+      <table role="presentation" align="center" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;background-color:transparent;"><tr><td height="20" aria-hidden="true" style="height:20px;line-height:20px;font-size:0;background-color:transparent;">&nbsp;</td></tr></table>
+    </td></tr></table>
+  </center>
+</body>
+</html>`;
+
+// ==========================================
+// CÓDIGO HTML CONFIRMACIÓN RESERVA EN ESPAÑOL (EMAILIFY FIGMA)
+// ==========================================
+export const EMAIL_HTML_ES = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Email</title>
+  <style type="text/css">
+    :root {
+      color-scheme: light only;
+      supported-color-schemes: light only;
+    }
+    html,body{margin:0!important;padding:0!important;width:100%!important;background:#f4f4f4;}
+    table,td{border-collapse:collapse!important;mso-table-lspace:0pt!important;mso-table-rspace:0pt!important;}
+    img{-ms-interpolation-mode:bicubic;}
+    .emailify-desktop{display:none;max-height:0;overflow:hidden;mso-hide:all;}
+    .emailify-mobile{display:table;width:100%;max-height:none;overflow:visible;}
+    .emailify-mobile img,.emailify-fluid img{width:100%!important;max-width:100%!important;height:auto!important;}
+    @media only screen and (min-width:601px){
+      .emailify-desktop{display:table!important;width:100%!important;max-height:none!important;overflow:visible!important;}
+      .emailify-mobile{display:none!important;max-height:0!important;overflow:hidden!important;mso-hide:all!important;}
+    }
+  </style>
+  <!--[if mso]>
+  <style type="text/css">
+    .emailify-desktop{display:table!important;width:100%!important;max-height:none!important;overflow:visible!important;}
+    .emailify-mobile{display:none!important;max-height:0!important;overflow:hidden!important;mso-hide:all!important;}
+  </style>
+  <![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;">
+  <center style="width:100%;background-color:#f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f4f4f4;border-collapse:collapse;"><tr><td align="center" style="padding:0;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-collapse:collapse;"><tr><td align="center" style="padding:0;">
+        <table role="presentation" class="emailify-fluid" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td style="padding:0;line-height:0;font-size:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr><td width="600" style="width:100.0000%;padding:0;line-height:0;font-size:0;vertical-align:top;cursor:default!important;"><span role="presentation" aria-hidden="true" style="display:block;line-height:0;font-size:0;cursor:default!important;"><!--[if !mso]><!--><div style="max-height:0;max-width:600px;line-height:0;font-size:0;mso-hide:all;"><div style="max-width:600px;padding-bottom:162.0000%;opacity:0;line-height:0;font-size:0;" role="presentation" aria-hidden="true">&nbsp;</div></div><!--<![endif]--><img src="https://emailify-assets.santiago-5d0.workers.dev/campaigns/figma-mwyzycotgpqgoehslv-200851/c4d3cf17bad7825a733621159a39ee29.jpg" width="600" height="972" border="0" draggable="false" role="presentation" alt="✉️ Mailing Confirmación reserva ES" style="display:block;width:100%;max-width:600px;height:auto;margin:0;padding:0;border:0;outline:none;text-decoration:none;pointer-events:none!important;cursor:default!important;" /></span></td></tr></table></td></tr></table>
+      </td></tr></table>
+      <table role="presentation" align="center" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;background-color:transparent;"><tr><td height="20" aria-hidden="true" style="height:20px;line-height:20px;font-size:0;background-color:transparent;">&nbsp;</td></tr></table>
+    </td></tr></table>
+  </center>
+</body>
+</html>`;
+
+// ==========================================
+// CÓDIGO HTML RECUPERACIÓN CARRITO ABANDONADO EN ESPAÑOL (EMAILIFY FIGMA)
+// ==========================================
+export const ABANDONED_CART_HTML_ES = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Email</title>
+  <style type="text/css">
+    :root {
+      color-scheme: light only;
+      supported-color-schemes: light only;
+    }
+    html,body{margin:0!important;padding:0!important;width:100%!important;background:#f4f4f4;}
+    table,td{border-collapse:collapse!important;mso-table-lspace:0pt!important;mso-table-rspace:0pt!important;}
+    img{-ms-interpolation-mode:bicubic;}
+    .emailify-desktop{display:none;max-height:0;overflow:hidden;mso-hide:all;}
+    .emailify-mobile{display:table;width:100%;max-height:none;overflow:visible;}
+    .emailify-mobile img,.emailify-fluid img{width:100%!important;max-width:100%!important;height:auto!important;}
+    @media only screen and (min-width:601px){
+      .emailify-desktop{display:table!important;width:100%!important;max-height:none!important;overflow:visible!important;}
+      .emailify-mobile{display:none!important;max-height:0!important;overflow:hidden!important;mso-hide:all!important;}
+    }
+  </style>
+  <!--[if mso]>
+  <style type="text/css">
+    .emailify-desktop{display:table!important;width:100%!important;max-height:none!important;overflow:visible!important;}
+    .emailify-mobile{display:none!important;max-height:0!important;overflow:hidden!important;mso-hide:all!important;}
+  </style>
+  <![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;">
+  <center style="width:100%;background-color:#f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f4f4f4;border-collapse:collapse;"><tr><td align="center" style="padding:0;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-collapse:collapse;"><tr><td align="center" style="padding:0;">
+        <table role="presentation" class="emailify-fluid" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td style="padding:0;line-height:0;font-size:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr><td width="600" style="width:100.0000%;padding:0;line-height:0;font-size:0;vertical-align:top;cursor:pointer;"><a href="https://api.whatsapp.com/send?phone=573233114995" target="_blank" style="display:block;line-height:0;font-size:0;text-decoration:none;"><img src="https://emailify-assets.santiago-5d0.workers.dev/campaigns/figma-mwyzycotgpqgoehslv-4001761/165142cf6f4e3f1aaedaa189035e83ea.jpg" width="600" height="942" border="0" draggable="false" role="presentation" alt="✉️ Recuperación de carrito abandonado ES" style="display:block;width:100%;max-width:600px;height:auto;margin:0;padding:0;border:0;outline:none;text-decoration:none;pointer-events:auto;cursor:pointer;" /></a></td></tr></table></td></tr></table>
+      </td></tr></table>
+      <table role="presentation" align="center" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;background-color:transparent;"><tr><td height="20" aria-hidden="true" style="height:20px;line-height:20px;font-size:0;background-color:transparent;">&nbsp;</td></tr></table>
+    </td></tr></table>
+  </center>
+</body>
+</html>`;
+
+// ==========================================
+// CÓDIGO HTML RECUPERACIÓN CARRITO ABANDONADO EN INGLÉS (EMAILIFY FIGMA)
+// ==========================================
+export const ABANDONED_CART_HTML_EN = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,date=no,address=no,email=no,url=no">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light only">
+  <title>Email</title>
+  <style type="text/css">
+    :root {
+      color-scheme: light only;
+      supported-color-schemes: light only;
+    }
+    html,body{margin:0!important;padding:0!important;width:100%!important;background:#f4f4f4;}
+    table,td{border-collapse:collapse!important;mso-table-lspace:0pt!important;mso-table-rspace:0pt!important;}
+    img{-ms-interpolation-mode:bicubic;}
+    .emailify-desktop{display:none;max-height:0;overflow:hidden;mso-hide:all;}
+    .emailify-mobile{display:table;width:100%;max-height:none;overflow:visible;}
+    .emailify-mobile img,.emailify-fluid img{width:100%!important;max-width:100%!important;height:auto!important;}
+    @media only screen and (min-width:601px){
+      .emailify-desktop{display:table!important;width:100%!important;max-height:none!important;overflow:visible!important;}
+      .emailify-mobile{display:none!important;max-height:0!important;overflow:hidden!important;mso-hide:all!important;}
+    }
+  </style>
+  <!--[if mso]>
+  <style type="text/css">
+    .emailify-desktop{display:table!important;width:100%!important;max-height:none!important;overflow:visible!important;}
+    .emailify-mobile{display:none!important;max-height:0!important;overflow:hidden!important;mso-hide:all!important;}
+  </style>
+  <![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;">
+  <center style="width:100%;background-color:#f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f4f4f4;border-collapse:collapse;"><tr><td align="center" style="padding:0;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border-collapse:collapse;"><tr><td align="center" style="padding:0;">
+        <table role="presentation" class="emailify-fluid" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;"><tr><td style="padding:0;line-height:0;font-size:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed;"><tr><td width="600" style="width:100.0000%;padding:0;line-height:0;font-size:0;vertical-align:top;cursor:pointer;"><a href="https://api.whatsapp.com/send?phone=573233114995" target="_blank" style="display:block;line-height:0;font-size:0;text-decoration:none;"><img src="https://emailify-assets.santiago-5d0.workers.dev/campaigns/figma-mwyzycotgpqgoehslv-4001899/8a0c9ba14af22b41176d4ddf3cf432c2.jpg" width="600" height="942" border="0" draggable="false" role="presentation" alt="✉️ Recuperación de carrito abandonado EN" style="display:block;width:100%;max-width:600px;height:auto;margin:0;padding:0;border:0;outline:none;text-decoration:none;pointer-events:auto;cursor:pointer;" /></a></td></tr></table></td></tr></table>
+      </td></tr></table>
+      <table role="presentation" align="center" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;background-color:transparent;"><tr><td height="20" aria-hidden="true" style="height:20px;line-height:20px;font-size:0;background-color:transparent;">&nbsp;</td></tr></table>
+    </td></tr></table>
+  </center>
 </body>
 </html>`;
 
@@ -474,401 +267,6 @@ async function fetchQrBuffer(orderId: string, ticketId: string, email: string): 
 /**
  * Sends a confirmation email to the buyer containing the ticket info and access QR code
  */
-export const EMAIL_HTML_ES = `<!doctype html>
-<html lang="en" dir="auto" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
-<head>
-<title></title>
-<!--[if !mso]><!-->
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<!--<![endif]-->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style type="text/css">
-
-#outlook a { padding:0; }
-body { margin:0;padding:0;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%; }
-table, td { border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt; }
-img { border:0;height:auto;line-height:100%; outline:none;text-decoration:none;-ms-interpolation-mode:bicubic; }
-p { display:block;margin:13px 0; }
-</style>
-<!--[if mso]>
-<noscript>
-<xml>
-<o:OfficeDocumentSettings>
-<o:AllowPNG/>
-<o:PixelsPerInch>96</o:PixelsPerInch>
-</o:OfficeDocumentSettings>
-</xml>
-</noscript>
-<![endif]-->
-<!--[if lte mso 11]>
-<style type="text/css">
-
-.h { width:100% !important; }
-</style>
-<![endif]-->
-<!--[if !mso]><!-->
-<link href="https://fonts.googleapis.com/css?family=Inter:400,800,500,700" rel="stylesheet" type="text/css">
-<!--<![endif]-->
-<style type="text/css">
-
-@media only screen and (min-width:600px) {
-.p { width:568px !important; max-width: 568px; }
-.c { width:600px !important; max-width: 600px; }
-.f { width:450px !important; max-width: 450px; }
-.j { width:418px !important; max-width: 418px; }
-.k { width:536px !important; max-width: 536px; }
-}
-</style>
-<style media="screen and (min-width:600px)">
-.moz-text-html .p { width:568px !important; max-width: 568px; }
-.moz-text-html .c { width:600px !important; max-width: 600px; }
-.moz-text-html .f { width:450px !important; max-width: 450px; }
-.moz-text-html .j { width:418px !important; max-width: 418px; }
-.moz-text-html .k { width:536px !important; max-width: 536px; }
-</style>
-<style type="text/css">
-
-@media only screen and (max-width:599px) {
-table.m { width: 100% !important; }
-td.m { width: auto !important; }
-}
-</style>
-<style type="text/css">
-
-body {
--webkit-font-smoothing:antialiased;
--moz-osx-font-smoothing:grayscale;
-}
-a[x-apple-data-detectors] {
-color: inherit !important;
-text-decoration: none !important;
-}
-[data-markjs] { color: inherit; padding: 0; background: none; }
-#MessageViewBody a {
-color: inherit !important;
-text-decoration: none!important;
-}
-[x-apple-data-detectors-type="calendar-event"] { color: inherit !important; -webkit-text-decoration-color: inherit !important; }
-u + .emailify a[href^="tel:"],
-u + .emailify a[href^="mailto:"],
-u + .emailify a[href*="maps.google"] {
-color: inherit !important;
-text-decoration: none !important;
-}
-@media only screen and (max-width:599px) {
-.emailify { height:100% !important; margin:0 !important; padding:0 !important; width:100% !important; }
-.m img { width: 100%!important; max-width: 100%!important; height: auto!important; }
-div.r > table > tbody > tr > td { direction: ltr!important; }
-img { background-color: transparent!important; }
-div.r.e > table > tbody > tr > td, div.r.e > div > table > tbody > tr > td { padding-right:16px!important }
-div.r.y > table > tbody > tr > td, div.r.y > div > table > tbody > tr > td { padding-left:16px!important }
-div.r.pt-0 > table > tbody > tr > td, div.r.pt-0 > div > table > tbody > tr > td { padding-top:0px!important }
-div.r.pr-0 > table > tbody > tr > td, div.r.pr-0 > div > table > tbody > tr > td { padding-right:0px!important }
-div.r.pb-0 > table > tbody > tr > td, div.r.pb-0 > div > table > tbody > tr > td { padding-bottom:0px!important }
-div.r.pl-0 > table > tbody > tr > td, div.r.pl-0 > div > table > tbody > tr > td { padding-left:0px!important }
-td.x.qk span, td.x.qk p, td.x.qk a, td.x.qk ol, td.x.qk ul, td.x.qk div, td.x.qk { font-size:20px!important }
-td.x.pj span, td.x.pj p, td.x.pj a, td.x.pj ol, td.x.pj ul, td.x.pj div, td.x.pj { line-height:24px!important }
-td.x.t span, td.x.t p, td.x.t a, td.x.t ol, td.x.t ul, td.x.t div, td.x.t { font-size:14px!important }
-td.x.s span, td.x.s p, td.x.s a, td.x.s ol, td.x.s ul, td.x.s div, td.x.s { line-height:18px!important }
-td.x.n span, td.x.n p, td.x.n a, td.x.n ol, td.x.n ul, td.x.n div, td.x.n { line-height:24px!important }
-}
-</style>
-<meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no">
-<meta name="x-apple-disable-message-reformatting">
-<meta name="color-scheme" content="light dark">
-<meta name="supported-color-schemes" content="light dark">
-<!--[if gte mso 9]>
-<style>
-a:link {
-mso-style-priority: 99;
-color: inherit;
-text-decoration: none;
-}
-a:visited {
-mso-style-priority: 99;
-color: inherit;
-text-decoration: none;
-}
-li { margin-left: -1em !important }
-table, td, p, div, span, ul, ol, li, a, h1, h2, h3, h4, h5, h6 {
-mso-hyphenate: none;
-}
-sup, sub { font-size: 100% !important; }
-img { background-color: transparent !important; }
-</style>
-<![endif]-->
-</head>
-<body lang="en" link="#2C6FF2" vlink="#2C6FF2" class="emailify" style="mso-line-height-rule: exactly; mso-hyphenate: none; word-wrap: normal; word-spacing: normal; background-color: #1e1e1e;">
-<style data-emailify-desktop-column-width-fallback type="text/css">
-@media only screen and (min-width:600px) {
-.p { width:568px !important; max-width: 568px; }
-.c { width:600px !important; max-width: 600px; }
-.f { width:450px !important; max-width: 450px; }
-.j { width:418px !important; max-width: 418px; }
-.k { width:536px !important; max-width: 536px; }
-}
-</style>
-<div style="background-color:#1e1e1e;" lang="en" dir="auto">
-<!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#a94a34;background-color:#a94a34;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#a94a34;background-color:#a94a34;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:16px 16px 16px 16px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:568px;"><![endif]-->
-<div class="p h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" style="font-size:0;padding:0;word-break:break-word;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0;">
-<tbody>
-<tr>
-<td style="width:238px;">
-<img alt src="https://e.hypermatic.com/f854eb869b5cb1a100c4794e37a7d354.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="238">
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r pt-0 pr-0 pb-0 pl-0" style="background:#fffffe;background-color:#fffffe;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#fffffe;background-color:#fffffe;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:0;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:600px;"><![endif]-->
-<div class="c h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" style="font-size:0;padding:0;word-break:break-word;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0;" class="m">
-<tbody>
-<tr>
-<td style="width:600px;" class="m">
-<img alt src="https://e.hypermatic.com/31c49f0b8ddcf67843a1527607cc19ca.jpg" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="600">
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#eae0ce;background-color:#eae0ce;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eae0ce;background-color:#eae0ce;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:30px 75px 7px 75px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:450px;"><![endif]-->
-<div class="f h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x qk pj" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Gritor', 'Arial', sans-serif;font-size:26px;font-weight:400;line-height:100%;text-align:center;text-transform:uppercase;color:#231e1a;"><p style="Margin:0;mso-line-height-alt:26px;font-size:26px;line-height:100%;"><span style="letter-spacing:-0.52px;">&iexcl;Tu reserva para Boho Sunday est&aacute; confirmada!</span></p></div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#eae0ce;background-color:#eae0ce;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eae0ce;background-color:#eae0ce;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:5px 91px 7px 91px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:418px;"><![endif]-->
-<div class="j h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x t s" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:400;line-height:131%;text-align:center;color:#231e1a;"><p style="Margin:0;mso-line-height-alt:21px;font-size:16px;line-height:131%;">Gracias por ser parte de esta experiencia. Adjuntamos tu c&oacute;digo QR de acceso, el cual deber&aacute;s presentar el d&iacute;a del evento.</p></div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#eae0ce;background-color:#eae0ce;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eae0ce;background-color:#eae0ce;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:14px 32px 16px 32px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:536px;"><![endif]-->
-<div class="k h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x t n" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:500;line-height:150%;text-align:center;text-transform:uppercase;color:#5d5d5d;"><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">Lugar: </span>Casa Candela</p><p style="Margin:0;mso-line-height-alt:24px;font-size:16px;line-height:150%;"><span style="font-weight:800;">FECHA: </span>18 DE OCTUBRE <span style="font-weight:800;"> </span><span style="font-size:10px;mso-line-height-alt:15px;">|</span><span style="font-size:10px;font-weight:800;mso-line-height-alt:15px;"> </span><span style="font-weight:800;"> HORA: </span>10 a.m.</p></div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#eae0ce;background-color:#eae0ce;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eae0ce;background-color:#eae0ce;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:5px 75px 40px 75px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:450px;"><![endif]-->
-<div class="f h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x t s" style="font-size:0;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:16px;font-weight:700;line-height:131%;text-align:center;color:#a94a34;"><p style="Margin:0;mso-line-height-alt:21px;font-size:16px;line-height:131%;"><span style="font-weight:400;color:#231e1a;">Te recomendamos guardar este mensaje para tener tu ingreso a la mano.</span></p><p style="Margin:0;mso-line-height-alt:21px;font-size:16px;line-height:131%;">&iexcl;Nos vemos pronto para vivir una tarde de moda, m&uacute;sica y buena energ&iacute;a!</p></div>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:600px;" width="600"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;"><![endif]-->
-<div class="r e y" style="background:#1e1e1e;background-color:#1e1e1e;margin:0px auto;max-width:600px;">
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#1e1e1e;background-color:#1e1e1e;width:100%;">
-<tbody>
-<tr>
-<td style="border:none;direction:ltr;font-size:0;padding:16px 16px 16px 16px;text-align:left;">
-<!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td style="line-height:0;font-size:0;mso-line-height-rule:exactly;vertical-align:middle;width:568px;"><![endif]-->
-<div class="p h" style="font-size:0;text-align:left;direction:ltr;display:inline-block;vertical-align:middle;width:100%;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:transparent;border:none;vertical-align:middle;" width="100%">
-<tbody>
-<tr>
-<td align="center" class="x" style="font-size:0;padding-bottom:16px;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:13px;font-weight:400;letter-spacing:19px;line-height:115%;text-align:center;color:#4d4d4d;"><p style="Margin:0;mso-line-height-alt:15px;font-size:13px;line-height:115%;">CASA CANDELA</p></div>
-</td>
-</tr>
-<tr>
-<td align="center" class="x" style="font-size:0;padding-bottom:16px;word-break:break-word;">
-<div style="font-family:'Inter', 'Arial', sans-serif;font-size:14px;font-weight:400;line-height:157%;text-align:center;color:#d9d1c0;"><p style="Margin:0;mso-line-height-alt:22px;font-size:14px;line-height:157%;">Tafetanes, Route 429180 Old Road to Sopetr&aacute;n, Antioquia</p><p style="Margin:0;mso-line-height-alt:22px;font-size:14px;line-height:183%;"><span style="font-size:12px;font-weight:700;line-height:183%;letter-spacing:2px;text-transform:uppercase;">www.casacandela.co</span></p></div>
-</td>
-</tr>
-<tr>
-<td align="center" style="font-size:0;padding:0;padding-bottom:0;word-break:break-word;">
-<!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation"><tr><td><![endif]-->
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-<tbody>
-<tr>
-<td style="padding:0 16px 0 0;vertical-align:middle;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:24px;">
-<tbody>
-<tr>
-<td style="font-size:0;height:24px;vertical-align:middle;width:24px;">
-<a href="https://www.instagram.com/casacandela.co/" target="_blank">
-<img alt="Instagram" height="24" src="https://e.hypermatic.com/0feda55cb30db8d1464c2097a3aad4bb.png" style="display:block;" width="24">
-</a>
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-<!--[if mso | IE]></td><td><![endif]-->
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-<tbody>
-<tr>
-<td style="padding:0 16px 0 0;vertical-align:middle;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:24px;">
-<tbody>
-<tr>
-<td style="font-size:0;height:24px;vertical-align:middle;width:24px;">
-<a href="https://www.facebook.com/casacandelaco" target="_blank">
-<img alt="Facebook" height="24" src="https://e.hypermatic.com/9b77b1191ee06a4222b39733471af6ef.png" style="display:block;" width="24">
-</a>
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-<!--[if mso | IE]></td><td><![endif]-->
-<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="float:none;display:inline-table;">
-<tbody>
-<tr>
-<td style="padding:0;padding-right:0;vertical-align:middle;">
-<table border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:24px;">
-<tbody>
-<tr>
-<td style="font-size:0;height:24px;vertical-align:middle;width:24px;">
-<a href="https://wa.link/s64zsh" target="_blank">
-<img alt="X" height="24" src="https://e.hypermatic.com/45e79b24e2181becd378fe3ec69a8cce.png" style="display:block;" width="24">
-</a>
-</td>
-</tr>
-</tbody>
-</table>
-</td>
-</tr>
-</tbody>
-</table>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<!--[if mso | IE]></td></tr></table><![endif]-->
-</div>
-</body>
-</html>`;
-
 export async function sendConfirmationEmail({ ticketId, orderId, buyerInfo, quantity = 1 }: SendMailParams) {
   const tickets = await getDynamicTickets(undefined, true, true);
   let ticket = tickets.find((t) => t.id === ticketId || t.id.toLowerCase() === ticketId.toLowerCase());
@@ -933,6 +331,41 @@ export async function sendConfirmationEmail({ ticketId, orderId, buyerInfo, quan
     html: mailHtml,
     attachments,
   });
+}
+
+/**
+ * Sends an abandoned cart / failed payment recovery email to the buyer in ES or EN.
+ */
+export async function sendAbandonedCartEmail({
+  email,
+  locale,
+}: {
+  email: string;
+  locale?: string;
+}) {
+  const cleanEmail = (email || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    console.warn(`[Email Service] ⚠️ Skipping abandoned cart email: invalid email "${cleanEmail}"`);
+    return;
+  }
+
+  const transport = createTransport();
+  const fromAddress = process.env.EMAIL_FROM || '"Boho Sunday" <reservas@bohosunday.com>';
+  const isEnglish = (locale || '').toLowerCase() === 'en';
+
+  const mailHtml = isEnglish ? ABANDONED_CART_HTML_EN : ABANDONED_CART_HTML_ES;
+  const subject = isEnglish
+    ? 'Did you run into any issues with your Boho Sunday reservation?'
+    : '¿Tuviste algún inconveniente con tu reserva para Boho Sunday?';
+
+  await transport.sendMail({
+    from: fromAddress,
+    to: cleanEmail,
+    subject,
+    html: mailHtml,
+  });
+
+  console.log(`[Email Service] 📩 Abandoned cart / recovery email (${isEnglish ? 'EN' : 'ES'}) sent to ${cleanEmail}`);
 }
 
 export async function sendAdminNotificationEmail(order: OrderDetail, status: 'approved' | 'rejected') {
@@ -1166,4 +599,4 @@ export async function sendSecurityAlertEmail({
   } catch (error) {
     console.error(`[Security Alert] ❌ Error sending security alert email:`, error);
   }
-}
+}

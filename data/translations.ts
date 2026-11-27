@@ -217,7 +217,7 @@ export const translations = {
       place: 'Casa Candela'
     },
     home: {
-      title: 'BOHO SUNDAY',
+      title: 'Plan de domingos de Boho Sunday White Edition III',
       desc1: 'An experience where music, energy, and the BOHO spirit come together to create an afternoon filled with good vibes, dancing, and unforgettable moments.',
       desc2: 'Don’t miss the chance to be part of a new edition of BOHO SUNDAY in Sopetrán.',
       location: 'LOCATION:',

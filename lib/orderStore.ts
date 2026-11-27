@@ -4,6 +4,12 @@ import { sendAdminNotificationEmail } from './emailService';
 import { getDynamicTickets } from './tickets';
 import { supabase } from './supabase';
 import { getActiveEdition } from './editions';
+import {
+  buildDraftOrderId,
+  clearAbandonedCartTimer,
+  scheduleAbandonedCartTimer,
+  triggerAbandonedCartForOrder,
+} from './abandonedCart';
 import crypto from 'crypto';
 
 export interface OrderDetail {
@@ -59,11 +65,46 @@ export async function createOrder(
 ): Promise<OrderDetail> {
   const createdAt = Date.now();
   const activeEdition = await getActiveEdition();
+
+  let firstTrackedAt = createdAt;
+  const draftOrderId = sessionToken ? buildDraftOrderId(ticketId, sessionToken) : '';
+
+  if (draftOrderId) {
+    try {
+      clearAbandonedCartTimer(draftOrderId);
+      const { data: draftRow } = await supabase
+        .from('orders')
+        .select('buyer_info, created_at')
+        .eq('order_id', draftOrderId)
+        .maybeSingle();
+
+      if (draftRow) {
+        const draftInfo =
+          typeof draftRow.buyer_info === 'string'
+            ? JSON.parse(draftRow.buyer_info)
+            : draftRow.buyer_info || {};
+        firstTrackedAt =
+          Number(draftInfo.firstTrackedAt) ||
+          (draftRow.created_at ? new Date(draftRow.created_at).getTime() : createdAt);
+        await supabase.from('orders').delete().eq('order_id', draftOrderId);
+      }
+    } catch (e) {
+      console.warn('[OrderStore] Could not migrate draft order:', e);
+    }
+  }
+
+  const enrichedBuyerInfo: BuyerInfo & Record<string, any> = {
+    ...buyerInfo,
+    trackAbandonedCart: true,
+    firstTrackedAt,
+    abandonedEmailSent: false,
+  };
+
   const order: OrderDetail = {
     orderId,
     ticketId,
     sessionToken,
-    buyerInfo,
+    buyerInfo: enrichedBuyerInfo,
     quantity,
     paymentMethod,
     status: 'pending',
@@ -79,7 +120,7 @@ export async function createOrder(
       order_id: orderId,
       ticket_id: ticketId,
       session_token: sessionToken,
-      buyer_info: buyerInfo,
+      buyer_info: enrichedBuyerInfo,
       quantity,
       payment_method: paymentMethod,
       status: 'pending',
@@ -96,7 +137,7 @@ export async function createOrder(
         order_id: orderId,
         ticket_id: ticketId,
         session_token: sessionToken,
-        buyer_info: buyerInfo,
+        buyer_info: enrichedBuyerInfo,
         quantity,
         payment_method: paymentMethod,
         status: 'pending',
@@ -109,6 +150,10 @@ export async function createOrder(
       }
     } else {
       console.log(`[OrderStore] 📝 Order created in Supabase: ${orderId} (Ticket: ${ticketId}, Edition: ${activeEdition.name}, Status: pending)`);
+    }
+
+    if (!orderId.startsWith('ORD-QUICK-')) {
+      scheduleAbandonedCartTimer(orderId, firstTrackedAt);
     }
   } catch (err) {
     console.error('[OrderStore] 🚨 Exception inserting order into Supabase:', err);
@@ -185,6 +230,13 @@ export async function approveOrder(
   if (order.status === 'approved') {
     console.log(`[OrderStore] ℹ️ Order ${orderId} is already approved.`);
     return order;
+  }
+
+  clearAbandonedCartTimer(orderId);
+  if (order.sessionToken) {
+    const draftOrderId = buildDraftOrderId(order.ticketId, order.sessionToken);
+    clearAbandonedCartTimer(draftOrderId);
+    supabase.from('orders').delete().eq('order_id', draftOrderId).then(() => {});
   }
 
   const updatedOrder: OrderDetail = {
@@ -291,6 +343,7 @@ export async function approveOrder(
  * Marks an order as rejected/failed in Supabase
  */
 export async function rejectOrder(orderId: string, errorDetail?: string): Promise<OrderDetail | null> {
+  clearAbandonedCartTimer(orderId);
   const order = await getOrder(orderId);
   if (!order) {
     console.error(`[OrderStore] ❌ Error: Order ${orderId} not found to reject.`);
@@ -321,10 +374,20 @@ export async function rejectOrder(orderId: string, errorDetail?: string): Promis
     console.error(`[OrderStore] 🚨 Exception marking order ${orderId} as rejected in Supabase:`, err);
   }
 
-  // Send failed notification email to admin asynchronously
+  // Send failed notification email to admin and abandoned cart / recovery email to buyer asynchronously
   if (order.status !== 'rejected' && order.status !== 'approved') {
     sendAdminNotificationEmail(updatedOrder, 'rejected').catch((err) => {
       console.error('[OrderStore] Error calling sendAdminNotificationEmail (rejected):', err);
+    });
+
+    triggerAbandonedCartForOrder({
+      orderId,
+      sessionToken: updatedOrder.sessionToken,
+      ticketId: updatedOrder.ticketId,
+      buyerInfo: updatedOrder.buyerInfo,
+      reason: 'payment_failed',
+    }).catch((err) => {
+      console.error('[OrderStore] Error triggering abandoned cart recovery email on rejectOrder:', err);
     });
   }
 

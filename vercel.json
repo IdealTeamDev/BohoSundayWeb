@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/send-scheduled-email",
-      "schedule": "0 15 17 10 *"
+      "schedule": "0 15 19 12 *"
     }
   ]
 }

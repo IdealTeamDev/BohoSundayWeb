@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { zoneConfig } from '@/data/zoneConfig';
 import type { BuyerInfo } from '@/types/checkout';
@@ -40,6 +40,77 @@ export default function CheckoutPage() {
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
 
+  const latestStateRef = useRef({
+    form,
+    quantity,
+    paymentMethod,
+    checkoutOrderId,
+  });
+
+  useEffect(() => {
+    latestStateRef.current = {
+      form,
+      quantity,
+      paymentMethod,
+      checkoutOrderId,
+    };
+  }, [form, quantity, paymentMethod, checkoutOrderId]);
+
+  const sendAbandonedCartEvent = useCallback(
+    (action: 'track' | 'expire') => {
+      const current = latestStateRef.current;
+      const email = (current.form.email || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+      const payload = JSON.stringify({
+        action,
+        ticketId,
+        orderId: current.checkoutOrderId || undefined,
+        quantity: current.quantity,
+        paymentMethod: current.paymentMethod || 'wompi',
+        buyerInfo: {
+          name: current.form.name,
+          phone: `${current.form.phonePrefix} ${current.form.phone}`.trim(),
+          email,
+          docType: current.form.docType,
+          docNumber: current.form.docNumber,
+          locale,
+        },
+      });
+
+      fetch('/api/checkout/abandoned-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    },
+    [ticketId, locale]
+  );
+
+  // Track email as soon as user enters a valid email address in the checkout form
+  useEffect(() => {
+    if (!sessionValid) return;
+    const email = (form.email || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+
+    const timer = setTimeout(() => {
+      sendAbandonedCartEvent('track');
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [sessionValid, form.email, form.name, form.phone, paymentMethod, sendAbandonedCartEvent]);
+
+  // Also capture latest form data if user closes tab / navigates away after entering email
+  useEffect(() => {
+    if (!sessionValid) return;
+    const handlePageHide = () => {
+      sendAbandonedCartEvent('track');
+    };
+    window.addEventListener('pagehide', handlePageHide);
+    return () => window.removeEventListener('pagehide', handlePageHide);
+  }, [sessionValid, sendAbandonedCartEvent]);
+
   const verifySession = useCallback(async () => {
     const res = await fetch(`/api/checkout/verify?ticketId=${ticketId}`);
     const data = await res.json();
@@ -65,6 +136,7 @@ export default function CheckoutPage() {
       setRemainingSeconds((s) => {
         if (s <= 1) {
           clearInterval(interval);
+          sendAbandonedCartEvent('expire');
           router.replace(locale === 'en' ? '/en' : '/');
           return 0;
         }
@@ -72,7 +144,7 @@ export default function CheckoutPage() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [sessionValid, router, locale]);
+  }, [sessionValid, router, locale, sendAbandonedCartEvent]);
 
   function validate() {
     const newErrors: Partial<typeof form & { paymentMethod: string }> = {};

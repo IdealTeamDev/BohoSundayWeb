@@ -6,9 +6,11 @@ import { addEmailToQueue } from '@/lib/emailQueue';
 import { getDynamicTickets } from '@/lib/tickets';
 
 export async function POST(req: NextRequest) {
+  let parsedOrderId: string | undefined;
   try {
     const body = await req.json();
     const { orderId, ticketId, formData } = body;
+    parsedOrderId = orderId;
 
     if (!orderId || !ticketId || !formData) {
       return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 });
@@ -143,9 +145,17 @@ export async function POST(req: NextRequest) {
     console.error('[ProcessPayment] 🚨 Exception processing payment:', error);
     // Extract detailed Mercado Pago API response errors if present
     const detailedError = error.apiResponse?.body || error.cause || error.message || error;
-    console.error('Detailed Error object:', JSON.stringify(detailedError));
+    const errorStr = typeof detailedError === 'object' ? JSON.stringify(detailedError) : String(detailedError);
+    console.error('Detailed Error object:', errorStr);
+
+    if (parsedOrderId) {
+      rejectOrder(parsedOrderId, `Exception processing payment: ${errorStr}`).catch((err) => {
+        console.error('[ProcessPayment] Error calling rejectOrder on exception:', err);
+      });
+    }
+
     return NextResponse.json({
-      error: typeof detailedError === 'object' ? JSON.stringify(detailedError) : String(detailedError),
+      error: errorStr,
     }, { status: 500 });
   }
 }
