@@ -12,8 +12,7 @@ export const Footer = () => {
 
  
   return (
-    // Se comenta la imagen de fondo anterior: style={{ backgroundImage: `url(${FOOTER_BANNER_URL})` }}
-    <footer   className="w-full bg-black bg-cover bg-no-repeat px-6 border-t  border-[#F3F0E9]/30">
+    <footer style={{ backgroundImage: `url(${FOOTER_BANNER_URL})` }} className="w-full bg-cover bg-no-repeat px-6 border-t border-[#F3F0E9]/30">
 
       {/* ── Contenido principal ── */}
       <div className="

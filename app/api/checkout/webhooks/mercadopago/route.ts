@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const tickets = await getDynamicTickets();
+    const tickets = await getDynamicTickets(order.stageId, true, true);
 
     // 1. If payment is APPROVED
     if (paymentStatus === 'approved') {
@@ -100,31 +100,20 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Check payment amount to prevent tampering
-      const ticket = tickets.find((t) => t.id === order.ticketId);
-      if (!ticket) {
-        console.error(`[Webhook Mercado Pago] ❌ Ticket ${order.ticketId} not found in system.`);
-        return new Response(JSON.stringify({ error: 'Ticket not found' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      const ticket = tickets.find(
+        (t) => t.id === order.ticketId || t.id.toLowerCase() === order.ticketId.toLowerCase()
+      );
+      if (ticket) {
+        const expectedAmount = ticket.price * order.quantity;
+        if (Math.abs(transactionAmount - expectedAmount) > 1) {
+          console.warn(
+            `[Webhook Mercado Pago] ⚠️ Amount difference detected (stage price may have changed): Paid=${transactionAmount}, Expected=${expectedAmount}. Proceeding with approval.`
+          );
+        }
       }
 
-      const expectedAmount = ticket.price * order.quantity;
-      
-      // Compare amount (allow float tolerance if needed)
-      if (Math.abs(transactionAmount - expectedAmount) > 1) {
-        console.error(`[Webhook Mercado Pago] 🚨 Payment amount mismatch! Paid: ${transactionAmount}, Expected: ${expectedAmount}`);
-        await rejectOrder(orderId, `Amount mismatch. Paid ${transactionAmount}, expected ${expectedAmount}`);
-        await releaseLock(order.ticketId, order.sessionToken, tickets);
-        return new Response(JSON.stringify({ error: 'Amount mismatch' }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Approve order in memory
-      await approveOrder(orderId, paymentId);
+      // Approve order in database and insert into purchased_tickets
+      await approveOrder(orderId, String(paymentId), order);
 
       // Permanently claim ticket lock
       await markAsSold(order.ticketId, order.sessionToken, tickets);

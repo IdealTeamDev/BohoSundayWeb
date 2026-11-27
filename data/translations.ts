@@ -10,7 +10,7 @@ export const translations = {
       place: 'Casa Candela'
     },
     home: {
-      title: 'Plan de domingos de Boho Sunday White Edition III',
+      title: 'Plan de domingo | Boho Sunday White Edition III',
       desc1: 'Una experiencia donde la música, la energía y el espíritu BOHO se encuentran para crear una tarde llena de buena vibra, baile y momentos para disfrutar.',
       desc2: 'No te pierdas la oportunidad de vivir una nueva edición de BOHO SUNDAY en Sopetrán.',
   

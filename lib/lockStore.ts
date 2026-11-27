@@ -3,13 +3,18 @@ import type { Ticket } from '@/types';
 import { supabase } from './supabase';
 import { getActiveEdition } from './editions';
 import { processAbandonedCarts } from './abandonedCart';
+import { syncAllPendingOrders } from './wompiReconciliation';
 
 const LOCK_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
 /**
- * Remove all expired locks from Supabase database and process expired 10-minute abandoned carts
+ * Remove all expired locks from Supabase database, reconcile pending Wompi orders, and process expired 10-minute abandoned carts
  */
 async function cleanExpiredLocks(): Promise<void> {
+  syncAllPendingOrders().catch((err) => {
+    console.error('[LockStore] Error reconciling pending Wompi orders:', err);
+  });
+
   processAbandonedCarts().catch((err) => {
     console.error('[LockStore] Error sweeping abandoned carts:', err);
   });

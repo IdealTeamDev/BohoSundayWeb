@@ -223,18 +223,23 @@ export async function getDynamicTickets(
     return t.id === 'early' || t.id === 'anytime';
   });
 
-  // 6. Filter camas/mesas according to active stage:
-  // - En Believers: zonas 'vip' y 'candela' INACTIVAS
-  // - En otras etapas: todas las zonas de camas activas
+  // 6. Filter camas/mesas according to active stage configuration:
+  // - Si la etapa tiene configurado `prices.enabled_special_zones` (array con 'vip' y/o 'candela'), se usa esa selección manual.
+  // - Si no está configurado aún, por defecto en Believers están inactivas y en otras etapas activas.
+  const configuredEnabledSpecialZones: string[] | null = Array.isArray(activeStage?.prices?.enabled_special_zones)
+    ? activeStage.prices.enabled_special_zones.map((z: any) => String(z).toLowerCase())
+    : null;
+
   const filteredCamas = finalCamas.filter(t => {
     if (skipStageFilter) {
       return true;
     }
     const zoneLower = (t.zone || '').toLowerCase();
-    if (isBelieversStage) {
-      if (zoneLower === 'vip' || zoneLower === 'candela') {
-        return false;
+    if (zoneLower === 'vip' || zoneLower === 'candela') {
+      if (configuredEnabledSpecialZones !== null) {
+        return configuredEnabledSpecialZones.includes(zoneLower);
       }
+      return !isBelieversStage;
     }
     return true;
   });

@@ -253,6 +253,28 @@ export async function triggerAbandonedCartForOrder({
       return false;
     }
 
+    // If this is a 10-minute timeout on a real order (ORD-...), first reconcile directly with Wompi
+    // so that if the user paid in Wompi and the webhook was delayed/lost, we auto-approve & send their QR instead!
+    if (
+      reason === 'timeout_10m' &&
+      targetRow?.order_id &&
+      !String(targetRow.order_id).startsWith('DRAFT-') &&
+      targetRow.status === 'pending'
+    ) {
+      try {
+        const { verifyOrderWithWompi } = await import('./wompiReconciliation');
+        const reconcileRes = await verifyOrderWithWompi(targetRow.order_id);
+        if (reconcileRes.newStatus === 'approved') {
+          console.log(
+            `[AbandonedCart] 🎉 Order ${targetRow.order_id} was APPROVED in Wompi! Sent QR confirmation instead of abandoned cart email.`
+          );
+          return false;
+        }
+      } catch (reconcileErr) {
+        console.warn('[AbandonedCart] Could not pre-verify order with Wompi:', reconcileErr);
+      }
+    }
+
     if (inFlightEmails.has(email)) {
       return false;
     }

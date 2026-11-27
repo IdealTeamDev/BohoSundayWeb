@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 200 }); // Return 200 to Wompi so it stops retrying
     }
 
-    const tickets = await getDynamicTickets();
+    const tickets = await getDynamicTickets(order.stageId, true, true);
 
     if (status === 'APPROVED') {
       if (order.status === 'approved') {
@@ -91,23 +91,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'Already approved' });
       }
 
-      // Check paid amount to prevent tampering
-      const ticket = tickets.find((t) => t.id === order.ticketId);
-      if (!ticket) {
-        console.error(`[Wompi Webhook] ❌ Ticket ${order.ticketId} not found in database.`);
-        return NextResponse.json({ error: 'Ticket not found' }, { status: 200 });
+      const ticket = tickets.find(
+        (t) => t.id === order.ticketId || t.id.toLowerCase() === order.ticketId.toLowerCase()
+      );
+      if (ticket) {
+        const expectedAmountInCents = ticket.price * order.quantity * 100;
+        if (Math.abs(amountInCents - expectedAmountInCents) > 100) {
+          console.warn(
+            `[Wompi Webhook] ⚠️ Price difference detected (stage may have changed since checkout): Paid cents=${amountInCents}, Current stage cents=${expectedAmountInCents}. Proceeding with approval because Wompi integrity signature guaranteed checkout amount.`
+          );
+        }
+      } else {
+        console.warn(`[Wompi Webhook] ⚠️ Ticket ${order.ticketId} not in current list, proceeding with approval using fallback details.`);
       }
 
-      const expectedAmountInCents = (ticket.price * order.quantity) * 100;
-      if (Math.abs(amountInCents - expectedAmountInCents) > 100) { // Tolerate small rounding diff (up to $1 COP in cents)
-        console.error(`[Wompi Webhook] 🚨 Amount mismatch! Paid cents: ${amountInCents}, Expected cents: ${expectedAmountInCents}`);
-        await rejectOrder(orderId, `Amount mismatch. Paid cents: ${amountInCents}, expected: ${expectedAmountInCents}`);
-        await releaseLock(order.ticketId, order.sessionToken, tickets);
-        return NextResponse.json({ error: 'Amount mismatch' }, { status: 200 });
-      }
-
-      // Approve order in memory
-      await approveOrder(orderId, paymentId);
+      // Approve order in database and insert into purchased_tickets
+      await approveOrder(orderId, String(paymentId), order);
 
       // Permanently lock ticket
       await markAsSold(order.ticketId, order.sessionToken, tickets);

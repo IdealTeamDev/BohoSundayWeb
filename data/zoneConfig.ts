@@ -11,7 +11,7 @@ export const zoneConfig = {
   },
   backstage: {
     label: "Backstage",
-    color: "#9797FF",
+    color: "#FDFFFD",
     dotColor: "#74AFAE",
     icon: "https://res.cloudinary.com/dow0dxajr/image/upload/v1795716599/icons_3_jhlpfp.png",
     iconActive: "https://res.cloudinary.com/dow0dxajr/image/upload/v1790006285/icon_uhu2iy.png",

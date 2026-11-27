@@ -426,6 +426,13 @@ export default function QuickSellPage() {
   const [purchasedTotal, setPurchasedTotal] = useState<number>(0);
   const [purchasedTotalPages, setPurchasedTotalPages] = useState<number>(1);
 
+  // Pending Orders / Wompi Reconciliation State
+  const [pendingOrdersList, setPendingOrdersList] = useState<any[]>([]);
+  const [pendingOrdersLoading, setPendingOrdersLoading] = useState<boolean>(false);
+  const [reconcilingOrderId, setReconcilingOrderId] = useState<string | null>(null);
+  const [syncingAllWompi, setSyncingAllWompi] = useState<boolean>(false);
+  const [reconcileFeedback, setReconcileFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
   // Pre-registers Module State
   const [preRegisterList, setPreRegisterList] = useState<any[]>([]);
   const [preRegisterLoading, setPreRegisterLoading] = useState<boolean>(false);
@@ -446,6 +453,10 @@ export default function QuickSellPage() {
     early: true,
     anytime: true,
     general: false,
+  });
+  const [editingEnabledSpecialZones, setEditingEnabledSpecialZones] = useState<Record<string, boolean>>({
+    vip: true,
+    candela: true,
   });
   const [savingPrices, setSavingPrices] = useState<boolean>(false);
 
@@ -870,6 +881,20 @@ export default function QuickSellPage() {
       general: savedEnabled ? savedEnabled.includes('general') : false,
     });
 
+    const isStageBelievers = Boolean(
+      (stage.id && String(stage.id).toLowerCase().includes('believer')) ||
+      (stage.name && String(stage.name).toLowerCase().includes('believer')) ||
+      (stage.slug && String(stage.slug).toLowerCase().includes('believer'))
+    );
+    const savedEnabledSpecialZones: string[] | null = Array.isArray(existingPrices.enabled_special_zones)
+      ? existingPrices.enabled_special_zones.map((z: any) => String(z).toLowerCase())
+      : null;
+
+    setEditingEnabledSpecialZones({
+      vip: savedEnabledSpecialZones ? savedEnabledSpecialZones.includes('vip') : !isStageBelievers,
+      candela: savedEnabledSpecialZones ? savedEnabledSpecialZones.includes('candela') : !isStageBelievers,
+    });
+
     setEditingPrices({
       early: Number(existingPrices.early ?? 250000),
       anytime: Number(existingPrices.anytime ?? 250000),
@@ -894,9 +919,13 @@ export default function QuickSellPage() {
       const enabledIndividualList = (['early', 'anytime', 'general'] as const).filter(
         (key) => editingEnabledIndividual[key]
       );
+      const enabledSpecialZonesList = (['vip', 'candela'] as const).filter(
+        (key) => editingEnabledSpecialZones[key]
+      );
       const payloadPrices = {
         ...editingPrices,
         enabled_individual: enabledIndividualList,
+        enabled_special_zones: enabledSpecialZonesList,
         vip_1: Number(editingPrices['vip-1'] ?? editingPrices.vip_1 ?? 7000000),
         vip_2: Number(editingPrices['vip-2'] ?? editingPrices.vip_2 ?? 6500000),
         vip_3: Number(editingPrices['vip-3'] ?? editingPrices.vip_3 ?? 5800000),
@@ -1137,14 +1166,226 @@ export default function QuickSellPage() {
     }
   }, [purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter]);
 
+  // Fetch Pending Orders for Wompi Reconciliation
+  const fetchPendingOrders = useCallback(async (
+    edition = selectedEditionFilter,
+    search = purchasedSearch
+  ) => {
+    setPendingOrdersLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const params = new URLSearchParams({
+        edition,
+        search,
+      });
+      const res = await fetch(`/api/admin/orders/reconcile?${params.toString()}`, {
+        headers: { 'x-admin-token': token },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setPendingOrdersList(data.pendingOrders || []);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching pending orders:', err);
+    } finally {
+      setPendingOrdersLoading(false);
+    }
+  }, [selectedEditionFilter, purchasedSearch]);
+
+  const handleVerifyOrderWithWompi = async (orderId: string) => {
+    setReconcilingOrderId(orderId);
+    setReconcileFeedback(null);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/orders/reconcile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({
+          action: 'verify',
+          orderId,
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.result?.newStatus === 'approved') {
+        setReconcileFeedback({
+          type: 'success',
+          message: data.message || `¡Orden ${orderId} verificada y aprobada exitosamente en Wompi!`,
+        });
+        alert(data.message || `¡Orden ${orderId} verificada y aprobada en Wompi! El QR ya fue emitido y enviado.`);
+        await Promise.all([
+          fetchPendingOrders(selectedEditionFilter, purchasedSearch),
+          fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter),
+          fetchResumenData(),
+        ]);
+        return;
+      }
+
+      // If automatic lookup by reference didn't find an approved transaction, offer entering Wompi Transaction ID from client receipt
+      const manualTxId = window.prompt(
+        `${data.message || 'No se encontró transacción aprobada automáticamente por referencia.'}\n\nSi el cliente tiene el comprobante de Wompi, ingresa el ID de Transacción de Wompi (ej: 179562-1792305666-18058) para consultarlo directamente, o deja vacío para cancelar:`
+      );
+
+      if (manualTxId && manualTxId.trim()) {
+        const resTx = await fetch('/api/admin/orders/reconcile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': token,
+          },
+          body: JSON.stringify({
+            action: 'verify',
+            orderId,
+            wompiTxId: manualTxId.trim(),
+          }),
+        });
+        const dataTx = await resTx.json();
+        if (resTx.ok && dataTx.result?.newStatus === 'approved') {
+          setReconcileFeedback({
+            type: 'success',
+            message: dataTx.message,
+          });
+          alert(dataTx.message);
+          await Promise.all([
+            fetchPendingOrders(selectedEditionFilter, purchasedSearch),
+            fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter),
+            fetchResumenData(),
+          ]);
+        } else {
+          setReconcileFeedback({
+            type: 'info',
+            message: dataTx.message || 'La transacción ingresada no figura como APROBADA en Wompi.',
+          });
+          alert(dataTx.message || 'La transacción ingresada no figura como APROBADA en Wompi.');
+        }
+      } else {
+        setReconcileFeedback({
+          type: 'info',
+          message: data.message || 'La orden sigue pendiente en Wompi.',
+        });
+      }
+    } catch (err) {
+      console.error('Error verifying order with Wompi:', err);
+      setReconcileFeedback({
+        type: 'error',
+        message: 'Error de red al verificar la orden con Wompi.',
+      });
+    } finally {
+      setReconcilingOrderId(null);
+    }
+  };
+
+  const handleForceApproveOrder = async (orderId: string, buyerName: string) => {
+    const paymentRef = window.prompt(
+      `¿Confirmas FORZAR LA APROBACIÓN de la orden ${orderId} (${buyerName})?\n\nEsto registrará inmediatamente la boleta en el sistema de ingreso (QR para guardias), descontará el cupo/mesa y enviará el correo con el QR al cliente.\n\nOpcional: Ingresa el número de referencia o ID de transacción de Wompi del comprobante (o deja en blanco):`,
+      ''
+    );
+
+    if (paymentRef === null) return; // Cancelled prompt
+
+    setReconcilingOrderId(orderId);
+    setReconcileFeedback(null);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/orders/reconcile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({
+          action: 'force_approve',
+          orderId,
+          paymentRef: paymentRef.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setReconcileFeedback({
+          type: 'success',
+          message: data.message,
+        });
+        alert(data.message);
+        await Promise.all([
+          fetchPendingOrders(selectedEditionFilter, purchasedSearch),
+          fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter),
+          fetchResumenData(),
+        ]);
+      } else {
+        setReconcileFeedback({
+          type: 'error',
+          message: data.error || data.message || 'No se pudo aprobar la orden.',
+        });
+        alert(data.error || data.message || 'No se pudo aprobar la orden.');
+      }
+    } catch (err) {
+      console.error('Error forcing order approval:', err);
+      alert('Error de red al forzar la aprobación de la orden.');
+    } finally {
+      setReconcilingOrderId(null);
+    }
+  };
+
+  const handleSyncAllWompiOrders = async () => {
+    setSyncingAllWompi(true);
+    setReconcileFeedback(null);
+    try {
+      const token = localStorage.getItem('admin_token') || '';
+      const res = await fetch('/api/admin/orders/reconcile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': token,
+        },
+        body: JSON.stringify({
+          action: 'sync_all',
+          hoursBack: 72,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setReconcileFeedback({
+          type: data.approvedCount > 0 ? 'success' : 'info',
+          message: data.message,
+        });
+        alert(data.message);
+        await Promise.all([
+          fetchPendingOrders(selectedEditionFilter, purchasedSearch),
+          fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter),
+          fetchResumenData(),
+        ]);
+      } else {
+        setReconcileFeedback({
+          type: 'error',
+          message: data.error || 'Error al sincronizar órdenes con Wompi.',
+        });
+      }
+    } catch (err) {
+      console.error('Error syncing all Wompi orders:', err);
+      setReconcileFeedback({
+        type: 'error',
+        message: 'Error de red al sincronizar con Wompi.',
+      });
+    } finally {
+      setSyncingAllWompi(false);
+    }
+  };
+
   useEffect(() => {
     if (activeView === 'compras') {
       const delayDebounceFn = setTimeout(() => {
         fetchPurchasedTickets(purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter);
+        fetchPendingOrders(selectedEditionFilter, purchasedSearch);
       }, 300);
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [activeView, purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter, fetchPurchasedTickets]);
+  }, [activeView, purchasedPage, selectedZone, purchasedSearch, purchasedLimit, selectedEditionFilter, purchasedTypeFilter, fetchPurchasedTickets, fetchPendingOrders]);
 
   // Handle Edition Actions
   const handleSetActiveEdition = async (slug: string) => {
@@ -2358,12 +2599,157 @@ export default function QuickSellPage() {
             <header className="topbar" style={{ margin: '-24px -28px 24px' }}>
               <div>
                 <h2>Compras</h2>
-                <div className="sub">{purchasedTotal} ventas registradas en las ediciones</div>
+                <div className="sub">
+                  {purchasedTotal} ventas aprobadas · {pendingOrdersList.length} orden(es) en estado pendiente
+                </div>
               </div>
               <div className="actions">
+                <button
+                  type="button"
+                  className="btn btn-bronze"
+                  disabled={syncingAllWompi}
+                  onClick={handleSyncAllWompiOrders}
+                  title="Consultar directamente en Wompi todas las órdenes pendientes recientes"
+                >
+                  {syncingAllWompi ? 'Sincronizando con Wompi...' : '🔄 Sincronizar Pagos Wompi'}
+                </button>
                 <button type="button" className="btn btn-ghost" onClick={downloadMetricsPDF}>Exportar PDF</button>
               </div>
             </header>
+
+            {reconcileFeedback && (
+              <div
+                style={{
+                  marginBottom: '18px',
+                  padding: '12px 16px',
+                  borderRadius: 'var(--r-control)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  background:
+                    reconcileFeedback.type === 'success'
+                      ? 'var(--ok-soft)'
+                      : reconcileFeedback.type === 'error'
+                      ? 'var(--sold-soft)'
+                      : 'var(--warn-soft)',
+                  color:
+                    reconcileFeedback.type === 'success'
+                      ? 'var(--ok)'
+                      : reconcileFeedback.type === 'error'
+                      ? 'var(--sold)'
+                      : 'var(--warn)',
+                  border: '1px solid var(--line)',
+                }}
+              >
+                {reconcileFeedback.message}
+              </div>
+            )}
+
+            {/* Panel de Órdenes Pendientes para Verificar en Wompi o Forzar Aprobación */}
+            {pendingOrdersList.length > 0 && (
+              <div className="card" style={{ marginBottom: '22px', border: '1.5px solid #D9B45F' }}>
+                <div className="card-head" style={{ background: 'var(--warn-soft)' }}>
+                  <div>
+                    <h3 style={{ color: '#6E5623' }}>
+                      ⏳ Órdenes Pendientes en Pasarela ({pendingOrdersList.length})
+                    </h3>
+                    <p style={{ color: '#7A6535' }}>
+                      Si un cliente pagó en Wompi pero el webhook no impactó, presiona <b>Verificar en Wompi</b> o <b>Forzar Aprobación</b> para emitir su QR al instante.
+                    </p>
+                  </div>
+                  <div className="right">
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => fetchPendingOrders(selectedEditionFilter, purchasedSearch)}
+                      disabled={pendingOrdersLoading}
+                    >
+                      {pendingOrdersLoading ? 'Actualizando...' : 'Actualizar pendientes'}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Cliente / Orden</th>
+                        <th>Entrada / Mesa</th>
+                        <th>Pasarela</th>
+                        <th>Fecha Intento</th>
+                        <th>Estado</th>
+                        <th style={{ textAlign: 'right' }}>Valor</th>
+                        <th style={{ textAlign: 'center' }}>Acciones Taquilla / Soporte</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingOrdersList.map((ord) => {
+                        const isWorking = reconcilingOrderId === ord.orderId;
+                        return (
+                          <tr key={ord.orderId}>
+                            <td>
+                              <div className="who">
+                                <b>{ord.buyerName}</b>
+                                <span>{ord.buyerEmail} · {ord.buyerPhone}</span>
+                                <span className="ord">{ord.orderId}</span>
+                              </div>
+                            </td>
+                            <td>
+                              {ord.ticketName} {ord.ticketNumber ? `#${ord.ticketNumber}` : ''} (×{ord.quantity})
+                            </td>
+                            <td>
+                              <span className="pill pill-muted">{String(ord.paymentMethod || 'wompi').toUpperCase()}</span>
+                            </td>
+                            <td>
+                              <span className="num" style={{ fontSize: '12px', color: 'var(--ink-2)' }}>
+                                {ord.createdAt
+                                  ? new Date(ord.createdAt).toLocaleString('es-CO', {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })
+                                  : '-'}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="pill pill-warn">⏳ Pendiente</span>
+                            </td>
+                            <td className="amt">
+                              ${Number(ord.totalPrice || 0).toLocaleString('es-CO')}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost"
+                                  style={{ padding: '6px 10px', fontSize: '12px', borderColor: 'var(--bronze)', color: 'var(--bronze)' }}
+                                  disabled={isWorking}
+                                  onClick={() => handleVerifyOrderWithWompi(ord.orderId)}
+                                  title="Consultar estado real de esta orden directamente en Wompi"
+                                >
+                                  {isWorking ? 'Verificando...' : '🔍 Verificar en Wompi'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-primary"
+                                  style={{ padding: '6px 10px', fontSize: '12px' }}
+                                  disabled={isWorking}
+                                  onClick={() => handleForceApproveOrder(ord.orderId, ord.buyerName)}
+                                  title="Aprobar inmediatamente, registrar en sistema de guardias y enviar QR al correo"
+                                >
+                                  {isWorking ? 'Procesando...' : '✅ Forzar Aprobación'}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             <div className="card">
               <div className="filters">
@@ -2918,10 +3304,18 @@ export default function QuickSellPage() {
                                   const enabledInd: string[] = Array.isArray(prices.enabled_individual)
                                     ? prices.enabled_individual.map((id: any) => String(id).toLowerCase())
                                     : ['early', 'anytime'];
+                                  const isStgBelievers = Boolean(
+                                    (stg.id && String(stg.id).toLowerCase().includes('believer')) ||
+                                    (stg.name && String(stg.name).toLowerCase().includes('believer')) ||
+                                    (stg.slug && String(stg.slug).toLowerCase().includes('believer'))
+                                  );
+                                  const enabledZones: string[] = Array.isArray(prices.enabled_special_zones)
+                                    ? prices.enabled_special_zones.map((z: any) => String(z).toLowerCase())
+                                    : (isStgBelievers ? [] : ['vip', 'candela']);
                                   return (
                                     <div style={{ marginBottom: '10px' }}>
                                       <strong>Boletería individual habilitada:</strong>
-                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '5px' }}>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '5px', marginBottom: '8px' }}>
                                         {(['early', 'anytime', 'general'] as const).map((indKey) => {
                                           const isIndOn = enabledInd.includes(indKey);
                                           const label = indKey === 'early' ? 'Early' : indKey === 'anytime' ? 'Anytime' : 'General';
@@ -2940,6 +3334,32 @@ export default function QuickSellPage() {
                                             >
                                               {isIndOn ? '✓ ' : '✕ '}
                                               {label} (${Number(prices[indKey] || 0).toLocaleString('es-CO')})
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                      <strong>Zonas sujetas a disponibilidad (manual):</strong>
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '5px' }}>
+                                        {([
+                                          { key: 'vip', label: 'Camas VIP' },
+                                          { key: 'candela', label: 'Mesas Candela' },
+                                        ] as const).map(({ key: zKey, label: zLabel }) => {
+                                          const isZoneOn = enabledZones.includes(zKey);
+                                          return (
+                                            <span
+                                              key={zKey}
+                                              style={{
+                                                fontSize: '11px',
+                                                fontWeight: 600,
+                                                padding: '2px 8px',
+                                                borderRadius: '99px',
+                                                background: isZoneOn ? '#E6F2E5' : 'var(--cream-deep)',
+                                                color: isZoneOn ? '#233821' : 'var(--ink-3)',
+                                                textDecoration: isZoneOn ? 'none' : 'line-through',
+                                              }}
+                                            >
+                                              {isZoneOn ? '✓ ' : '✕ '}
+                                              {zLabel}
                                             </span>
                                           );
                                         })}
@@ -3754,9 +4174,71 @@ export default function QuickSellPage() {
                 })}
               </div>
 
-              <div style={{ marginBottom: '12px', fontWeight: 600, fontSize: '14px', color: 'var(--olive-800)' }}>
-                Mesas y Camas
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--olive-800)' }}>
+                  Mesas y Camas
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--ink-2)' }}>
+                  Habilita o deshabilita manualmente Camas VIP y Mesas Candela
+                </span>
               </div>
+
+              {/* Selectores manuales de habilitación para Camas VIP y Mesas Candela */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                {([
+                  { key: 'vip', label: 'Camas VIP (01 a 04)', desc: 'Activar venta de camas VIP en el mapa' },
+                  { key: 'candela', label: 'Mesas Candela', desc: 'Activar venta de mesas Candela en el mapa' },
+                ] as const).map(({ key, label, desc }) => {
+                  const isEnabled = Boolean(editingEnabledSpecialZones[key]);
+                  return (
+                    <label
+                      key={key}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px',
+                        border: isEnabled ? '1.5px solid var(--olive-700)' : '1px solid var(--line)',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        background: isEnabled ? '#FAFDF9' : 'var(--cream)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ink)' }}>{label}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--ink-3)', fontWeight: 400 }}>{desc}</div>
+                      </div>
+                      <span
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '11.5px',
+                          fontWeight: 600,
+                          color: isEnabled ? '#233821' : 'var(--ink-3)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isEnabled}
+                          onChange={(e) =>
+                            setEditingEnabledSpecialZones({
+                              ...editingEnabledSpecialZones,
+                              [key]: e.target.checked,
+                            })
+                          }
+                          style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--olive-700)' }}
+                        />
+                        {isEnabled ? 'Habilitada' : 'Inactiva'}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Oasis ($)</label>
@@ -3782,40 +4264,50 @@ export default function QuickSellPage() {
                     onChange={(e) => setEditingPrices({ ...editingPrices, primitivo: Number(e.target.value) })}
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>CAMA VIP 01 ($)</label>
+                <div style={{ opacity: editingEnabledSpecialZones.vip ? 1 : 0.55 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>
+                    CAMA VIP 01 ($) {!editingEnabledSpecialZones.vip && '(Inactiva)'}
+                  </label>
                   <input
                     type="number"
                     value={editingPrices['vip-1'] || ''}
                     onChange={(e) => setEditingPrices({ ...editingPrices, 'vip-1': Number(e.target.value) })}
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>CAMA VIP 02 ($)</label>
+                <div style={{ opacity: editingEnabledSpecialZones.vip ? 1 : 0.55 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>
+                    CAMA VIP 02 ($) {!editingEnabledSpecialZones.vip && '(Inactiva)'}
+                  </label>
                   <input
                     type="number"
                     value={editingPrices['vip-2'] || ''}
                     onChange={(e) => setEditingPrices({ ...editingPrices, 'vip-2': Number(e.target.value) })}
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>CAMA VIP 03 ($)</label>
+                <div style={{ opacity: editingEnabledSpecialZones.vip ? 1 : 0.55 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>
+                    CAMA VIP 03 ($) {!editingEnabledSpecialZones.vip && '(Inactiva)'}
+                  </label>
                   <input
                     type="number"
                     value={editingPrices['vip-3'] || ''}
                     onChange={(e) => setEditingPrices({ ...editingPrices, 'vip-3': Number(e.target.value) })}
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>CAMA VIP 04 ($)</label>
+                <div style={{ opacity: editingEnabledSpecialZones.vip ? 1 : 0.55 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>
+                    CAMA VIP 04 ($) {!editingEnabledSpecialZones.vip && '(Inactiva)'}
+                  </label>
                   <input
                     type="number"
                     value={editingPrices['vip-4'] || ''}
                     onChange={(e) => setEditingPrices({ ...editingPrices, 'vip-4': Number(e.target.value) })}
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>Candela ($)</label>
+                <div style={{ opacity: editingEnabledSpecialZones.candela ? 1 : 0.55 }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, marginBottom: '4px', color: 'var(--ink)' }}>
+                    Candela ($) {!editingEnabledSpecialZones.candela && '(Inactiva)'}
+                  </label>
                   <input
                     type="number"
                     value={editingPrices.candela || ''}

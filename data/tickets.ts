@@ -12,7 +12,7 @@ export const tickets: Ticket[] = [
     persons: 1,
     price: 290000,
     currency: 'COP',
-    includes: { licor: 'Antes de las 2PM', agua: 0, redBull: 0 },
+    includes: { licor: 'Antes de las 4 PM', agua: 0, redBull: 0 },
     available: true,
     position: { x: 0, y: 0 },
     stock: 100
