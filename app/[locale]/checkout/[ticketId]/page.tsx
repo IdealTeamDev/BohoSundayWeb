@@ -452,6 +452,11 @@ export default function CheckoutPage() {
               <MPCardBrick
                 amount={ticket.stock !== undefined ? ticket.price * quantity : ticket.price}
                 locale={locale}
+                payer={{
+                  email: form.email,
+                  docType: form.docType,
+                  docNumber: form.docNumber,
+                }}
                 onSubmit={handleBrickSubmit}
               />
             </div>

@@ -7,12 +7,18 @@ interface MPCardBrickProps {
   amount: number;
   onSubmit: (param: { selectedPaymentMethod: string; formData: any }) => Promise<void>;
   locale?: string;
+  payer?: {
+    email?: string;
+    docType?: string;
+    docNumber?: string;
+  };
 }
 
 function MPCardBrickComponent({
   amount,
   onSubmit,
   locale = 'es',
+  payer,
 }: MPCardBrickProps) {
   const [initialized, setInitialized] = useState(false);
   const [sdkError, setSdkError] = useState<string | null>(null);
@@ -43,6 +49,13 @@ function MPCardBrickComponent({
     );
   }
 
+  const normalizedIdType =
+    payer?.docType === 'C.C'
+      ? 'CC'
+      : payer?.docType === 'C.E'
+      ? 'CE'
+      : undefined;
+
   return (
     <div className="w-full bg-white p-4 rounded-xl border border-[#E8E2DA] shadow-sm max-w-md mx-auto">
       {sdkError && (
@@ -56,6 +69,21 @@ function MPCardBrickComponent({
       <Payment
         initialization={{
           amount: amount,
+          ...(payer?.email
+            ? {
+                payer: {
+                  email: payer.email.trim(),
+                  ...(normalizedIdType && payer?.docNumber
+                    ? {
+                        identification: {
+                          type: normalizedIdType,
+                          number: payer.docNumber.trim(),
+                        },
+                      }
+                    : {}),
+                },
+              }
+            : {}),
         }}
         customization={{
           visual: {
