@@ -218,8 +218,8 @@ export const translations = {
     },
     home: {
       title: 'BOHO SUNDAY',
-      desc1: 'An experience to enjoy the sun, music, and good energy. A Sunday to dance, share, and get carried away by the rhythm of Boho Sunday.',
-      desc2: 'Don\'t miss the opportunity to be part of the best party in Sopetrán.',
+      desc1: 'An experience where music, energy, and the BOHO spirit come together to create an afternoon filled with good vibes, dancing, and unforgettable moments.',
+      desc2: 'Don’t miss the chance to be part of a new edition of BOHO SUNDAY in Sopetrán.',
       location: 'LOCATION:',
       address: 'Vereda Tafetanes Route 429180 Old Way to Sopetrán, Antioquia',
       // English logos (placeholder if you want to use the same or different files)

@@ -80,11 +80,11 @@ export default function Home() {
       </div>
       <AlliesCarousel />
 
-      {/* Se oculta la barra de ventas (BottomBar) por post Boho 
-       {/*<BottomBar
+      {/* Se oculta la barra de ventas (BottomBar) por post Boho */}
+      <BottomBar
         openMap={openMap}
         onToggleMap={() => setOpenMap(!openMap)}
-      /> */}
+      /> 
       <Footer />
     </div>
   );

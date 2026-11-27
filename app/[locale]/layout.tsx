@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: "Fiesta afrobeat en Medellín | Boho sunday",
-    description: "Disfruta el Boho Sunday Colombiamoda Edition, una fiesta de afrobeats en Sopetrán que se realiza en el hotel Casa Candela. Reserva aquí.",
+    description: "Disfruta el Boho Sunday White Edition III una fiesta de afrobeats en Sopetrán que se realiza en el hotel Casa Candela. Reserva aquí.",
     keywords: ["Boho Sunday", "Colombia moda", "Casa Candela", "Fiesta boho"]
   };
 }
