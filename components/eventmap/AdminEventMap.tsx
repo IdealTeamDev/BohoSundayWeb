@@ -346,9 +346,7 @@ export default function AdminEventMap({ onSelectTicketForSale, onRefreshStats, o
 
             let dotBg = cfg.dotColor;
             let dotBorder = '2px solid white';
-            let textColor = ticket.zone === 'bohemian' || ticket.zone === 'vip' || ticket.zone === 'candela'
-              ? '#EAE0CE'
-              : '#231E1A';
+            let textColor = cfg.color;
             let dotShadow = 'none';
 
             if (status === 'locked') {

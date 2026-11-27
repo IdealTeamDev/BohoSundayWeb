@@ -218,9 +218,7 @@ export default function EventMap({ onClose }: EventMapProps) {
                 transition: 'transform 0.15s ease, opacity 0.2s ease',
                 fontSize: `${Math.max(6, dotSize * 0.42)}px`,
                 fontWeight: '800',
-                color: ticket.zone === 'bohemian' || ticket.zone === 'vip' || ticket.zone === 'candela'
-                  ? '#EAE0CE'
-                  : '#231E1A',
+                color: cfg.color,
                 fontFamily: 'var(--font-nunito, sans-serif)',
                 lineHeight: 1,
               }}

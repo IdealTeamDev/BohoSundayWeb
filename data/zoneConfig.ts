@@ -2,8 +2,8 @@
 export const zoneConfig = {
   vip: {
     label: "VIP",
-    color: "#CC6633",
-    dotColor: "#819176",
+    color: "#668E80",
+    dotColor: "#A8C6BD",
     icon: "https://res.cloudinary.com/dow0dxajr/image/upload/v1795716597/icons_4_l8aq8s.png",
     iconActive: "https://res.cloudinary.com/dow0dxajr/image/upload/v1791901437/Vector_4_m51gqg.png", // <- Modifica esta ruta con el icono activo 
     glowColor: "rgba(99,102,241,0.5)",
@@ -39,8 +39,8 @@ export const zoneConfig = {
   },
   candela: {
     label: "Candela",
-    color: "#f97316",
-    dotColor: "#A591BA",
+    color: "#AA945B",
+    dotColor: "#E0D08D",
     icon: "https://res.cloudinary.com/dow0dxajr/image/upload/v1795716627/icons_2_losktr.png",
     iconActive: "https://res.cloudinary.com/dow0dxajr/image/upload/v1791901437/Vector_3_w1lrts.png",
     glowColor: "rgba(234,88,12,0.5)",
